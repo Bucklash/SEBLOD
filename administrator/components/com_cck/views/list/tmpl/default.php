@@ -64,7 +64,16 @@ echo '<div class="seblod first container-fluid">' . $this->form . '</div>';
 		if ( $this->show_items_number ) {
 			$label	=	$this->label_items_number;
 			if ( $this->config['doTranslation'] ) {
-				$label	=	JText::_( 'COM_CCK_' . str_replace( ' ', '_', trim( $label ) ) );
+				$label	=	'COM_CCK_' . str_replace( ' ', '_', trim( $label ) );
+
+				if ( ( $this->total == 0 || $this->total == 1 ) && JFactory::getLanguage()->hasKey( $label.'_1' ) ) {
+					$label	.=	'_1';
+				}
+				$label	=	JText::_( $label );
+			} elseif ( $this->total == 0 || $this->total == 1 ) {
+				if ( JFactory::getLanguage()->hasKey( 'COM_CCK_' . str_replace( ' ', '_', trim( $label ).'_1' ) ) ) {
+					$label	=	JText::_( 'COM_CCK_' . str_replace( ' ', '_', trim( $label ).'_1' ) );	
+				}			
 			}
 			$item_number	=	'<div class="'.$this->class_items_number.'"><span>'.$this->total.'</span>&nbsp;'.$label.'</div>';
 		}
@@ -83,7 +92,7 @@ echo '<div class="seblod first container-fluid">' . $this->form . '</div>';
 				$pages	=	str_replace( 'document.adminForm.limitstart', 'document.'.$this->config['formId'].'.limitstart', $this->pagination->getListFooter() );
 				$pages	=	str_replace( 'Joomla.submitform()', 'Joomla.submitform(\'\',document.getElementById(\''.$this->config['formId'].'\'))', $pages );
 				
-				echo str_replace( '<div class="pagination pagination-toolbar">', '<div class="pagination pagination-toolbar">'.$item_number, $pages );
+				echo str_replace( '<div class="pagination pagination-toolbar clearfix">', '<div class="pagination pagination-toolbar clearfix">'.$item_number, $pages );
 			} else {
 				echo $item_number;
 			}

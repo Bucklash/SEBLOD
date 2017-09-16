@@ -57,9 +57,10 @@ class CCK_Item
 		}
 		
         if ( $prefix == 'get' ) {
-			$fieldname	=	$args[0];
-			$count		=	count( $args );
+			$count	=	count( $args );
 			if ( $count ==  1 ) {
+				$fieldname	=	$args[0];
+
 				if ( empty( $property ) ) {
 					if ( isset( $this->me[$fieldname] ) ) {
 						return $this->me[$fieldname];
@@ -69,7 +70,11 @@ class CCK_Item
 						return $this->me[$fieldname]->$property;
 					}
 				}
+			} elseif ( $count == 0 ) {
+				return;
 			} else {
+				$fieldname	=	$args[0];
+
 				if ( $count == 2 ) {					
 					return empty( $property ) ? @$this->me[$fieldname]->value[$args[1]] : @$this->me[$fieldname]->value[$args[1]]->$property;
 				} else {
@@ -84,6 +89,30 @@ class CCK_Item
 		if ( isset( $this->$property ) ) {
 			return $this->$property;
 		}
+    }
+
+	// getAuthor
+    public function getAuthor()
+    {
+    	return $this->author;
+    }
+
+	// getId
+    public function getId()
+    {
+    	return $this->pid;
+    }
+
+    // getPk
+    public function getPk()
+    {
+		return $this->pk;
+    }
+
+	// getType
+    public function getType()
+    {
+		return $this->cck;
     }
 
 	// initialize
@@ -229,7 +258,7 @@ class CCK_Item
 	{
 		$field	=	$this->get( $fieldname );
 		
-		if ( !$field->display ) {
+		if ( !is_object( $field ) || !$field->display ) {
 			return '';
 		}
 		
@@ -357,7 +386,12 @@ class CCK_Item
 
 			// Prepare
 			if ( $this->translate && trim( $legend ) ) {
-				$legend	=	JText::_( 'COM_CCK_' . str_replace( ' ', '_', trim( $legend ) ) );
+				$legend	=	trim( $legend );
+				$key	=	'COM_CCK_' . str_replace( ' ', '_', $legend );
+
+				if ( JFactory::getLanguage()->hasKey( $key ) ) {
+					$legend	=	JText::_( $key );
+				}
 			}
 			if ( is_object( $options ) ) {
 				$orientation			=	$options->get( 'field_orientation', 'vertical' );

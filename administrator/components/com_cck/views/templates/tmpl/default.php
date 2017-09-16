@@ -213,6 +213,23 @@ $js	=	'
 				}
 				Joomla.submitform(task);
 			}
+			$(document).ready(function() {
+				$(document).keypress(function(e) {
+					if (!$(":input:focus").length) {
+						e.preventDefault();
+
+						if (e.which == 64) {
+							if ( $("#filter_search").val() != "" ) {
+								$("#filter_search").select();
+							} else {
+								$("#filter_search").focus();
+							}
+						} else if (e.which == 110) {
+							$("#toolbar-new > button").click();
+						}
+					}
+				});
+			});
 		})(jQuery);
 		';
 $doc->addScriptDeclaration( $js );

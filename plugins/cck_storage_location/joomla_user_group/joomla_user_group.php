@@ -37,6 +37,12 @@ class plgCCK_Storage_LocationJoomla_User_Group extends JCckPluginLocation
 	protected static $context2		=	'';
 	protected static $contexts		=	array( 'com_content.article' );
 	protected static $error			=	false;
+	protected static $events		=	array(
+											'afterDelete'=>'onUserAfterDeleteGroup',
+											'afterSave'=>'onUserAfterSaveGroup',
+											'beforeDelete'=>'onUserBeforeDeleteGroup',
+											'beforeSave'=>'onUserBeforeSaveGroup'
+										);
 	protected static $ordering		=	array( 'alpha'=>'title ASC' );
 	protected static $ordering2		=	array( 'newest'=>'created DESC', 'oldest'=>'created ASC', 'ordering'=>'ordering ASC', 'popular'=>'hits DESC' );
 	protected static $pk			=	0;
@@ -78,24 +84,6 @@ class plgCCK_Storage_LocationJoomla_User_Group extends JCckPluginLocation
 			if ( ! isset( $config['storages'][self::$table] ) ) {
 				$config['storages'][self::$table]	=	self::_getTable( $pk );
 			}
-		}
-	}
-	
-	// onCCK_Storage_LocationPrepareDelete
-	public function onCCK_Storage_LocationPrepareDelete( &$field, &$storage, $pk = 0, &$config = array() )
-	{
-		if ( self::$type != $field->storage_location ) {
-			return;
-		}
-		
-		// Init
-		$table	=	$field->storage_table;
-		
-		// Set
-		if ( $table == self::$table ) {
-			$storage	=	self::_getTable( $pk );
-		} else {
-			$storage	=	parent::g_onCCK_Storage_LocationPrepareForm( $table, $pk );
 		}
 	}
 
@@ -274,28 +262,10 @@ class plgCCK_Storage_LocationJoomla_User_Group extends JCckPluginLocation
 		return true;
 	}
 	
-	// onCCK_Storage_LocationStore
-	public function onCCK_Storage_LocationStore( $type, $data, &$config = array(), $pk = 0 )
-	{
-		if ( self::$type != $type ) {
-			return;
-		}
-		
-		if ( ! @$config['storages'][self::$table]['_']->pk ) {
-			self::_core( $config['storages'][self::$table], $config, $pk, $this->params->toArray() );
-			$config['storages'][self::$table]['_']->pk	=	self::$pk;
-		}
-		if ( $data['_']->table != self::$table ) {
-			parent::g_onCCK_Storage_LocationStore( $data, self::$table, self::$pk, $config, $this->params->toArray() );
-		}
-		
-		return self::$pk;
-	}
-	
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Protected
 	
 	// _core
-	protected function _core( $data, &$config = array(), $pk = 0, $params = array() )
+	protected function _core( $data, &$config = array(), $pk = 0 )
 	{
 		if ( ! $config['id'] ) {
 			$config['id']	=	parent::g_onCCK_Storage_LocationPrepareStore();
@@ -342,13 +312,13 @@ class plgCCK_Storage_LocationJoomla_User_Group extends JCckPluginLocation
 		}
 		
 		$config['author']	=	JFactory::getUser()->id;
-		parent::g_onCCK_Storage_LocationStore( $data, self::$table, self::$pk, $config, $params );
+		parent::g_onCCK_Storage_LocationStore( $data, self::$table, self::$pk, $config );
 	}
 	
 	// _getTable
 	protected static function _getTable( $pk = 0 )
 	{
-		$table	=	JTable::getInstance( 'usergroup' );
+		$table	=	JTable::getInstance( 'Usergroup' );
 		
 		if ( $pk > 0 ) {
 			$table->load( $pk );

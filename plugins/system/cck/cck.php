@@ -44,7 +44,7 @@ class plgSystemCCK extends JPlugin
 		}
 		// Deprecated :: end
 
-		if ( $app->isAdmin() ) {
+		if ( $app->isClient( 'administrator' ) ) {
 			JFactory::getLanguage()->load( 'lib_cck', JPATH_SITE );
 
 			if ( file_exists( JPATH_SITE.'/plugins/cck_storage_location/joomla_user_note/joomla_user_note.php' ) ) {
@@ -75,7 +75,7 @@ class plgSystemCCK extends JPlugin
 				$this->site_cfg->loadString( $this->site->configuration );
 				$this->site_context	=	(int)JCck::getConfig_Param( 'multisite_context', '1' );
 
-				if ( $app->isSite() && $this->site ) {
+				if ( $app->isClient( 'site' ) && $this->site ) {
 					// --- Redirect to Homepage
 					$homepage	=	$this->site_cfg->get( 'homepage', 0 );
 
@@ -160,7 +160,7 @@ class plgSystemCCK extends JPlugin
 			}
 		}
 
-		if ( JFactory::getApplication()->isSite() ) {
+		if ( JFactory::getApplication()->isClient( 'site' ) ) {
 			$Itemid	=	$uri->getVar( 'Itemid' );
 
 			if ( $uri->getVar( 'option' ) == 'com_cck' && !$uri->getVar( 'task' ) && !$uri->getVar( 'view' ) ) {
@@ -241,7 +241,9 @@ class plgSystemCCK extends JPlugin
 		$router->attachBuildRule( array( $this, 'buildRule' ), JRouter::PROCESS_DURING );
 		$router->attachParseRule( array( $this, 'parseRule' ), JRouter::PROCESS_DURING );
 
-		if ( $app->isAdmin() ) {
+		if ( $app->isClient( 'administrator' ) ) {
+			JCckDevIntegration::addMenuPresets();
+			
 			if ( $app->input->get( 'option' ) == 'com_config' && strpos( $app->input->get( 'component' ), 'com_cck' ) !== false ) {
 				JFactory::getLanguage()->load( 'com_cck_core' );
 			}
@@ -261,10 +263,11 @@ class plgSystemCCK extends JPlugin
 			}
 		}
 
-		if ( JCckToolbox::getConfig()->get( 'processing', 0 ) ) { // todo: move below
-			JCckToolbox::process( 'onAfterInitialise' );
-		}
 		if ( $this->multisite !== true ) {
+			if ( JCckToolbox::getConfig()->get( 'processing', 0 ) ) {
+				JCckToolbox::process( 'onAfterInitialise' );
+			}
+
 			return;
 		}
 		$user	=	JFactory::getUser();
@@ -280,7 +283,7 @@ class plgSystemCCK extends JPlugin
 			}
 		}
 		if ( $user->id > 0 && is_object( $this->site ) && $isUser ) {
-			if ( $app->isSite() ) {
+			if ( $app->isClient( 'site' ) ) {
 				$this->_setHomepage( $this->site_cfg->get( 'homepage', 0 ) );
 
 				$style	=	$this->site_cfg->get( 'template_style', '' );
@@ -293,6 +296,10 @@ class plgSystemCCK extends JPlugin
 
 			if ( ! $this->site ) {
 				JFactory::getSession()->set( 'user', JFactory::getUser( $user->id ) );
+
+				if ( JCckToolbox::getConfig()->get( 'processing', 0 ) ) {
+					JCckToolbox::process( 'onAfterInitialise' );
+				}
 				return;
 			}
 
@@ -358,7 +365,7 @@ class plgSystemCCK extends JPlugin
 				$viewlevels		=	$authlevels;
 			}
 
-			if ( $app->isAdmin() && $this->site->guest_only_viewlevel > 0 ) {
+			if ( $app->isClient( 'administrator' ) && $this->site->guest_only_viewlevel > 0 ) {
 				$viewlevels[]	=	$this->site->guest_only_viewlevel;
 			}
 
@@ -375,11 +382,14 @@ class plgSystemCCK extends JPlugin
 				$menuShadow->makeHimLive();
 			}
 		} else {
-			if ( $app->isAdmin() ) {
+			if ( $app->isClient( 'administrator' ) ) {
 				return;
 			}
-      
+
 			if ( ! $this->site ) {
+				if ( JCckToolbox::getConfig()->get( 'processing', 0 ) ) {
+					JCckToolbox::process( 'onAfterInitialise' );
+				}
 				return;
 			}
 
@@ -387,8 +397,12 @@ class plgSystemCCK extends JPlugin
 			$session->set( 'user', JFactory::getUser( 0 ) );
 
 			if ( strpos( JUri::getInstance()->toString(), 'task=registration.activate' ) !== false ) {
+				if ( JCckToolbox::getConfig()->get( 'processing', 0 ) ) {
+					JCckToolbox::process( 'onAfterInitialise' );
+				}
 				return;
 			}
+
 			$user			=	new JUser( $this->site->guest );
 			$user->guest	=	1;
 
@@ -408,6 +422,10 @@ class plgSystemCCK extends JPlugin
 				$this->_setTemplateStyle( $style );
 			}
 		}
+
+		if ( JCckToolbox::getConfig()->get( 'processing', 0 ) ) {
+			JCckToolbox::process( 'onAfterInitialise' );
+		}
 	}
 
 	// onAfterDispatch
@@ -423,7 +441,7 @@ class plgSystemCCK extends JPlugin
 		$view		=	$app->input->get( 'view', '' );
 		$layout		=	$app->input->get( 'layout', '' );
 
-		if ( $app->isAdmin() ) {
+		if ( $app->isClient( 'administrator' ) ) {
 			switch ( $option ) {
 				case 'com_config':
 					$com	=	$app->input->get( 'component', '' );
@@ -499,7 +517,7 @@ class plgSystemCCK extends JPlugin
 					}
 					break;
 			}
-		} elseif ( $app->isSite() ) {
+		} elseif ( $app->isClient( 'site' ) ) {
 			if ( !JCck::getConfig_Param( 'sef_canonical', 0 ) && !isset( $app->cck_canonical ) && isset( $doc->_links ) && count( $doc->_links ) ) {
 				foreach ( $doc->_links as $k=>$link ) {
 					if ( $link['relation'] == 'canonical' ) {
@@ -511,6 +529,40 @@ class plgSystemCCK extends JPlugin
 
 			$itemId	=	$app->input->getInt( 'Itemid', 0 );
 			$user	=	JFactory::getUser();
+
+			// Redirect from tmpl=raw to #!
+			if ( $app->input->get( 'tmpl' ) == 'raw' ) {
+				$item	=	$app->getMenu()->getItem( $app->input->getInt( 'Itemid' ) );
+
+				if ( isset( $item->query['option'], $item->query['view'], $item->query['search'] )
+				  && $item->query['option'] == 'com_cck' && $item->query['view'] == 'list' ) {
+					$ref	=	$app->input->server->getString( 'HTTP_REFERER', '' );
+					$uri	=	JUri::getInstance();
+
+					if ( $ref == '' || strpos( $ref, '://'.$uri->getHost() ) === false ) {
+						if ( $item->query['search'] ) {
+							$search	=	JCckDatabase::loadResult( 'SELECT options FROM #__cck_core_searchs WHERE name = "'.$item->query['search'].'"' );
+							$search	=	new JRegistry( $search );
+
+							if ( (int)$search->get( 'load_resource', 0 ) ) {
+								$base		=	$uri->toString( array( 'scheme', 'host', 'port' ) );
+								$url		=	$uri->getPath();
+								$path		=	JRoute::_( 'index.php?Itemid='.$itemId );
+
+								if ( $path == '/' ) {
+									$path	=	'';
+								}
+
+								$base		.=	$path.'/';
+								$url		=	str_replace( $path.'/', '', $url );
+								$url		=	$base.'#'.$url;
+								
+								$app->redirect( $url );
+							}
+						}
+					}
+				}
+			}
 
 			if ( $this->multisite === true ) {
 				$config		=	JFactory::getConfig();
@@ -696,12 +748,12 @@ class plgSystemCCK extends JPlugin
 		$app	=	JFactory::getApplication();
 		$doc	=	JFactory::getDocument();
 
-		if ( ( $app->isAdmin() || ( $app->isSite() && JCckToolbox::getConfig()->def( 'KO' ) ) ) && $doc->getType() == 'html' ) {
+		if ( ( $app->isClient( 'administrator' ) || ( $app->isClient( 'site' ) && JCckToolbox::getConfig()->def( 'KO' ) ) ) && $doc->getType() == 'html' ) {
 			$head	=	$doc->getHeadData();
 
 			JCckToolbox::setHead( $head );
 		}
-		if ( $app->isSite() && isset( $app->cck_app['Header'] ) ) {
+		if ( $app->isClient( 'site' ) && isset( $app->cck_app['Header'] ) ) {
 			if ( count( $app->cck_app['Header'] ) ) {
 				foreach ( $app->cck_app['Header'] as $k=>$v ) {
 					$app->setHeader( $k, $v, true );
@@ -722,12 +774,12 @@ class plgSystemCCK extends JPlugin
 		$view		=	$app->input->get( 'view', '' );
 		$layout		=	$app->input->get( 'layout', '' );
 
-		if ( ( $app->isAdmin() || ( $app->isSite() && JCckToolbox::getConfig()->def( 'KO' ) ) ) && $doc->getType() == 'html' ) {
+		if ( ( $app->isClient( 'administrator' ) || ( $app->isClient( 'site' ) && JCckToolbox::getConfig()->def( 'KO' ) ) ) && $doc->getType() == 'html' ) {
 			JCckToolbox::setHeadAfterRender();
 		}
 
 		// site
-		if ( $app->isSite() ) {
+		if ( $app->isClient( 'site' ) ) {
 			if ( $this->multisite === true ) {
 				if ( $this->site ) {
 					if ( !$this->site_context ) {
@@ -763,7 +815,7 @@ class plgSystemCCK extends JPlugin
 		}
 
 		// admin
-		if ( $app->isAdmin() ) {
+		if ( $app->isClient( 'administrator' ) ) {
 			$buffer		=	'';
 			$type		=	JFactory::getDocument()->getType();
 

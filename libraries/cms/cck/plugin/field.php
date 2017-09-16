@@ -68,19 +68,20 @@ class JCckPluginField extends JPlugin
 			return $value;
 		}
 		if ( count( $opts ) ) {
+			$length	=	strlen( $value );
 			foreach ( $opts as $opt ) {
 				$o	=	explode( '=', $opt );
+
 				if ( $config['doTranslation'] && trim( $o[0] ) ) {
 					$o[0]	=	JText::_( 'COM_CCK_' . str_replace( ' ', '_', trim( $o[0] ) ) );
 				}
-				// if ( strcasecmp( $o[0], $value ) == 0 ) {
-				if ( stristr( $o[0], $value ) !== false ) {
+				if ( stristr( $o[0], $value ) !== false && strlen( $o[0] ) == $length ) {
 					return ( isset( $o[1] ) ) ? $o[1] : $o[0];
 					break;
 				}
 			}
 		}
-		
+
 		return $value;
 	}
 	
@@ -372,7 +373,7 @@ class JCckPluginField extends JPlugin
 		
 		// 4
 		$hide				=	( @$field->restriction != '' ) ? '' : ' hidden';
-		$value				=	( @$field->access ) ? (int)$field->access : 1;
+		$value				=	( @$field->access == '' ) ? 1 : ( ( @$field->access ) ? (int)$field->access : 0 );
 		$text				=	( isset( $data['access'][$value] ) ) ? $data['access'][$value]->text : JText::_( 'COM_CCK_UNKNOWN_SETUP' );
 		$column1			=	'<input type="hidden" id="ffp'.$name.'_access" name="ffp['.$name.'][access]" value="'.$value.'" />'
 							.	'<span class="text blue sp2se" data-id="ffp'.$name.'_access" data-to="access">'.$text.'</span>';
@@ -480,7 +481,7 @@ class JCckPluginField extends JPlugin
 		
 		// 4
 		$hide				=	( @$field->restriction != '' ) ? '' : ' hidden';
-		$value				=	( @$field->access ) ? (int)$field->access : 1;
+		$value				=	( @$field->access == '' ) ? 1 : ( ( @$field->access ) ? (int)$field->access : 0 );
 		$text				=	( isset( $data['access'][$value] ) ) ? $data['access'][$value]->text : JText::_( 'COM_CCK_UNKNOWN_SETUP' );
 		$column1			=	'<input type="hidden" id="ffp'.$name.'_access" name="ffp['.$name.'][access]" value="'.$value.'" />'
 							.	'<span class="text blue sp2se" data-id="ffp'.$name.'_access" data-to="access">'.$text.'</span>';
@@ -576,7 +577,7 @@ class JCckPluginField extends JPlugin
 		
 		// 4
 		$hide				=	( @$field->restriction != '' ) ? '' : ' hidden';
-		$value				=	( @$field->access ) ? (int)$field->access : 1;
+		$value				=	( @$field->access == '' ) ? 1 : ( ( @$field->access ) ? (int)$field->access : 0 );
 		$text				=	( isset( $data['access'][$value] ) ) ? $data['access'][$value]->text : JText::_( 'COM_CCK_UNKNOWN_SETUP' );
 		$column1			=	'<input type="hidden" id="ffp'.$name.'_access" name="ffp['.$name.'][access]" value="'.$value.'" />'
 							.	'<span class="text blue sp2se" data-id="ffp'.$name.'_access" data-to="access">'.$text.'</span>';
@@ -714,7 +715,7 @@ class JCckPluginField extends JPlugin
 		
 		// 4
 		$hide				=	( @$field->restriction != '' ) ? '' : ' hidden';
-		$value				=	( @$field->access ) ? (int)$field->access : 1;
+		$value				=	( @$field->access == '' ) ? 1 : ( ( @$field->access ) ? (int)$field->access : 0 );
 		$text				=	$data['access'][$value]->text;
 		$column1			=	'<input type="hidden" id="ffp'.$name.'_access" name="ffp['.$name.'][access]" value="'.$value.'" />'
 							.	'<span class="text blue sp2se" data-id="ffp'.$name.'_access" data-to="access">'.$text.'</span>';
@@ -803,6 +804,29 @@ class JCckPluginField extends JPlugin
 			}
 		}
 
+		// Css
+		if ( $field->variation ) {
+			$css	=	'';
+
+			switch ( $field->variation ) {
+				case 'value':
+					$css	=	'is-value';
+					break;
+				case 'form_filter':
+					$css	=	'is-filter';
+					break;
+				case 'form_filter_ajax':
+					$css	=	'is-filter-ajax';
+					break;
+				default:
+					break;
+			}
+			if ( $css ) {
+				$field->css	.=	$field->css ? ' '.$css : $css;
+			}
+		}
+
+		// Attributes
 		if ( isset( $field->attributes ) && $field->attributes != '' ) {
 			if ( strpos( $field->attributes, 'J(' ) !== false ) {
 				$matches	=	'';
@@ -1045,7 +1069,7 @@ class JCckPluginField extends JPlugin
 		if ( $variation == 'value' ) {
 			$attr			=	$field->attributes ? ' '.$field->attributes : '';
 			$base			=	( $hidden != '' ) ? trim( $hidden ) : '<input type="hidden" id="'.$id.'" name="'.$name.'" value="'.htmlspecialchars( $value, ENT_COMPAT, 'UTF-8' ).'" class="'.$class.'"'.$attr.' />';
-			$field->form	=	$base . '<span id="_'.$id.'" class="variation_value">'.$text.'</span>';
+			$field->form	=	$base . '<span id="_'.$id.'" class="variation_value is-value">'.$text.'</span>';
 		} elseif ( $variation == 'disabled' ) {
 			$base			=	( $hidden != '' ) ? trim( $hidden ) : '<input type="hidden" id="_'.$id.'" name="'.$name.'" value="'.htmlspecialchars( $value, ENT_COMPAT, 'UTF-8' ).'" class="'.$class.'" />';
 			$field->form	=	$base;
@@ -1067,9 +1091,9 @@ class JCckPluginField extends JPlugin
 			if ( $variation == 'form_filter_ajax' ) {
 				$field->form	=	str_replace( 'class="', 'data-cck-ajax="" class="', $field->form );
 
-				self::g_addScriptDeclaration( '$("form#'.$parent.'").on("change", "#'.$id.'", function() { var q = ""; $("form#'.$parent.' [data-cck-ajax=\'\']").each(function(i) { q += "&"+$(this).attr("name")+"="+$(this).myVal(); }); JCck.Core.loadmore("&start=0"+q,0,1); });' );
+				self::g_addScriptDeclaration( '$("form#'.$parent.'").on("change", "#'.$id.'.is-filter-ajax", function() { var q = ""; $("form#'.$parent.' [data-cck-ajax=\'\']").each(function(i) { q += "&"+$(this).attr("name")+"="+$(this).myVal(); }); JCck.Core.loadmore("&start=0"+q,0,1); });' );
 			} else {
-				self::g_addScriptDeclaration( '$("form#'.$parent.'").on("change", "#'.$id.'", function() { '.$submit.'(\'search\'); });' );
+				self::g_addScriptDeclaration( '$("form#'.$parent.'").on("change", "#'.$id.'.is-filter", function() { '.$submit.'(\'search\'); });' );
 			}
 		} elseif ( $variation == 'list' || $variation == 'list_filter' || $variation == 'list_filter_ajax' ) {
 			$attributes		=	( isset( $field->attributesList ) && $field->attributesList != '' ) ? explode( '||', $field->attributesList ) : array();

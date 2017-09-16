@@ -60,7 +60,7 @@ if ( $id > 0 ) {
 	$isNew	=	1;
 }
 
-if ( $type->admin_form && $app->isSite() && $user->authorise( 'core.admin.form', 'com_cck.form.'.$type->id ) ) {
+if ( $type->admin_form && $app->isClient( 'site' ) && $user->authorise( 'core.admin.form', 'com_cck.form.'.$type->id ) ) {
 	if ( $type->admin_form == 1 || ( $type->admin_form == 2 && !$isNew ) ) {
 		$preconfig['client']	=	'admin';
 		$more_options			=	$type->{'options_'.$preconfig['client']};
@@ -94,12 +94,14 @@ if ( !$isNew ) {
 	// canEditOwnContent
 	jimport( 'cck.joomla.access.access' );
 	$canEditOwnContent	=	CCKAccess::check( $user->id, 'core.edit.own.content', 'com_cck.form.'.$type->id );
+
 	if ( $canEditOwnContent ) {
-		$remote_field		=	JCckDatabase::loadObject( 'SELECT storage, storage_table, storage_field FROM #__cck_core_fields WHERE name = "'.$canEditOwnContent.'"' );
+		$parts				=	explode( '@', $canEditOwnContent );
+		$remote_field		=	JCckDatabase::loadObject( 'SELECT storage, storage_table, storage_field FROM #__cck_core_fields WHERE name = "'.$parts[0].'"' );
 		$canEditOwnContent	=	false;
 		if ( is_object( $remote_field ) && $remote_field->storage == 'standard' ) {
 			$related_content_id		=	JCckDatabase::loadResult( 'SELECT '.$remote_field->storage_field.' FROM '.$remote_field->storage_table.' WHERE id = '.(int)$id );
-			$related_content		=	JCckDatabase::loadObject( 'SELECT author_id, pk FROM #__cck_core WHERE storage_location = "joomla_article" AND pk = '.(int)$related_content_id );
+			$related_content		=	JCckDatabase::loadObject( 'SELECT author_id, pk FROM #__cck_core WHERE storage_location = "'.( isset( $parts[1] ) && $parts[1] != '' ? $parts[1] : 'joomla_article' ).'" AND pk = '.(int)$related_content_id );
 
 			if ( $related_content->author_id == $user->id ) {
 				$canEditOwnContent	=	true;
@@ -110,7 +112,7 @@ if ( !$isNew ) {
 		$author			=	JCckDatabase::loadResult( 'SELECT author_id FROM #__cck_core WHERE cck = "'.JCckDatabase::escape( $type->name ).'" AND pk = '.(int)$id );
 	}
 } else {
-	if ( $type->location && (( $app->isAdmin() && $type->location != 'admin' ) || ( $app->isSite() && $type->location != 'site' )) ) {
+	if ( $type->location && (( $app->isClient( 'administrator' ) && $type->location != 'admin' ) || ( $app->isClient( 'site' ) && $type->location != 'site' )) ) {
 		CCK_Form::redirect( $no_action, $no_redirect, $no_message, $no_style, $config, $doDebug ); return;
 	}
 	$actionACL			=	'create';
@@ -358,9 +360,11 @@ if ( !$canAccess && $canEditOwn && !$config['author'] ) {
 
 // BeforeRender
 if ( isset( $config['process']['beforeRenderForm'] ) && count( $config['process']['beforeRenderForm'] ) ) {
+	JCckDevHelper::sortObjectsByProperty( $config['process']['beforeRenderForm'], 'priority' );
+	
 	foreach ( $config['process']['beforeRenderForm'] as $process ) {
 		if ( $process->type ) {
-			JCck::callFunc_Array( 'plg'.$process->group.$process->type, 'on'.$process->group.'beforeRenderForm', array( $process->params, &$fields, &$config['storages'], &$config ) );
+			JCck::callFunc_Array( 'plg'.$process->group.$process->type, 'on'.$process->group.'BeforeRenderForm', array( $process->params, &$fields, &$config['storages'], &$config ) );
 		}
 	}
 }
@@ -410,7 +414,7 @@ if ( $config['pk'] && empty( $config['id'] ) ) {
 }
 
 // Versions
-if ( $app->isAdmin() && JCck::on( '3.2' ) ) {
+if ( $app->isClient( 'administrator' ) && JCck::on( '3.2' ) ) {
 	if ( @$config['base']->location == 'joomla_article' ) { // TODO: getContext / params from any object
 		$object_params	=	JComponentHelper::getParams( 'com_content' );
 

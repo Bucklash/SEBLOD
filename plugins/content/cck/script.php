@@ -112,11 +112,8 @@ class plgContentCCKInstallerScript
 							);
 				foreach ( $addons as $addon ) {
 					$addon->title	=	$titles[$addon->element];
-					self::_addAddon( $addon, $seblod );
+					self::_addAddon( $addon, $seblod, $type );
 				}
-				$query		=	'UPDATE #__menu SET alias = CONCAT(UCASE(LEFT(alias,1)),SUBSTRING(alias,2)) WHERE link LIKE "index.php?option=com_cck_%" AND parent_id = '.(int)$seblod->id;
-				$db->setQuery( $query );
-				$db->execute();
 			}
 		}	
 		
@@ -155,9 +152,14 @@ class plgContentCCKInstallerScript
 				$query	=	'SELECT id FROM #__modules WHERE module="'.$module['name'].'"';
 				$db->setQuery( $query );
 				$mid	=	$db->loadResult();
-				$query	=	'INSERT INTO #__modules_menu (moduleid, menuid) VALUES ('.$mid.', 0)';
-				$db->setQuery( $query );
-				$db->execute();
+				
+				try {
+					$query	=	'INSERT INTO #__modules_menu (moduleid, menuid) VALUES ('.$mid.', 0)';
+					$db->setQuery( $query );
+					$db->execute();
+				} catch ( Exception $e ) {
+					// Do nothing
+				}
 			}
 				
 			// Publish Plugins
@@ -238,7 +240,7 @@ class plgContentCCKInstallerScript
 			$dispatcher	=	JEventDispatcher::getInstance();
 			
 			foreach ( $categories as $category ) {
-				$table	=	JTable::getInstance( 'category' );
+				$table	=	JTable::getInstance( 'Category' );
 				$table->access	=	2;
 				$table->setLocation( 1, 'last-child' );	
 				$table->bind( $category );
@@ -318,7 +320,10 @@ class plgContentCCKInstallerScript
 									78=>'3.7.0', 79=>'3.7.1', 80=>'3.7.2', 81=>'3.7.3', 82=>'3.7.4', 83=>'3.7.5', 84=>'3.7.6', 85=>'3.7.7',
 									86=>'3.8.0', 87=>'3.8.1', 88=>'3.8.2', 89=>'3.8.3', 90=>'3.8.4', 91=>'3.8.5',
 									92=>'3.9.0', 93=>'3.9.1', 94=>'3.9.2', 95=>'3.10.0', 96=>'3.10.1', 97=>'3.10.2', 98=>'3.10.3', 99=>'3.10.4', 100=>'3.10.5', 101=>'3.10.6', 102=>'3.10.7', 103=>'3.10.8', 104=>'3.10.9',
-									105=>'3.11.0', 106=>'3.11.1', 107=>'3.11.2', 108=>'3.11.3' );
+									105=>'3.11.0', 106=>'3.11.1', 107=>'3.11.2', 108=>'3.11.3', 109=>'3.11.4',
+									110=>'3.12.0', 111=>'3.12.1', 112=>'3.12.2', 113=>'3.12.3',
+									114=>'3.13.0', 115=>'3.13.1', 116=>'3.14.0', 117=>'3.14.1'
+							);
 			// ******** ******** ******** ******** ******** ******** ******** ******** ******** ******** ******** ******** ******** ******** ******** ******** //
 			
 			$i			=	array_search( $old, $versions );
@@ -384,7 +389,7 @@ class plgContentCCKInstallerScript
 				}
 				if ( JCckDatabase::doQuery( 'INSERT IGNORE #__cck_core_folders (id) VALUES (29)' ) ) {
 					require_once JPATH_ADMINISTRATOR.'/components/'.CCK_COM.'/tables/folder.php';
-					$folder			=	JTable::getInstance( 'folder', 'CCK_Table' );
+					$folder			=	JTable::getInstance( 'Folder', 'CCK_Table' );
 					$folder->load( 29 );
 					$folder_data	=	array( 'parent_id'=>13, 'path'=>'joomla/user/profile', 'title'=>'Profile', 'name'=>'profile', 'color'=>'#0090d1',
 											   'introchar'=>'U.', 'colorchar'=>'#ffffff', 'elements'=>'field', 'featured'=>0, 'published'=>1 );
@@ -453,7 +458,7 @@ class plgContentCCKInstallerScript
 				}
 			}
 			if ( $i2 < 25 ) {
-				$table	=	JTable::getInstance( 'asset' );
+				$table	=	JTable::getInstance( 'Asset' );
 				$table->loadByName( 'com_cck' );
 				if ( $table->rules ) {
 					$rules	=	(array)json_decode( $table->rules );
@@ -539,14 +544,20 @@ class plgContentCCKInstallerScript
 	}
 	
 	// _addAddon
-	protected function _addAddon( $addon, $parent )
+	protected function _addAddon( $addon, $parent, $type )
 	{
 		$db		=	JFactory::getDbo();
 		$name	=	str_replace( 'com_cck_', '', $addon->element );
-		$table	=	JTable::getInstance( 'menu' );
+
+		// -- Dirty workaround cleanup
+		if ( $type == 'update' && version_compare( JFactory::getApplication()->cck_core_version_old, '3.11.4', '<' ) && $name != '' ) {
+			$db->setQuery( 'DELETE FROM #__menu WHERE link = "index.php?option=com_cck_'.$name.'" AND parent_id IN (0,1)' );
+			$db->execute();
+		}
 		
-		$data	=	array( 'menutype'=>'main', 'title'=>$addon->element, 'alias'=>$addon->title, 'path'=>'SEBLOD/'.$addon->title,
-						   'link'=>'index.php?option=com_cck_'.$name, 'type'=>'component', 'published'=>0, 'parent_id'=>$parent->id,
+		$table	=	JTable::getInstance( 'Menu' );
+		$data	=	array( 'menutype'=>'main', 'title'=>$addon->element.'_title', 'alias'=>$addon->title, 'path'=>'SEBLOD/'.$addon->title,
+						   'link'=>'index.php?option=com_cck_'.$name, 'type'=>'component', 'published'=>1, 'parent_id'=>$parent->id,
 						   'level'=>2, 'component_id'=>$addon->id, 'access'=>1, 'img'=>'class:component', 'client_id'=>1 );
 		
 		$table->setLocation( $data['parent_id'], 'last-child' );
@@ -556,7 +567,7 @@ class plgContentCCKInstallerScript
 		$table->path	=	'SEBLOD/'.$addon->title;
 		$table->store();
 		$table->rebuildPath( $table->id );
-		$db->setQuery( 'UPDATE #__menu SET alias = "'.$addon->title.'", path = "SEBLOD/'.$addon->title.'" WHERE id = '.(int)$table->id );
+		$db->setQuery( 'UPDATE #__menu SET alias = "'.$addon->title.'", path = "SEBLOD/'.$addon->title.'" WHERE id = '.(int)$table->id. ' AND client_id = 1' );
 		$db->execute();
 	}
 

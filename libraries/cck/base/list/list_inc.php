@@ -121,7 +121,7 @@ if ( $limitstart != -1 ) {
 	if ( $limitstart > 0 && !(int)$app->input->getInt( 'start' ) ) {
 		$isAltered	=	true;
 	}
-	if ( isset( $this ) ) {
+	if ( isset( $this ) && isset( $this->state ) && is_object( $this->state ) ) {
 		if ( $limitend != -1 ) {
 			$this->state->set( 'limit', (int)$limitend );
 		}
@@ -283,7 +283,7 @@ if ( JCck::getConfig_Param( 'validation', 2 ) > 1 ) {
 }
 $preconfig['client']	=	'list';
 $error					=	'';
-$current				=	array( 'stage'=>0, 'stages'=>array(), 'order_by'=>$params->get( 'order_by', '' ) );
+$current				=	array( 'stage'=>0, 'stages'=>array(), 'order_by'=>@$order_by );
 $session				=	JFactory::getSession();
 $registry				=	$session->get( 'registry' );
 $stages					=	array();
@@ -506,14 +506,20 @@ if ( $preconfig['task'] == 'search' ) {
 					// Form
 					$return			=	'';
 					if ( @$preconfig['auto_redirect_vars'] != '' ) {
-						$return		=	$app->input->getString( $preconfig['auto_redirect_vars'], '' );
+						$variables	=	explode( ',', $preconfig['auto_redirect_vars'] );
+						
+						foreach ( $variables as $variable ) {
+							if ( $variable != '' ) {
+								$result	=	$app->input->getString( $variable, '' );
 
-						if ( $return != '' ) {
-							$return		=	'&'.$preconfig['auto_redirect_vars'].'='.$return;
+								if ( $result != '' ) {
+									$return		.=	'&'.$variable.'='.$result;
+								}
+							}
 						}
 					}
 					$return			.=	'&return='.base64_encode( $_SERVER["HTTP_REFERER"] );
-					$redirect_url	=	JRoute::_( 'index.php?option=com_cck&view=form&layout=edit&type='.$items[0]->cck.'&id='.$items[0]->pk.'&Itemid='.$config['Itemid'].$return );
+					$redirect_url	=	JRoute::_( 'index.php?option=com_cck&view=form&layout=edit&type='.$items[0]->cck.'&id='.$items[0]->pk.'&Itemid='.$config['Itemid'].$return, false );
 					$app->redirect( $redirect_url );
 					return;
 				}
@@ -617,9 +623,9 @@ if ( $no_action ) {
 	} else {
 		$data		=	CCK_List::render( $items, ${$target}, $path, $preconfig['client'], $config['Itemid'], $options, $config );
 	}
-	if ( $doDebug ) {
-		echo $profiler->mark( 'afterRender'.$isCached ).'<br /><br />';
-	}
+}
+if ( $doDebug ) {
+	echo $profiler->mark( 'afterRender'.$isCached ).'<br /><br />';
 }
 
 if ( $preconfig['show_form'] > 0 ) {

@@ -218,7 +218,28 @@ class com_cckInstallerScript
 		
 		$app->cck_core				=	true;
 		$app->cck_core_version_old	=	self::_getVersion();
-		
+
+		// -- Dirty workaround (for websites with corrupted Menu Tree) cleaned on postflight
+		if ( $type == 'update' && version_compare( $app->cck_core_version_old, '3.11.4', '<' ) ) {
+			$db			=	JFactory::getDbo();
+			$query		=	'SELECT b.id, b.lft, b.rgt'
+						.	' FROM #__menu AS a'
+						.	' LEFT JOIN #__menu AS b ON b.parent_id = a.id'
+						.	' WHERE a.link = "index.php?option=com_cck" AND a.client_id = 1';
+			$db->setQuery( $query );
+			$items		=	$db->loadObjectList();
+
+			if ( count( $items ) ) {
+				foreach ( $items as $item ) {
+					$db->setQuery( 'UPDATE #__menu SET parent_id = 1 AND level = 1 AND lft = 0 AND rgt = 0 WHERE id = '.(int)$item->id. ' AND client_id = 1' );
+					$db->execute();
+				}
+			}
+
+			$db->setQuery( 'UPDATE #__menu SET rgt = lft WHERE link = "index.php?option=com_cck" AND client_id = 1' );
+			$db->execute();
+		}
+
 		set_time_limit( 0 );
 	}
 	
@@ -252,6 +273,26 @@ class com_cckInstallerScript
 			JFile::delete( JPATH_SITE.'/cli/cck_job.php' );
 			JFile::copy( $src, JPATH_SITE.'/cli/cck_job.php' );
 		}
+
+		$src	=	JPATH_ADMINISTRATOR.'/components/com_cck/install/tmpl/raw.php';
+		$dest	=	JPATH_ADMINISTRATOR.'/templates/'.$app->getTemplate().'/raw.php';
+		if ( !JFile::exists( $dest ) ) {
+			JFile::copy( $src, $dest );
+		}
+		$query	=	$db->getQuery( true );
+		$query->select( $db->quoteName( array( 'template' ) ) )
+			  ->from( $db->quoteName( '#__template_styles' ) )
+			  ->where( $db->quoteName( 'client_id' ) . ' = 0' )
+			  ->where( $db->quoteName( 'home' ) . ' = 1' );
+		$db->setQuery( $query );
+		
+		if ( $site_template = $db->loadResult() ) {
+			$dest	=	JPATH_SITE.'/templates/'.$site_template.'/raw.php';
+			if ( !JFile::exists( $dest ) ) {
+				JFile::copy( $src, $dest );
+			}
+		}
+
 		$src	=	JPATH_ADMINISTRATOR.'/components/com_cck/install/cms';
 		if ( JFolder::exists( $src ) ) {
 			JFolder::copy( $src, JPATH_SITE.'/libraries/cms/cck', '', true );

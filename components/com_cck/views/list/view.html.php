@@ -53,6 +53,7 @@ class CCKViewList extends JViewLegacy
 		
 		$limitstart		=	$this->state->get( 'limitstart' );
 		$live			=	urldecode( $params->get( 'live' ) );
+		$order_by		=	$params->get( 'order_by', '' );
 		$variation		=	$params->get( 'variation' );
 		
 		if ( $params->get( 'show_list', '' ) != '' ) {
@@ -155,8 +156,12 @@ class CCKViewList extends JViewLegacy
 			$this->description			=	'';
 		}
 		if ( $this->description != '' ) {
-			$this->description	=	str_replace( '[title]', $menu->title, $this->description );
-			$this->description	=	str_replace( '[note]', $menu->note, $this->description );
+			if ( is_object( $menu ) ) {
+				$this->description	=	str_replace( '[title]', $menu->title, $this->description );
+				$this->description	=	str_replace( '[note]', $menu->note, $this->description );
+			} else {
+				$this->description	=	str_replace( array( '[title]', '[note]' ), '', $this->description );
+			}
 			$this->description	=	str_replace( '$cck->get', '$cck-&gt;get', $this->description );
 			$this->description	=	JCckDevHelper::replaceLive( $this->description );
 			if ( strpos( $this->description, '$cck-&gt;get' ) !== false ) {

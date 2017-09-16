@@ -39,6 +39,12 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 	protected static $context2		=	'';
 	protected static $contexts		=	array( 'com_content.article' );
 	protected static $error			=	false;
+	protected static $events		=	array(
+											'afterDelete'=>'onContentAfterDelete',
+											'afterSave'=>'onContentAfterSave',
+											'beforeDelete'=>'onContentBeforeDelete',
+											'beforeSave'=>'onContentBeforeSave'
+										);
 	protected static $ordering		=	array( 'alpha'=>'title ASC', 'newest'=>'created DESC', 'oldest'=>'created ASC', 'ordering'=>'ordering ASC', 'popular'=>'hits DESC' );
 	protected static $ordering2		=	array();
 	protected static $pk			=	0;
@@ -100,24 +106,6 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 		}
 		if ( isset( $config['doSEF'] ) && $config['doSEF'] && isset( $row->readmore_link ) ) {
 			$row->readmore_link	=	self::getRouteByStorage( $config['storages'], $config['doSEF'], $config['Itemid'], $config );
-		}
-	}
-	
-	// onCCK_Storage_LocationPrepareDelete
-	public function onCCK_Storage_LocationPrepareDelete( &$field, &$storage, $pk = 0, &$config = array() )
-	{
-		if ( self::$type != $field->storage_location ) {
-			return;
-		}
-		
-		// Init
-		$table	=	$field->storage_table;
-		
-		// Set
-		if ( $table == self::$table ) {
-			$storage	=	self::_getTable( $pk );
-		} else {
-			$storage	=	parent::g_onCCK_Storage_LocationPrepareForm( $table, $pk );
 		}
 	}
 
@@ -274,12 +262,12 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 	{
 		$app		=	JFactory::getApplication();
 		$dispatcher	=	JEventDispatcher::getInstance();
-		$table		=	self::_getTable( $pk );	
+		$table		=	self::_getTable( $pk );
 		
 		if ( !$table ) {
 			return false;
 		}
-		
+
 		// Check
 		$user 			=	JCck::getUser();
 		$canDelete		=	$user->authorise( 'core.delete', 'com_cck.form.'.$config['type_id'] );
@@ -302,27 +290,6 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 		$dispatcher->trigger( 'onContentAfterDelete', array( self::$context, $table ) );
 		
 		return true;
-	}
-	
-	// onCCK_Storage_LocationStore
-	public function onCCK_Storage_LocationStore( $type, $data, &$config = array(), $pk = 0 )
-	{
-		if ( self::$type != $type ) {
-			return;
-		}
-		
-		if ( isset( $config['primary'] ) && $config['primary'] != self::$type ) {
-			return;
-		}
-		if ( ! @$config['storages'][self::$table]['_']->pk ) {
-			self::_core( $config['storages'][self::$table], $config, $pk );
-			$config['storages'][self::$table]['_']->pk	=	self::$pk;
-		}
-		if ( $data['_']->table != self::$table ) {
-			parent::g_onCCK_Storage_LocationStore( $data, self::$table, self::$pk, $config );
-		}
-		
-		return self::$pk;
 	}
 	
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Protected
@@ -405,7 +372,7 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 			if ( $isNew ) {
 				$i		=	2;
 				$alias	=	$table->alias.'-'.$i;
-				$test	=	JTable::getInstance( 'content' );
+				$test	=	JTable::getInstance( 'Content' );
 				
 				while ( $test->load( array( 'alias'=>$alias, 'catid'=>$table->catid ) ) ) {
 					$alias		=	$table->alias.'-'.$i++;
@@ -454,7 +421,7 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 	// _getTable
 	protected static function _getTable( $pk = 0, $join = false )
 	{
-		$table	=	JTable::getInstance( 'content' );
+		$table	=	JTable::getInstance( 'Content' );
 		
 		if ( $pk > 0 ) {
 			$table->load( $pk );
@@ -501,7 +468,7 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 	// _completeTable
 	protected function _completeTable( &$table, &$data, &$config )
 	{
-		if ( $table->state == 1 && intval( $table->publish_up ) == 0 ) {
+		if ( $table->state == 1 && (int)$table->publish_up == 0 ) {
 			$table->publish_up	=	substr( JFactory::getDate()->toSql(), 0, -3 );
 		}
 		if ( ! $table->{self::$key} ) {
@@ -582,6 +549,9 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 	// _setAssociations
 	protected function _setAssociations( $table, $data, $isNew, $config )
 	{
+		if ( !( isset( $data['associations'] ) && is_array( $data['associations'] ) ) ) {
+			return;
+		}
 		$app	=	JFactory::getApplication();
 		$db		=	JFactory::getDbo();
 
@@ -633,7 +603,12 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 	// _setFeatured
 	protected function _setFeatured( $table, $isNew )
 	{
-		require_once JPATH_ADMINISTRATOR.'/components/com_content/tables/featured.php';
+		JLoader::register( 'ContentTableFeatured', JPATH_ADMINISTRATOR.'/components/com_content/tables/featured.php' );
+
+		if ( !class_exists( 'ContentTableFeatured' ) ) {
+			return;
+		}
+		
 		$featured	=	JTable::getInstance( 'Featured', 'ContentTable' );
 		
 		if ( $isNew ) {
@@ -820,10 +795,10 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 			if ( $config['doSEF'][0] == '5' ) {
 				$join				.=	' LEFT JOIN #__cck_core AS c ON (c.storage_location = "joomla_user" AND c.pk = a.created_by)'
 									.	' LEFT JOIN #__content AS d ON d.id = c.pkb';
-				$where				=	' AND d.alias="'.(string)$segments[0].'"';
+				$where				=	' AND d.alias = '.JCckDatabase::quote( (string)$segments[0] );
 			} elseif ( $config['doSEF'][0] == '3' ) {
 				$join				=	' LEFT JOIN #__cck_core AS b on b.'.$config['join_key'].' = a.id';
-				$where				=	' AND b.cck = "'.(string)$segments[0].'"';
+				$where				=	' AND b.cck = '.JCckDatabase::quote( (string)$segments[0] );
 			} else {
 				$join				=	' LEFT JOIN #__categories AS b on b.id = a.catid';
 				if ( $config['doSEF'] == '1'  ) {
@@ -831,14 +806,14 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 					$vars['catid']	=	$segments[0];
 				} else {
 					$segments[0]	=	str_replace( ':', '-', $segments[0] );
-					$where			=	' AND b.alias = "'.$segments[0].'"';
+					$where			=	' AND b.alias = '.JCckDatabase::quote( $segments[0] );
 				}
 			}
 		}
 		
 		// Retrieve Content Type(s)
 		if ( isset( $active->query['search'] ) && $active->query['search'] ) {
-			$cck			=	JCckDatabaseCache::loadResult( 'SELECT sef_route FROM #__cck_core_searchs WHERE name = "'.$active->query['search'].'"' );
+			$cck			=	JCckDatabaseCache::loadResult( 'SELECT sef_route FROM #__cck_core_searchs WHERE name = '.JCckDatabase::quote( $active->query['search'] ) );
 			
 			if ( $cck != '' ) {
 				$join		=	' LEFT JOIN #__cck_core AS b on b.'.$config['join_key'].' = a.id';
@@ -863,7 +838,7 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 				}
 			} else {
 				$segments[$n - 1]	=	str_replace( ':', '-', $segments[$n - 1] );
-				$where				=	' WHERE a.alias = "'.$segments[$n - 1].'"'.$where;
+				$where				=	' WHERE a.alias = '.JCckDatabase::quote( $segments[$n - 1] ).$where;
 			}
 		}
 		if ( $where != '' ) {
@@ -890,7 +865,7 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 		static $itemIds	=	array();
 
 		if ( $isAdmin == -1 ) {
-			$isAdmin	=	JFactory::getApplication()->isAdmin();
+			$isAdmin	=	JFactory::getApplication()->isClient( 'administrator' );
 		}
 		
 		if ( $itemId && !$isAdmin && $sef != '10' ) {
@@ -954,7 +929,7 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 		$now	=	substr( JFactory::getDate()->toSql(), 0, -3 );
 		$null	=	$db->getNullDate();
 
-		$states	=	self::_getStaticParam( 'allowed_status', '1,2' );
+		$states	=	self::getStaticParams()->get( 'allowed_status', '1,2' );
 		$states	=	explode( ',', $states );
 		$states	=	ArrayHelper::toInteger( $states );
 		$states	=	( count( $states ) > 1 ) ? 'IN ('.implode( ',', $states ).')' : '= '.(int)$states[0];
@@ -995,20 +970,6 @@ class plgCCK_Storage_LocationJoomla_Article extends JCckPluginLocation
 	public static function getId( $config )
 	{
 		return JCckDatabase::loadResult( 'SELECT id FROM #__cck_core WHERE storage_location="'.self::$type.'" AND pk='.(int)$config['pk'] );
-	}
-
-	// _getStaticParam (todo: need to be improved and moved)
-	protected static function _getStaticParam( $name, $default = '' )
-	{
-		static $params	=	array();
-
-		if ( !isset( $params[$name] ) ) {
-			$plg			=	JPluginHelper::getPlugin( 'cck_storage_location', 'joomla_article' );
-			$plg_params		=	new JRegistry( $plg->params );
-			$params[$name]	=	$plg_params->get( $name, $default );
-		}
-
-		return $params[$name];
 	}
 }
 ?>

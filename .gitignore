@@ -634,7 +634,11 @@
 /administrator/index.php
 /bin/*
 /cache/*
-/cli/*
+/cli/deletefiles.php
+/cli/finder_indexer.php
+/cli/garbagecron.php
+/cli/index.html
+/cli/update_cron.php
 /components/com_ajax/*
 /components/com_banners/*
 /components/com_config/*
@@ -643,11 +647,6 @@
 /components/com_contenthistory/*
 /components/com_fields/*
 /components/com_menus/*
-/administrator/templates/system/*
-/administrator/templates/index.html
-/administrator/index.php
-/cache/*
-/cli/*
 /components/com_banners/*
 /components/com_contact/*
 /components/com_content/*
@@ -939,6 +938,7 @@
 /libraries/cms/component/*
 /libraries/cms/editor/*
 /libraries/cms/error/*
+/libraries/cms/extension/*
 /libraries/cms/form/*
 /libraries/cms/help/*
 /libraries/cms/helper/*
@@ -1146,6 +1146,7 @@
 ######## SEBLOD
 
 /administrator/components/com_cck/install/cms/*
+/administrator/components/com_cck/install/cli/*
 
 ######## Aptana Studio
 
@@ -1824,6 +1825,14 @@ Temporary Items
 /administrator/language/fr-FR/fr-FR.plg_cck_field_link_cck_ecommerce_go_to_checkout.sys.ini
 /plugins/cck_field_link/cck_ecommerce_go_to_checkout/*
 
+######## SEBLOD Plug-ins >> Link >> SEBLOD eCommerce Reorder
+
+/administrator/language/en-GB/en-GB.plg_cck_field_link_cck_ecommerce_reorder.ini
+/administrator/language/en-GB/en-GB.plg_cck_field_link_cck_ecommerce_reorder.sys.ini
+/administrator/language/fr-FR/fr-FR.plg_cck_field_link_cck_ecommerce_reorder.ini
+/administrator/language/fr-FR/fr-FR.plg_cck_field_link_cck_ecommerce_reorder.sys.ini
+/plugins/cck_field_link/cck_ecommerce_reorder/*
+
 ######## SEBLOD Plug-ins >> Link >> SEBLOD Route
 
 /administrator/language/en-GB/en-GB.plg_cck_field_link_cck_route.ini
@@ -1839,6 +1848,14 @@ Temporary Items
 /administrator/language/fr-FR/fr-FR.plg_cck_field_link_cck_search_js.ini
 /administrator/language/fr-FR/fr-FR.plg_cck_field_link_cck_search_js.sys.ini
 /plugins/cck_field_link/cck_search_js/*
+
+######## SEBLOD Plug-ins >> Link >> SEBLOD Task
+
+/administrator/language/en-GB/en-GB.plg_cck_field_link_cck_task.ini
+/administrator/language/en-GB/en-GB.plg_cck_field_link_cck_task.sys.ini
+/administrator/language/fr-FR/fr-FR.plg_cck_field_link_cck_task.ini
+/administrator/language/fr-FR/fr-FR.plg_cck_field_link_cck_task.sys.ini
+/plugins/cck_field_link/cck_task/*
 
 ######## SEBLOD Plug-ins >> Live >> Datetime
 
@@ -1952,6 +1969,14 @@ Temporary Items
 /administrator/language/fr-FR/fr-FR.plg_cck_field_live_url.ini
 /administrator/language/fr-FR/fr-FR.plg_cck_field_live_url.sys.ini
 /plugins/cck_field_live/url/*
+
+######## SEBLOD Plug-ins >> Live >> X
+
+/administrator/language/en-GB/en-GB.plg_cck_field_live_x.ini
+/administrator/language/en-GB/en-GB.plg_cck_field_live_x.sys.ini
+/administrator/language/fr-FR/fr-FR.plg_cck_field_live_x.ini
+/administrator/language/fr-FR/fr-FR.plg_cck_field_live_x.sys.ini
+/plugins/cck_field_live/x/*
 
 ######## SEBLOD Plug-ins >> Object >> Joomla! Menu Item
 

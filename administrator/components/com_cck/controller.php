@@ -89,9 +89,10 @@ class CCKController extends JControllerLegacy
 		require_once JPATH_ADMINISTRATOR.'/components/com_cck/tables/type.php';
 		require_once JPATH_ADMINISTRATOR.'/components/com_cck/helpers/helper_workshop.php';
 		
+		$prefix						=	JCck::getConfig_Param( 'development_prefix', '' );
 		$style						=	Helper_Workshop::getDefaultStyle();
 		
-		$table						=	JTable::getInstance( 'type', 'CCK_Table' );
+		$table						=	JTable::getInstance( 'Type', 'CCK_Table' );
 		$table->title				=	$title;
         $table->folder				=	$folder;
 		$table->template_admin		=	$style->id;
@@ -99,8 +100,14 @@ class CCKController extends JControllerLegacy
 		$table->template_content	=	$style->id;
 		$table->template_intro		=	$style->id;
 		$table->published			=	1;
+		$table->access				=	3;
 		$table->indexed				=	'intro';
-		$table->storage_location	=	'none';
+		$table->location			=	'none';
+		$table->storage_location	=	JCckDatabase::loadResult( 'SELECT storage_location FROM #__cck_core_types WHERE id = '.(int)$type_id );
+		
+		if ( !$table->storage_location ) {
+			$table->storage_location	=	'';
+		}
 
 		$rules	=	array( 'core.create'=>array(),
 						   'core.create.max.parent'=>array( '8'=>"0" ),
@@ -113,12 +120,17 @@ class CCKController extends JControllerLegacy
 		$rules	=	new JAccessRules( $rules );
 		$table->setRules( $rules );
 		$table->check();
+		
+		if ( $prefix ) {
+			$table->name			=	$prefix.'_'.$table->name;
+		}
+		
 		$table->store();
 		// --
 
 		// -- Field
 		require_once JPATH_ADMINISTRATOR.'/components/com_cck/tables/field.php';
-		$table2						=	JTable::getInstance( 'field', 'CCK_Table' );
+		$table2						=	JTable::getInstance( 'Field', 'CCK_Table' );
 		$table2->title				=	$title;
 		$table2->name				=	$table->name;
 		$table2->folder				=	$folder;
@@ -541,8 +553,6 @@ class CCKController extends JControllerLegacy
 		if ( $view == 'form' || $view == 'list' || ( $view == 'cck' && $layout == 'welcome' ) ) {
 			return;
 		}
-		
-		$user	=	JCck::getUser( 0, false, true );
 	}
 }
 ?>

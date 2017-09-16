@@ -50,29 +50,9 @@ abstract class JCck
 		if ( self::$_config ) {
 			return self::$_config;
 		}
-		$isConfigView	=	false;
-		
-		// Protect JFactory::getApplication for CLI
-		try {
-			$app			=	JFactory::getApplication();
-			$isConfigView	=	( ( $app->input->get( 'option' ) == 'com_cck' && $app->input->get( 'view' ) == 'field' ) || ( $app->input->get( 'option' ) == 'com_config' ) );
-		} catch ( Exception $e ) {
-		}
 		
 		$config			=	new stdClass;
 		$config->params =	JComponentHelper::getParams( 'com_'.self::$_me );
-
-		// Tweak Language: JText
-		$translate		=	(int)$config->params->get( 'language_jtext', 0 );
-		if ( $translate == 2 ) {
-			if ( !$isConfigView ) {
-				if ( JFactory::getLanguage()->getTag() == 'en-GB' ) {
-					$config->params->set( 'language_jtext', 0 );
-				} else {
-					$config->params->set( 'language_jtext', 1 );
-				}
-			}
-		}
 		
 		self::$_config	=&	$config;
 	}
@@ -93,7 +73,38 @@ abstract class JCck
 		if ( ! self::$_config ) {
 			self::_setConfig();
 		}
-		
+	
+		// Tweak Language: JText
+		if ( $name == 'language_jtext' ) {
+			static $tweaked	=	0;
+			
+			if ( !$tweaked ) {
+				$isConfigView	=	false;
+				
+				// Protect JFactory::getApplication for CLI
+				try {
+					$app			=	JFactory::getApplication();
+					$isConfigView	=	( ( $app->input->get( 'option' ) == 'com_cck' && $app->input->get( 'view' ) == 'field' ) || ( $app->input->get( 'option' ) == 'com_config' ) );
+				} catch ( Exception $e ) {
+					// Do Nothing
+				}
+				
+				$translate		=	(int)self::$_config->params->get( 'language_jtext', 0 );
+				
+				if ( $translate == 2 ) {
+					if ( !$isConfigView ) {
+						if ( JFactory::getLanguage()->getTag() == 'en-GB' ) {
+							self::$_config->params->set( 'language_jtext', 0 );
+						} else {
+							self::$_config->params->set( 'language_jtext', 1 );
+						}
+					}
+				}
+				
+				$tweaked++;
+			}
+		}
+
 		return self::$_config->params->get( $name, $default );
 	}
 	
@@ -127,6 +138,7 @@ abstract class JCck
 	{
 		if ( (int)self::getConfig_Param( 'multisite', 0 ) ) {
 			$alias			=	'';
+			$context		=	'';
 			$host			=	JUri::getInstance()->getHost();
 			$path			=	JUri::getInstance()->getPath();
 			$path_base		=	$path;
@@ -326,12 +338,13 @@ abstract class JCck
 		
 		$doc	=	JFactory::getDocument();
 		if ( $key == 'cck.ecommerce' ) { // todo: explode & dispatch
-			$version	=	'1.0.0';
+			$version	=	'2.25.0';
 			if ( is_file( JPATH_ADMINISTRATOR.'/components/com_cck_ecommerce/_VERSION.php' ) ) {
 				require_once JPATH_ADMINISTRATOR.'/components/com_cck_ecommerce/_VERSION.php';
 				$version	=	new JCckEcommerceVersion;
+				$version	=	$version->getApiVersion();
 			}
-			$doc->addScript( JUri::root( true ).'/media/cck_ecommerce/js/cck.ecommerce-'.$version->getApiVersion().'.min.js' );
+			$doc->addScript( JUri::root( true ).'/media/cck_ecommerce/js/cck.ecommerce-'.$version.'.min.js' );
 		}
 		
 		$loaded[$key]	=	true;
@@ -367,10 +380,10 @@ abstract class JCck
 		if ( $more === true && !( isset( $app->cck_jquery_more ) && $app->cck_jquery_more === true ) && !( isset( $app->cck_jquery_dev ) && $app->cck_jquery_dev === true ) ) {
 			$context	=	'';
 
-			if ( JCck::isSite() ) {
+			if ( JCck::isSite() && JCck::getSite()->context ) {
 				$context	=	'/'.JCck::getSite()->context;
 			}
-			$doc->addScript( $root.'/media/cck/js/cck.core-3.11.3.min.js' );
+			$doc->addScript( $root.'/media/cck/js/cck.core-3.13.0.min.js' );
 			$doc->addScriptDeclaration( 'JCck.Core.baseURI = "'.JUri::base( true ).$context.'";' );
 			$doc->addScriptDeclaration( 'JCck.Core.sourceURI = "'.substr( JUri::root(), 0, -1 ).'";' );
 			
@@ -396,7 +409,7 @@ abstract class JCck
 		$root	=	JUri::root( true );
 
 		if ( !( isset( $app->cck_modal_box ) && $app->cck_modal_box === true ) ) {
-			$style	=	$app->isAdmin() ? 'css/' : 'styles/'.self::getConfig_Param( 'site_modal_box_css', 'style0' ).'/';
+			$style	=	$app->isClient( 'administrator' ) ? 'css/' : 'styles/'.self::getConfig_Param( 'site_modal_box_css', 'style0' ).'/';
 			$doc	=	JFactory::getDocument();
 			$doc->addStyleSheet( $root.'/media/cck/scripts/jquery-colorbox/'.$style.'colorbox.css' );
 			$doc->addScript( $root.'/media/cck/scripts/jquery-colorbox/js/jquery.colorbox-min.js' );

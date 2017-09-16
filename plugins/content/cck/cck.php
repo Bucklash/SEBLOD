@@ -96,9 +96,10 @@ class plgContentCCK extends JPlugin
 			return true;
 		}
 		
-		$tableKey	=	$data->getKeyName();
-		$pk			= 	$data->$tableKey;
-		$base 		= 	str_replace( '#__', '', $data->getTableName() );
+		$table_key	=	$data->getKeyName();
+		$table_name	=	$data->getTableName();
+		$pk			= 	$data->$table_key;
+		$base 		= 	str_replace( '#__', '', $table_name );
 		
 		require_once JPATH_SITE.'/plugins/cck_storage_location/'.$object.'/'.$object.'.php';
 		$properties		= 	array( 'bridge_object', 'custom' );
@@ -146,6 +147,7 @@ class plgContentCCK extends JPlugin
 				$dispatcher	=	JEventDispatcher::getInstance();
 				$parent		=	JCckDatabase::loadResult( 'SELECT parent FROM #__cck_core_types WHERE name = "'.$type.'"' );
 				$fields		=	CCK_Form::getFields( array( $type, $parent ), 'all', -1, '', true );
+				
 				if ( count( $fields ) ) {
 					foreach ( $fields as $field ) {
 						$Pt		=	$field->storage_table;
@@ -156,7 +158,11 @@ class plgContentCCK extends JPlugin
 						if ( $Pt && ! isset( $config['storages'][$Pt] ) ) {
 							$config['storages'][$Pt]	=	'';
 							
-							$dispatcher->trigger( 'onCCK_Storage_LocationPrepareDelete', array( &$field, &$config['storages'][$Pt], $pk, &$config ) );
+							if ( $Pt == $table_name ) {
+								$config['storages'][$Pt]	=	$data;
+							} else {
+								$dispatcher->trigger( 'onCCK_Storage_LocationPrepareDelete', array( &$field, &$config['storages'][$Pt], $pk, &$config ) );	
+							}
 						}
 						$dispatcher->trigger( 'onCCK_StoragePrepareDelete', array( &$field, &$value, &$config['storages'][$Pt], &$config ) );
 						$dispatcher->trigger( 'onCCK_FieldDelete', array( &$field, $value, &$config, array() ) );
@@ -171,13 +177,13 @@ class plgContentCCK extends JPlugin
 				if ( $bridge_object == 'joomla_category' ) {
 					JLoader::register( 'JTableCategory', JPATH_PLATFORM.'/joomla/database/table/category.php' );
 
-					$bridge	=	JTable::getInstance( 'category' );
+					$bridge	=	JTable::getInstance( 'Category' );
 					$bridge->load( $pkb );
 					$bridge->delete( $pkb );
 				} elseif ( $bridge_object == 'joomla_article' ) {
 					JLoader::register( 'JTableContent', JPATH_PLATFORM.'/joomla/database/table/content.php' );
 
-					$bridge	=	JTable::getInstance( 'content' );
+					$bridge	=	JTable::getInstance( 'Content' );
 					$bridge->load( $pkb );
 					$bridge->delete( $pkb );
 				}
@@ -392,6 +398,10 @@ class plgContentCCK extends JPlugin
 		$tpl['path']		=	$tpl['root'].'/'.$tpl['folder'];
 		if ( ! $tpl['folder'] || ! file_exists( $tpl['path'].'/index.php' ) ) {
 			$article->$property		=	str_replace( $article->$property, 'Template Style does not exist. Open the Content Type & save it again. (Intro + Content views)', $article->$property );
+
+			if ( JCck::on( '3.8' ) && isset( $article->introtext ) ) {
+				$article->introtext	=	'';
+			}
 			return;
 		}
 		
@@ -570,6 +580,10 @@ class plgContentCCK extends JPlugin
 		
 		$data					=	$doc->render( false, $params );
 		$article->$property		=	str_replace( $article->$property, $data, $article->$property );
+		
+		if ( JCck::on( '3.8' ) && isset( $article->introtext ) ) {
+			$article->introtext	=	'';
+		}
 	}
 }
 ?>

@@ -35,6 +35,19 @@ class JCckPluginLocation extends JPlugin
 		return true;
 	}
 
+	// getStaticParams
+	public static function getStaticParams()
+	{
+		static $params	=	null;
+		
+		if ( !is_object( $params ) ) {
+			$plg		=	JPluginHelper::getPlugin( 'cck_storage_location', static::$type );
+			$params		=	new JRegistry( $plg->params );
+		}
+		
+		return $params;
+	}
+
 	// getStaticProperties
 	public static function getStaticProperties( $properties )
 	{
@@ -48,6 +61,7 @@ class JCckPluginLocation extends JPlugin
 									'context'=>'',
 									'contexts'=>'',
 									'custom'=>'',
+									'events'=>'',
 									'key'=>'',
 									'modified_at'=>'',
 									'ordering'=>'',
@@ -71,7 +85,25 @@ class JCckPluginLocation extends JPlugin
 		
 		return $properties;
 	}
-	
+
+	// onCCK_Storage_LocationPrepareDelete
+	public function onCCK_Storage_LocationPrepareDelete( &$field, &$storage, $pk = 0, &$config = array() )
+	{
+		if ( static::$type != $field->storage_location ) {
+			return;
+		}
+		
+		// Init
+		$table	=	$field->storage_table;
+		
+		// Set
+		if ( $table == static::$table ) {
+			$storage	=	static::_getTable( $pk );
+		} else {
+			$storage	=	static::g_onCCK_Storage_LocationPrepareForm( $table, $pk );
+		}
+	}
+
 	// onCCK_Storage_LocationSaveOrder
 	public static function onCCK_Storage_LocationSaveOrder( $pks = array(), $order = array() )
 	{
@@ -133,6 +165,31 @@ class JCckPluginLocation extends JPlugin
 		return true;
 	}
 
+	// onCCK_Storage_LocationStore
+	public function onCCK_Storage_LocationStore( $type, $data, &$config = array(), $pk = 0 )
+	{
+		if ( static::$type != $type ) {
+			return;
+		}
+		
+		if ( isset( $config['primary'] ) && $config['primary'] != static::$type ) {
+			return;
+		}
+		if ( ! @$config['storages'][static::$table]['_']->pk ) {
+			if ( isset( $config['storages'][static::$table] )
+			  && $config['storages'][static::$table]['_']->table == static::$table && isset( $config['storages'][static::$table][static::$key] ) ) {
+				unset( $config['storages'][static::$table][static::$key] );
+			}
+			static::_core( $config['storages'][static::$table], $config, $pk );
+			$config['storages'][static::$table]['_']->pk	=	static::$pk;
+		}
+		if ( $data['_']->table != static::$table ) {
+			static::g_onCCK_Storage_LocationStore( $data, static::$table, static::$pk, $config );
+		}
+		
+		return static::$pk;
+	}
+
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Prepare
 	
 	// g_onCCK_Storage_LocationPrepareContent
@@ -172,13 +229,13 @@ class JCckPluginLocation extends JPlugin
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Store
 	
 	// g_onCCK_Storage_LocationRollback
-	public function g_onCCK_Storage_LocationRollback( $pk )
+	public static function g_onCCK_Storage_LocationRollback( $pk )
 	{
 		JCckDatabase::execute( 'DELETE FROM #__cck_core WHERE id = '.(int)$pk );
 	}
 
 	// g_onCCK_Storage_LocationStore
-	public function g_onCCK_Storage_LocationStore( $location, $default, $pk, &$config, $params = array() )
+	public static function g_onCCK_Storage_LocationStore( $location, $default, $pk, &$config )
 	{		
 		if ( ! $pk ) {
 			return;
@@ -191,6 +248,9 @@ class JCckPluginLocation extends JPlugin
 
 		// Core
 		if ( !$already ) {
+			if ( static::$bridge_object != '' ) {
+				$params		=	static::getStaticParams()->toArray();
+			}
 			if ( isset( $params['bridge'] ) && $params['bridge'] ) {
 				if ( !isset( $params['bridge_default_title'] ) ) {
 					$params['bridge_default_title']			=	'';
@@ -329,23 +389,24 @@ class JCckPluginLocation extends JPlugin
 			$core->load( $config['id'] );
 			
 			JLoader::register( 'JTableCategory', JPATH_PLATFORM.'/joomla/database/table/category.php' );
-			$bridge		=	JTable::getInstance( 'category' );
+			$bridge		=	JTable::getInstance( 'Category' );
 			$dispatcher	=	JEventDispatcher::getInstance();
 			
 			if ( $core->pkb > 0 ) {
 				$bridge->load( $core->pkb );
-				$bridge->description		=	'';
-				$isNew				=	false;
+				$bridge->description	=	'';
+				$isNew					=	false;
 			} else {
-				$bridge->access				=	'';
-				$bridge->published			=	'';
-				$bridge->created_user_id	=	$config['author'];
+				$bridge->access			=	'';
+				$bridge->published		=	'';
 				self::g_initTable( $bridge, $params, false, 'bridge_' );
 				if ( ! isset( $config['storages']['#__categories']['parent_id'] ) ) {
 					$config['storages']['#__categories']['parent_id']	=	$params['bridge_default-parent_id'];
 				}
-				$isNew				=	true;
+				$isNew					=	true;
 			}
+			$bridge->created_user_id	=	$config['author'];
+
 			if ( $bridge->parent_id != $config['storages']['#__categories']['parent_id'] || $config['storages']['#__categories']['id'] == 0 ) {
 				$bridge->setLocation( $config['storages']['#__categories']['parent_id'], 'last-child' );
 			}
@@ -391,7 +452,7 @@ class JCckPluginLocation extends JPlugin
 			$bridge->check();
 			$bridge->extension		=	'com_content';
 			if ( $bridge->parent_id > 1 ) {
-				$bridgeParent		=	JTable::getInstance( 'category' );
+				$bridgeParent		=	JTable::getInstance( 'Category' );
 				$bridgeParent->load( $bridge->parent_id );
 				$bridge->path		=	$bridgeParent->path.'/';
 			} else {
@@ -405,7 +466,7 @@ class JCckPluginLocation extends JPlugin
 			$dispatcher->trigger( 'onContentBeforeSave', array( 'com_categories.category', &$bridge, $isNew ) );
 			if ( !$bridge->store() ) {
 				if ( $isNew ) {
-					$test	=	JTable::getInstance( 'category' );
+					$test	=	JTable::getInstance( 'Category' );
 					for ( $i = 2; $i < 69; $i++ ) {
 						$alias	=	$bridge->alias.'-'.$i;
 						if ( !$test->load( array( 'alias'=>$alias, 'parent_id'=>$bridge->parent_id, 'extension'=>$bridge->extension ) ) ) {
@@ -443,7 +504,7 @@ class JCckPluginLocation extends JPlugin
 			$core->load( $config['id'] );
 			
 			JLoader::register( 'JTableContent', JPATH_PLATFORM.'/joomla/database/table/content.php' );
-			$bridge		=	JTable::getInstance( 'content' );
+			$bridge		=	JTable::getInstance( 'Content' );
 			$dispatcher	=	JEventDispatcher::getInstance();
 			
 			if ( $core->pkb > 0 ) {
@@ -453,11 +514,11 @@ class JCckPluginLocation extends JPlugin
 			} else {
 				$bridge->access		=	'';
 				$bridge->state		=	'';
-				$bridge->created_by	=	$config['author'];
 				self::g_initTable( $bridge, $params, false, 'bridge_' );
 				$isNew				=	true;
 			}
-			
+			$bridge->created_by		=	$config['author'];
+
 			if ( isset( $config['storages']['#__content'] ) ) {
 				$bridge->bind( $config['storages']['#__content'] );
 			}
@@ -518,7 +579,7 @@ class JCckPluginLocation extends JPlugin
 			$dispatcher->trigger( 'onContentBeforeSave', array( 'com_content.article', &$bridge, $isNew ) );
 			if ( !$bridge->store() ) {
 				if ( $isNew ) {
-					$test	=	JTable::getInstance( 'content' );
+					$test	=	JTable::getInstance( 'Content' );
 					for ( $i = 2; $i < 69; $i++ ) {
 						$alias	=	$bridge->alias.'-'.$i;
 						if ( !$test->load( array( 'alias'=>$alias, 'catid'=>$bridge->catid ) ) ) {

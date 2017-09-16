@@ -93,8 +93,10 @@ class plgCCK_Field_LinkCCK_Form extends JCckPluginLink
 			// canEditOwnContent
 			jimport( 'cck.joomla.access.access' );
 			$canEditOwnContent	=	CCKAccess::check( $user->id, 'core.edit.own.content', 'com_cck.form.'.$config['type_id'] );
+
 			if ( $canEditOwnContent ) {
-				$field2	=	JCckDatabaseCache::loadObject( 'SELECT storage, storage_table, storage_field FROM #__cck_core_fields WHERE name = "'.$canEditOwnContent.'"' );
+				$parts	=	explode( '@', $canEditOwnContent );
+				$field2	=	JCckDatabaseCache::loadObject( 'SELECT storage, storage_table, storage_field FROM #__cck_core_fields WHERE name = "'.$parts[0].'"' );
 				$canEditOwnContent		=	false;
 				if ( is_object( $field2 ) && $field2->storage == 'standard' ) {
 					$pks				=	( isset( $config['pks'] ) ) ? $config['pks'] : $config['pk'];
@@ -108,8 +110,14 @@ class plgCCK_Field_LinkCCK_Form extends JCckPluginLink
 								$values[]	=	$p->map;
 							}
 						}
-						$values			=	( count( $values ) ) ? implode( ',', $values ) : '0';
-						$cache[$index]	=	JCckDatabase::loadObjectList( 'SELECT author_id, pk FROM #__cck_core WHERE storage_location = "joomla_article" AND pk IN ( '.$values.' )', 'pk' );
+						if ( count( $values ) ) {
+							$values			=	array_diff( $values, array( '' ) );
+							$values			=	implode( ',', $values );
+						} else {
+							$values			=	'0';
+						}
+						
+						$cache[$index]	=	JCckDatabase::loadObjectList( 'SELECT author_id, pk FROM #__cck_core WHERE storage_location = "'.( isset( $parts[1] ) && $parts[1] != '' ? $parts[1] : 'joomla_article' ).'" AND pk IN ( '.$values.' )', 'pk' );
 					}
 					if ( isset( $cache[$index.'_pks'][$config['pk']] )
 						&& isset( $cache[$index][$cache[$index.'_pks'][$config['pk']]->map] )   
@@ -180,7 +188,19 @@ class plgCCK_Field_LinkCCK_Form extends JCckPluginLink
 				$f->link_rel		=	$link_rel ? $link_rel : ( isset( $f->link_rel ) ? $f->link_rel : '' );
 				$f->link_state		=	$link->get( 'state', 1 );
 				$f->link_target		=	$link_target ? $link_target : ( isset( $f->link_target ) ? $f->link_target : '' );
-				$f->link_title		=	$link_title ? ( $link_title == '2' ? $link_title2 : ( isset( $f->link_title ) ? $f->link_title : '' ) ) : '';
+
+				if ( $link_title ) {
+					if ( $link_title == '2' ) {
+						$f->link_title	=	$link_title2;
+					} elseif ( $link_title == '3' ) {
+						$f->link_title	=	JText::_( 'COM_CCK_' . str_replace( ' ', '_', trim( $link_title2 ) ) );
+					}
+					if ( !isset( $f->link_title ) ) {
+						$f->link_title	=	'';
+					}
+				} else {
+					$f->link_title		=	'';
+				}
 			}
 			$field->link		=	'#';	//todo
 		} else {
@@ -203,7 +223,19 @@ class plgCCK_Field_LinkCCK_Form extends JCckPluginLink
 			$field->link_rel		=	$link_rel ? $link_rel : ( isset( $field->link_rel ) ? $field->link_rel : '' );
 			$field->link_state		=	$link->get( 'state', 1 );
 			$field->link_target		=	$link_target ? $link_target : ( isset( $field->link_target ) ? $field->link_target : '' );
-			$field->link_title		=	$link_title ? ( $link_title == '2' ? $link_title2 : ( isset( $field->link_title ) ? $field->link_title : '' ) ) : '';
+
+			if ( $link_title ) {
+				if ( $link_title == '2' ) {
+					$field->link_title	=	$link_title2;
+				} elseif ( $link_title == '3' ) {
+					$field->link_title	=	JText::_( 'COM_CCK_' . str_replace( ' ', '_', trim( $link_title2 ) ) );
+				}
+				if ( !isset( $field->link_title ) ) {
+					$field->link_title	=	'';
+				}
+			} else {
+				$field->link_title		=	'';
+			}
 		}
 	}
 

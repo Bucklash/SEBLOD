@@ -16,6 +16,7 @@ $type			=	$app->input->getString( 'type', '2,7' ); /* '7' || '2,7' || 2,3,6,7 */
 $groups			=	explode( ',', $type );
 $groups			=	ArrayHelper::toInteger( $groups );
 $guest_only		=	( count( $groups ) > 1 ) ? 1 : 0;
+$levels			=	array();
 $sitetitle		=	$item->title;
 $sitename		=	$item->name;
 $sitemail		=	JFactory::getConfig()->get( 'mailfrom' );
@@ -39,7 +40,7 @@ if ( isset( $item->groups ) && $item->groups != '' ) {
 	unset( $item->groups );
 }
 require_once JPATH_ADMINISTRATOR.'/components/com_cck/tables/site.php';
-require_once JPATH_LIBRARIES.'/joomla/user/user.php';
+JLoader::register( 'JUser', JPATH_PLATFORM.'/joomla/user/user.php' );
 
 // Guest Group
 $guest_group	=	( $mode ) ? CCK_TableSiteHelper::addUserGroup( $sitetitle, 1 )
@@ -65,7 +66,7 @@ $root			=	CCK_TableSiteHelper::getRootAsset();
 $rules			=	array();
 
 foreach ( $groups as $i=>$g ) {
-	$group		=	JTable::getInstance( 'usergroup' );
+	$group		=	JTable::getInstance( 'Usergroup' );
 	$group->load( $g );
 	
 	// Usergroup

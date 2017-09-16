@@ -166,7 +166,7 @@ if ( $app->input->get( 'tmpl' ) == 'raw' ) {
 })(jQuery);
 </script>
 <?php } ?>
-<?php if ( $this->load_resource ) {
+<?php if ( $this->load_resource && $this->total ) {
 	$url	=	JRoute::_( 'index.php?Itemid='.$app->input->getInt( 'Itemid', 0 ) );
 	
 	if ( $url == '/' ) {
@@ -181,7 +181,9 @@ if ( $app->input->get( 'tmpl' ) == 'raw' ) {
 		var fragment = window.location.hash;
 		if (fragment != "") {
 			fragment = fragment.substring(1);
-			JCck.Core.loadfragment.loadUrl("<?php echo $url; ?>/"+fragment+"<?php echo ( $this->tmpl_resource ? '?tmpl='.$this->tmpl_resource : '' )?>");
+			setTimeout(function() {
+				JCck.Core.loadfragment.loadUrl("<?php echo $url; ?>/"+fragment+"<?php echo ( $this->tmpl_resource ? '?tmpl='.$this->tmpl_resource : '' )?>");
+			}, 1);
 		}
 	});
 })(jQuery);

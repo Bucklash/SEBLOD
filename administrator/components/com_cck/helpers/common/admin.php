@@ -407,7 +407,7 @@ class CommonHelper_Admin
 		if ( $selectlabel !== false ) {
 			$options[]	=	JHtml::_( 'select.option', '', JText::_( 'COM_CCK_ALL_'._C2_TEXT.'S_SL' ), 'value', 'text' );
 		}
-		$where		=	( $published ) ? ' WHERE a.published = 1 ' : '';
+		$where		=	( $published ) ? ' WHERE a.published = 1 ' : ' WHERE a.published != -44';
 		$options2	=	JCckDatabase::loadObjectList( 'SELECT a.title AS text, a.id AS value FROM #__cck_core_types AS a '.$where.' ORDER BY a.title' );
 		if ( count( $options2 ) ) {
 			$options[] 	=	JHtml::_( 'select.option', '<OPTGROUP>', JText::_( 'COM_CCK_'._C2_TEXT.'S' ) );
@@ -439,7 +439,7 @@ class CommonHelper_Admin
 	{
 		$db		=	JFactory::getDbo();
 		require_once JPATH_ADMINISTRATOR.'/components/com_cck/tables/'.$options['table'].'.php';
-		$table	=	JTable::getInstance( $options['table'], 'CCK_Table' );
+		$table	=	JTable::getInstance( ucfirst( $options['table'] ), 'CCK_Table' );
 		
 		foreach ( $pks as $pk ) {
 			$table->load( $pk );

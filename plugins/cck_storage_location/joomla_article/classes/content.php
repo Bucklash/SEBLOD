@@ -14,27 +14,29 @@ defined( '_JEXEC' ) or die;
 class JCckContentJoomla_Article extends JCckContent
 {
 	// saveBase
-	public function saveBase()
+	protected function saveBase()
 	{
 		if ( property_exists( $this->_instance_base, 'language' ) && $this->_instance_base->language == '' ) {
 			$this->_instance_base->language	=	'*';
 		}
-		$status			=	$this->store( 'base' );
+		if ( $this->_instance_base->state == 1 && (int)$this->_instance_base->publish_up == 0 ) {
+			$this->_instance_base->publish_up	=	substr( JFactory::getDate()->toSql(), 0, -3 );
+		}
+
+		$status			=	$this->_instance_base->store();
 
 		if ( !$this->_pk && !$status ) {
 			$i			=	2;
 			$alias		=	$this->_instance_base->alias.'-'.$i;
 			$property	=	$this->_columns['parent'];
-			$test		=	JTable::getInstance( 'content' );
+			$test		=	JTable::getInstance( 'Content' );
 			
 			while ( $test->load( array( 'alias'=>$alias, $property=>$this->_instance_base->{$property} ) ) ) {
 				$alias	=	$this->_instance_base->alias.'-'.$i++;
 			}
 			$this->_instance_base->alias	=	$alias;
 
-			$status		=	$this->store( 'base' );
-
-			/* TODO: publish_up */
+			$status		=	$this->_instance_base->store();
 		}
 
 		return $status;

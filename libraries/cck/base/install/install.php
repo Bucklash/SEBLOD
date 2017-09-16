@@ -184,23 +184,26 @@ class CCK_Install
 			
 			if ( $id > 0 ) {
 				JLoader::register( 'JTableMenu', JPATH_PLATFORM.'/joomla/database/table/menu.php' );
-				$table	=	JTable::getInstance( 'menu' );
+				$table	=	JTable::getInstance( 'Menu' );
 				$table->load( $id );
 				
-				$query	=	'SELECT id, level, lft, path FROM #__menu WHERE link = "index.php?option=com_cck"';
+				$query		=	'SELECT id FROM #__menu WHERE link = "index.php?option=com_cck"';
 				$db->setQuery( $query );
-				$seblod	=	$db->loadObject();
+				$seblod_id		=	$db->loadResult();
 				
-				if ( $seblod->id > 0 ) {
-					$table->title		=	'com_'.$addon['name'];
-					$table->alias		=	$addon['title'];
-					$table->path		=	'SEBLOD/'.$addon['title'];
-					$table->level		=	2;
-					$table->parent_id	=	$seblod->id;
+				if ( $seblod_id > 0 ) {
+					$data	=	array(
+									'alias'=>ucfirst( $addon['title'] ),
+									'parent_id'=>$seblod_id,
+									'title'=>'com_'.$addon['name'].'_title'
+								);
+
+					$table->setLocation( $seblod_id, 'last-child' );
+					$table->bind( $data );
 					$table->check();
 					$table->store();
-					$table->rebuild( $seblod->id, $seblod->lft, $seblod->level, $seblod->path );
-					$db->setQuery( 'UPDATE #__menu SET alias = "'.$addon['title'].'", path = "SEBLOD/'.$addon['title'].'" WHERE id = '.(int)$table->id );
+
+					$db->setQuery( 'UPDATE #__menu SET alias = "'.$addon['title'].'", path = "SEBLOD/'.$addon['title'].'" WHERE id = '.(int)$table->id. ' AND client_id = 1' );
 					$db->execute();
 				}
 			}

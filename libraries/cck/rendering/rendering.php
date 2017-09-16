@@ -165,7 +165,7 @@ class CCK_Rendering
 		$this->template		=	$me->template;
 		$this->type			=	$me->cck_type;
 		$this->type_infos	=	NULL;
-		$this->location		=	( $app->isAdmin() ) ? 'admin' : 'site';
+		$this->location		=	( $app->isClient( 'administrator' ) ) ? 'admin' : 'site';
 		$this->theme		=	$me->theme;
 		
 		$this->infinite		=	$me->infinite;
@@ -205,7 +205,7 @@ class CCK_Rendering
 		}
 		
 		if ( ! @$this->params['variation_default'] ) {
-			if ( $app->isAdmin() ) {
+			if ( $app->isClient( 'administrator' ) ) {
 				$this->params['variation_default']	=	'seb_css3b';
 			} else {
 				$this->params['variation_default']	=	JCck::getConfig_Param( ( $this->mode == 'form' ? 'site_variation_form' : 'site_variation' ), 'seb_css3' );
@@ -495,7 +495,9 @@ class CCK_Rendering
 			$label	=	'<label>'.$label.'</label>';
 		} else {
 			if ( $suffix ) {
-				$label	.=	'<span class="star"> '.$suffix.'</span>';
+				if ( $label != '&nbsp;' ) {
+					$label	.=	'<span class="star"> '.$suffix.'</span>';
+				}
 			}
 			if ( $label ) {
 				$label	=	'<label for="'.$this->me[$fieldname]->name.'">'.$label.'</label>';
@@ -926,7 +928,12 @@ class CCK_Rendering
 			// Prepare
 			if ( $this->translate && trim( $legend ) ) {
 				if ( !( $legend[0] == '<' || strpos( $legend, ' / ' ) !== false ) ) {
-					$legend	=	JText::_( 'COM_CCK_' . str_replace( ' ', '_', trim( $legend ) ) );
+					$legend	=	trim( $legend );
+					$key	=	'COM_CCK_' . str_replace( ' ', '_', $legend );
+
+					if ( JFactory::getLanguage()->hasKey( $key ) ) {
+						$legend	=	JText::_( $key );
+					}
 				}
 			}
 			if ( is_object( $options ) ) {

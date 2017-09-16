@@ -87,7 +87,7 @@ Helper_Include::addDependencies( $this->getName(), $this->getLayout() );
 			<td class="center hidden-phone"><?php Helper_Display::quickSlideTo( 'pagination-bottom', $i + 1 ); ?></td>
 			<td class="center hidden-phone"><?php echo JHtml::_( 'grid.id', $i, $item->id ); ?></td>
 			<td width="30px" class="center hidden-phone">
-            	<?php if ( $item->published && $item->adminFields && $item->location != 'site' && $item->storage_location != 'none' && $canCreateItem ) { ?>
+            	<?php if ( $item->published && $item->adminFields && $item->location != 'site' && $item->location != 'none' && $canCreateItem ) { ?>
 					<a target="_self" href="<?php echo $link2; ?>"<?php echo $action_attr; ?>>
 						<?php echo $action; ?>
 					</a>
@@ -220,6 +220,9 @@ $js	=	'
 				Joomla.submitform(task);
 			}
 			$(document).ready(function() {
+				$("#collapseModal2").on("hidden", function () {
+					$("#toolbar-new > button").blur();
+				});
 				$(document).keypress(function(e) {
 					if (!$(":input:focus").length) {
 						e.preventDefault();
@@ -230,6 +233,8 @@ $js	=	'
 							} else {
 								$("#filter_search").focus();
 							}
+						} else if (e.which == 110) {
+							$("#toolbar-new > button").click();
 						} else if (JCck.Dev.count == 1 && e.which >= 49 && e.which <= 52) {
 							var n = e.which - 48;
 							if ($(\'[data-edit-trigger="\'+n+\'"]\').length) {

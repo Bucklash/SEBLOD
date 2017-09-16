@@ -178,6 +178,24 @@ $js	=	'
 				Joomla.submitform(task);
 			}
 			$(document).ready(function() {
+				$("#collapseModal2").on("hidden", function () {
+					$("#toolbar-new > button").blur();
+				});
+				$(document).keypress(function(e) {
+					if (!$(":input:focus").length) {
+						e.preventDefault();
+
+						if (e.which == 64) {
+							if ( $("#filter_search").val() != "" ) {
+								$("#filter_search").select();
+							} else {
+								$("#filter_search").focus();
+							}
+						} else if (e.which == 110) {
+							$("#toolbar-new > button").click();
+						}
+					}
+				});
 				$(".sly ul li").on("click", function () {
 					$(".sly ul li").removeClass("active"); $(this).addClass("active");
 					$("#site_grp").val($(this).attr("data-values"));

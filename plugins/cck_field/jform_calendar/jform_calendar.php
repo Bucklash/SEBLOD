@@ -99,26 +99,35 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 		}
 
 		// Prepare
-		$class	=	'inputbox text'.$validate . ( $field->css ? ' '.$field->css : '' );
-		$xml	=	'
-					<form>
-						<field
-							type="'.self::$type2.'"
-							name="'.$name.'"
-							id="'.$id.'"
-							label="'.htmlspecialchars( $field->label ).'"
-							showtime="'.( isset( $options2['time'] ) && $options2['time'] ? 'true' : 'false' ).'"
-							todaybutton="'.( ( isset( $options2['today'] ) && $options2['today'] ) || !isset( $options2['today'] ) ? 'true' : 'false' ).'"
-							weeknumbers="'.( isset( $options2['week_numbers'] ) && $options2['week_numbers'] ? 'true' : 'false' ).'"
-							translateformat="true"
-							filter="user_utc"
-							class="'.$class.'"
-						/>
-					</form>
-				';
+		$class		=	'inputbox text'.$validate . ( $field->css ? ' '.$field->css : '' );
+		$readonly	=	( $field->variation == 'disabled' ) ? 'disabled="disabled"' : '';
+		$xml		=	'
+						<form>
+							<field
+								type="'.self::$type2.'"
+								name="'.$name.'"
+								id="'.$id.'"
+								label="'.htmlspecialchars( $field->label ).'"
+								showtime="'.( isset( $options2['time'] ) && $options2['time'] ? 'true' : 'false' ).'"
+								todaybutton="'.( ( isset( $options2['today'] ) && $options2['today'] ) || !isset( $options2['today'] ) ? 'true' : 'false' ).'"
+								weeknumbers="'.( isset( $options2['week_numbers'] ) && $options2['week_numbers'] ? 'true' : 'false' ).'"
+								translateformat="true"
+								filter="user_utc"
+								class="'.$class.'"
+								'.$readonly.'
+							/>
+						</form>
+					';
 		$form	=	JForm::getInstance( $id, $xml );
 		$form	=	$form->getInput( $name, '', $value );
 		
+		if ( JFactory::getApplication()->input->get( 'tmpl' ) == 'raw' ) {
+			$form	=	str_replace( 'class="field-calendar"', 'class="field-calendar raw"', $form );
+			$form	.=	self::_addScript();
+
+			self::_addScripts();
+		}
+
 		// Set
 		if ( ! $field->variation ) {
 			$field->form	=	$form;
@@ -174,6 +183,9 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 			$name	=	$field->name;
 		}
 		$value	=	trim( $value );
+		
+		// Validate
+		parent::g_onCCK_FieldPrepareStore_Validation( $field, $name, $value, $config );
 
 		if ( $value != '' && $value != '0000-00-00 00:00:00' ) {
 			$date			=	JFactory::getDate( $value, $this->userTimeZone );
@@ -181,9 +193,6 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 			$date->setTimezone( $timezone );
 			$value	=	$date->toSql();
 		}
-
-		// Validate
-		parent::g_onCCK_FieldPrepareStore_Validation( $field, $name, $value, $config );
 		
 		// Set or Return
 		if ( $return === true ) {
@@ -209,6 +218,48 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 	
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Stuff & Script
 	
+	// _addScript
+	protected static function _addScript()
+	{
+		static $loaded	=	0;
+		if ( $loaded ) {
+			return;
+		}
+
+		$js		=	'
+					!(function(window, document){
+						"use strict";
+							var elements, i;
+
+							elements = document.querySelectorAll(".field-calendar.raw");
+
+							for (i = 0; i < elements.length; i++) {
+								JoomlaCalendar.init(elements[i]);
+							}
+						})(window, document);
+					';
+		$loaded	=	1;
+
+		return '<script>'.$js.'</script>';
+	}
+
+	// _addScripts
+	protected static function _addScripts()
+	{
+		static $loaded	=	0;
+		if ( $loaded ) {
+			return;
+		}
+
+		$loaded	=	1;
+		$root	=	JUri::root( true );
+
+		echo '<link rel="stylesheet" href="'.$root.'/media/system/css/fields/calendar.css" type="text/css" />';
+		echo '<script src="'.$root.'/media/system/js/fields/calendar-locales/en.js" type="text/javascript"></script>';
+		echo '<script src="'.$root.'/media/system/js/fields/calendar-locales/date/gregorian/date-helper.js" type="text/javascript"></script>';
+		echo '<script src="'.$root.'/media/system/js/fields/calendar.js" type="text/javascript"></script>';
+	}
+
 	// isFriendly
 	public static function isFriendly()
 	{

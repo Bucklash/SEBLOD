@@ -61,6 +61,8 @@ class plgCCK_Field_LinkContent extends JCckPluginLink
 		$link_class			=	$link->get( 'class', '' );
 		$link_rel			=	$link->get( 'rel', '' );
 		$link_target		=	$link->get( 'target', '' );
+		$link_title			=	$link->get( 'title', '' );
+		$link_title2		=	$link->get( 'title_custom', '' );
 		$tmpl				=	$link->get( 'tmpl', '' );
 		$tmpl				=	( $tmpl == '-1' ) ? $app->input->getCmd( 'tmpl', '' ) : $tmpl;
 		$tmpl				=	( $tmpl ) ? 'tmpl='.$tmpl : '';
@@ -113,7 +115,7 @@ class plgCCK_Field_LinkContent extends JCckPluginLink
 				$field->link	.=	( $custom[0] == '#' ) ? $custom : ( ( strpos( $field->link, '?' ) !== false ) ? '&'.$custom : '?'.$custom );
 			}
 		}
-		if ( $app->isAdmin() ) {
+		if ( $app->isClient( 'administrator' ) ) {
 			$field->link	=	str_replace( '/administrator', '', $field->link );
 
 			$link_attr		=	' data-cck-route="'.base64_encode( $field->link ).'"';
@@ -152,7 +154,7 @@ class plgCCK_Field_LinkContent extends JCckPluginLink
 			} else {
 				$base		=	JUri::getInstance()->toString( array( 'scheme', 'host' ) );
 			}
-			if ( $path_type == 2 ) {
+			if ( $path_type == 2 || $path_type == 3 ) {
 				$field->link	=	$base.$field->link;
 				$segment		=	JRoute::_( 'index.php?Itemid='.$itemId );
 
@@ -161,7 +163,11 @@ class plgCCK_Field_LinkContent extends JCckPluginLink
 				}
 				$base			.=	$segment.'/';
 				$field->link	=	str_replace( $base, '', $field->link );
-				$field->link	=	$base.'#'.$field->link;
+				$field->link	=	'#'.$field->link;
+
+				if ( $path_type == 2 ) {
+					$field->link	=	$base.$field->link;
+				}
 			} else {
 				$field->link	=	$base.$field->link;
 			}
@@ -171,6 +177,19 @@ class plgCCK_Field_LinkContent extends JCckPluginLink
 		$field->link_rel		=	$link_rel ? $link_rel : ( isset( $field->link_rel ) ? $field->link_rel : '' );
 		$field->link_state		=	$link->get( 'state', 1 );
 		$field->link_target		=	$link_target ? ( $link_target == 'modal' ? '' : $link_target ) : ( isset( $field->link_target ) ? $field->link_target : '' );
+
+		if ( $link_title ) {
+			if ( $link_title == '2' ) {
+				$field->link_title	=	$link_title2;
+			} elseif ( $link_title == '3' ) {
+				$field->link_title	=	JText::_( 'COM_CCK_' . str_replace( ' ', '_', trim( $link_title2 ) ) );
+			}
+			if ( !isset( $field->link_title ) ) {
+				$field->link_title	=	'';
+			}
+		} else {
+			$field->link_title		=	'';
+		}
 	}
 
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Special Events

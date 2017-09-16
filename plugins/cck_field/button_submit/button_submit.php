@@ -150,10 +150,12 @@ class plgCCK_FieldButton_Submit extends JCckPluginField
 		}
 
 		if ( $form != '' ) {
+			$uri	=	JUri::getInstance()->toString();
 			$form	=	'<form action="'.JRoute::_( 'index.php?option=com_cck' ).'" autocomplete="off" enctype="multipart/form-data" method="post" id="'.$form_id.'" name="'.$form_id.'">'
 					.	$form
 					.	'<input type="hidden" name="task" value="'.$task.'" />'
 					.	'<input type="hidden" name="cid" value="'.$config['id'].'">'
+					.	'<input type="hidden" name="return" value="'.base64_encode( $uri ).'">'
 					.	'<input type="hidden" name="tid" value="'.$task_id.'">'
 					.	JHtml::_( 'form.token' )
 					.	'</form>';
@@ -192,7 +194,7 @@ class plgCCK_FieldButton_Submit extends JCckPluginField
 		$task_auto	=	( isset( $options2['task_auto'] ) && $options2['task_auto'] == '0' ) ? 0 : 1;
 		$task_id	=	( isset( $options2['task_id'] ) && $options2['task_id'] ) ? $options2['task_id'] : 0;
 
-		if ( JFactory::getApplication()->isAdmin() ) {
+		if ( JFactory::getApplication()->isClient( 'administrator' ) ) {
 			$task	=	( $config['client'] == 'admin' ) ? 'form.'.$task : 'list.'.$task;
 		}
 		if ( $task_id ) {
@@ -219,7 +221,10 @@ class plgCCK_FieldButton_Submit extends JCckPluginField
 				$config['doQuery2']	=	true;
 				parent::g_addProcess( 'beforeRenderForm', self::$type, $config, array( 'name'=>$field->name, 'id'=>$id, 'task'=>$task, 'task_auto'=>$task_auto, 'task_id'=>$task_id ) );
 			} elseif ( $task == 'export' || $task == 'process' || $task == 'list.export' || $task == 'list.process' ) {
-				$click	=	$pre_task.$config['submit'].'(\''.$task.'\');return false;';
+				$uri		=	JUri::getInstance()->toString();
+				$pre_task	.=	htmlspecialchars( 'jQuery("#'.$config['formId'].'").append(\'<input type="hidden" name="return" value="'.base64_encode( $uri ).'">\');' );
+
+				$click		=	$pre_task.$config['submit'].'(\''.$task.'\');return false;';
 				if ( $field->variation != 'toolbar_button' ) {
 					parent::g_addProcess( 'beforeRenderForm', self::$type, $config, array( 'name'=>$field->name, 'task'=>$task, 'task_auto'=>$task_auto, 'task_id'=>$task_id ) );					
 				}
@@ -378,12 +383,15 @@ class plgCCK_FieldButton_Submit extends JCckPluginField
 				return;
 			}
 			if ( isset( $config[$target] ) && $config[$target] != '' ) {
+				JText::script( 'COM_CCK_COMPLETED' );
+
 				$params	=	JComponentHelper::getParams( 'com_cck_exporter' );
 				$step	=	(int)$params->get( 'mode_ajax_count', 25 );
 				$js 	=	'
 							(function ($){
 								JCck.Core.SubmitButton = {
 									batch:[],
+									css:"",
 									items:['.$config[$target].'],
 									step:'.(int)$step.',
 									total:'.( substr_count( $config[$target], ',' ) + 1 ).',
@@ -407,6 +415,10 @@ class plgCCK_FieldButton_Submit extends JCckPluginField
 
 													if (typeof resp == "object") {
 														if ( resp.output_path !== undefined ) {
+															window.setTimeout(function(){
+																$(el+" .bar").css("font-size","inherit").css("padding",JCck.Core.SubmitButton.css).text(Joomla.JText._("COM_CCK_COMPLETED"));
+															},500);
+															
 															document.location.href = resp.output_path;
 														} else {
 															document.location.reload();
@@ -423,6 +435,7 @@ class plgCCK_FieldButton_Submit extends JCckPluginField
 										var w = parseFloat($(this)[0].getBoundingClientRect().width);
 										var h = $(this).css("height");
 
+										JCck.Core.SubmitButton.css = $(this).css("padding");
 										$(this).prop("disabled",true).addClass("btn-progress").css("width", w).css("height", h).css("padding", 0);
 										$(this).html(\'<div class="progress"><div class="bar" style="width:0%;"></div></div>\');
 										$(el+" > div").css("height", "100%").css("margin", "0").css("padding", "0");

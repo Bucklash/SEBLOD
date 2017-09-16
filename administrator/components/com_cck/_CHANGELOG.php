@@ -22,6 +22,129 @@ $ -> Language fix or change
 - -> Removed
 ! -> Note
 
+-------------------- 3.13.1 Upgrade Release [xx-Sept-2017] ----------
+
++ Add "raw.php" file in admin/site default templates (install and update).
+
+# "Edit Own (Related Content)" support added to JCckContent.
+# Include inline scripts on JForm Calendar when tmpl=raw.
+
+-------------------- 3.13.0 Upgrade Release [30-Aug-2017] -----------
+
+! Joomla! 3.8 ready.
+  >> other minor fixes may be needed for final 3.8 release.
+
++ Menu Presets added for "mod_menu"
+  >> SEBLOD, SEBLOD Add-ons, SEBLOD Apps, SEBLOD Ecommerce
++ Native redirections added for Lists using "Fragment as Resource" capability.
+  >> from tmpl=raw to #fragment
+
++ Keyboard Shortcut added in Content/Search Types UI to close/cancel with (q).
++ Keyboard Shortcuts added to add a new Content/Search Type or Field/Site/Template with (n).
++ "Only Fragment" paths mode added on Content Link plug-in.
+
++ "addToGroup", "removeFromGroup" methods added on JCckContentJoomla_User class.
+  >> use JCckContent->call( 'addToGroup', 00 );
+  >> use JCckContent->call( 'removeFromGroup', 00 );
+
+^ Back-end UI improved: Fields' Storage.
+^ Various INT(11) updated to UNSIGNED INT(10).
+^ Mobile Detect updated to 2.8.26.
+
+! "data-cck-modal-hash" on any HTML element (Content View)
+  >> to change the #fragment of the URL
+! "data-cck-modal-title" on any HTML element (Content View)
+  >> to set the title of the modal
+! SEBLOD Admin Menu module (mod_cck_menu) deprecated, use "mod_menu";
+
+- #__cck_core_preferences removed from install.sql
+
+# "Featured" behaviour (JGrid) fixed.
+# "Fragment as Resource" fixed on Safari (macOS).
+# "From Name" fixed on Email Field plug-in.
+# initialize() fixed in JCckContentJoomla_User for CRONs.
+# JText not applied on Multilingual ("Yes but English") fixed (regression).
+# Missing "return" added on "Export", "Process" tasks from Submit Button plug-in.
+# Various improvements or issues fixed.
+
+-------------------- 3.12.2 Upgrade Release [31-Jul-2017] -----------
+
+# "data-cck-boxchecked" JS issue fixed.
+
+-------------------- 3.12.1 Upgrade Release [31-Jul-2017] -----------
+
+# Regression (objects with bridge capability) fixed.
+
+-------------------- 3.12.0 Upgrade Release [28-Jul-2017] -----------
+
+* Security Release:
+  >> Missing escaping on 2 queries.
+
++ "Optimize (Memory)" process reworked (for both post/pre PHP 7).
++ Search Generic now gives the ability to target a specific column.
+  >> [aka]:[value] instead of [value] while searching
+
++ "Clear" Access Level added (on Fields) from Content/Search Types UI.
++ "Edit Own Related Content" permission improved.
+  >> any object suppport added >> [column]@[object]
++ Keyboard Shortcuts added in Fields/Sites/Templates UI (List View) to search (@).
++ Multiple items supported in "Dropdown Menu" behaviour (JGrid).
++ "Language" parameter added on Date Typo plug-in.
++ Links support added in "Featured", "Status" behaviours (JGrid).
++ "Property" picker added on Joomla! User Live plug-in.
++ "Title" added on Content Link plug-in.
++ "Title / Tooltip" (Self) parameter/process added on JGrid Typo plug-in.
++ Translated Title added on "Delete", "SEBLOD Form" Link plug-ins.
+
++ "data-cck-boxchecked" attribute implemented for item selection.
++ "is-filter" class implemented for Filter variation.
+  >> useful to enable/disable "change" event
+
+^ Apply Group's own restriction before fields (so they don't end up in $config['fields'])
+^ JCckContent class updated.
+  >> "delete" method refactored.
+  >> Events triggering added.
+  >> Permissions check added.
+  >> "setOptions" method added.
+  >> some method declarations have changed (from public to protected)!
+
+! Priority added on Process stack.
+  >> "beforeRenderForm" support added.
+
+# Alternative Language constant "..._1" applied when no result as well.
+# Bridge author issue fixed.
+# Calendar fixed for PHP 5.4
+# Code Mirror support fixed.
+# "Completed" text added on Submit Button.
+# Delete link issue fixed on Free Button field plug-in.
+# Delete support added Batch/List (i.e Search Form).
+# Development Prefix applied on Group creation.
+# Integration issues fixed.
+# Issues fixed on "JForm Associations" Field plug-in.
+# Menu Tree (Add-ons for SEBLOD) issue fixed.
+# Missing Development Prefix added on Group creation.
+# Missing translation fixed for optgroups on Static Options of Dynamic Select plug-in.
+# Missing "return" added on "Export", "Process" tasks from Submit Button plug-in.
+# Multilanguage Integration issue fixed.
+# Multiselect added on back-end managers.
+# Object Plug-ins now loaded from CLI.
+# "onAfterInitialise" processing calls move below Core/Multi-site code.
+# "onAfterDelete" fixed for base table.
+# Template positions toggle issue fixed on back-end.
+# Validation Rules fixed on JForm Calendar plug-in.
+# Various improvements or issues fixed.
+
+-------------------- 3.11.3 Upgrade Release [09-Jun-2017] -----------
+
++ Alternative Language constant "..._1" for unique search result added.
+
+! Various cleaning performed.
+
+# Missing "Debug" fixed on Lists.
+# Trigger "change" issue fixed on Calendar (regression since SEBLOD 3.11.0).
+# Variations fixed on Calendar within Group X (regression since SEBLOD 3.11.2).
+# Various minor issues fixed.
+
 -------------------- 3.11.2 Upgrade Release [22-May-2017] -----------
 
 + "onUserLogin" event support added.

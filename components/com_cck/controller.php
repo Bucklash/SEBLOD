@@ -28,6 +28,7 @@ class CCKController extends JControllerLegacy
 		$this->registerTask( 'save2redirect', 'save' );
 		$this->registerTask( 'save2skip', 'save' );
 		$this->registerTask( 'save2view', 'save' );
+		$this->registerTask( 'save4later', 'save' );
 	}
 
 	// display
@@ -288,6 +289,7 @@ class CCKController extends JControllerLegacy
 		}
 
 		$path	=	JPATH_ROOT.'/'.$file;
+		
 		if ( is_file( $path ) && $file ) {
 			$size	=	filesize( $path ); 
 			$ext	=	strtolower( substr ( strrchr( $path, '.' ) , 1 ) );
@@ -315,6 +317,8 @@ class CCKController extends JControllerLegacy
 							}
 						}
 						$this->_download_hits( $id, $fieldname, $collection, $xi );
+
+						JCckDatabase::execute( 'UPDATE #__cck_core SET download_hits = download_hits+1 WHERE id = '.(int)$config['id'] );
 					}
 					set_time_limit( 0 );
 					@ob_end_clean();
@@ -378,8 +382,8 @@ class CCKController extends JControllerLegacy
 		$model		=	JModelLegacy::getInstance( 'CCK_Exporter', 'CCK_ExporterModel' );
 		$params		=	JComponentHelper::getParams( 'com_cck_exporter' );
 
-		$file = $model->export( $params, $task_id, $ids, $config );
-		$file	=	JCckDevHelper::getRelativePath( $file, false );
+		$file 		=	$model->export( $params, $task_id, $ids, $config );
+		$file		=	JCckDevHelper::getRelativePath( $file, false );
 		
 		if ( $file ) {
 			$error			=	0;
@@ -566,7 +570,11 @@ class CCKController extends JControllerLegacy
 		$config		=	$model->store( $preconfig, $task );
 		$id			=	$config['pk'];
 		$itemId		=	$preconfig['itemId'];
-
+		
+		if ( $task == 'save4later' ) {
+			$task	=	'save';
+		}
+		
 		// Return Now for Ajax..
 		if ( $isAjax ) {
 			return $config;
@@ -726,7 +734,15 @@ class CCKController extends JControllerLegacy
 					$link			.=	$hash;
 				}
 			} else {
-				$link			.=	$char.'thanks='.$preconfig['type'].$hash;
+				if ( strpos( $link, '?thanks=' ) === false && strpos( $link, '&thanks=' ) === false ) {
+					$link			.=	$char.'thanks='.$preconfig['type'];
+				} else {
+					$vars			=	JCckDevHelper::getUrlVars( $link );
+					$thanks			=	$vars->get( 'thanks', '' );
+					$link			=	str_replace( '?thanks='.$thanks, '?thanks='.$preconfig['type'], $link );
+					$link			=	str_replace( '&thanks='.$thanks, '&thanks='.$preconfig['type'], $link );
+				}
+				$link				.=	$hash;
 			}
 		}
 		if ( $msg != '' ) {

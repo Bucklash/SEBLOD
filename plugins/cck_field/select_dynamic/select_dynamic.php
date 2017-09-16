@@ -10,6 +10,8 @@
 
 defined( '_JEXEC' ) or die;
 
+use Joomla\String\StringHelper;
+
 // Plugin
 class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 {
@@ -633,11 +635,14 @@ class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 			foreach ( $options as $val ) {
 				$latest	=	0;
 				if ( trim( $val ) != '' ) {
-					if ( JString::strpos( $val, '=' ) !== false ) {
+					if ( StringHelper::strpos( $val, '=' ) !== false ) {
 						$opt	=	explode( '=', $val );
 						if ( $opt[1] == 'optgroup' ) {
 							if ( $optgroup == 1 ) {
 								$results[]	=	JHtml::_( 'select.option', '</OPTGROUP>' );
+							}
+							if ( $field->bool8 && trim( $opt[0] ) ) {
+								$opt[0]	=	JText::_( 'COM_CCK_' . str_replace( ' ', '_', trim( $opt[0] ) ) );
 							}
 							$results[]		=	JHtml::_( 'select.option', '<OPTGROUP>', $opt[0] );
 							$optgroup	=	1;
