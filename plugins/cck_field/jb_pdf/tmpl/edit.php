@@ -122,17 +122,12 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
         * // This method has several options, check the source code documentation for more information.
         * $pdf->Output('example_001.pdf', 'I');
         * 
-        * //============================================================+
-        * // END OF FILE
-        * //============================================================+
-        * 
         * 
         */
 
-        /*
-        * Add link to tutoril on forum
-        */ 
-        echo JCckDev::renderHelp( 'field', 'seblod-2-x-email-field' );
+        // Add link to tutorial on forum i.e. https://www.seblod.com/community/forums/fields-plug-ins/pdf-plugin
+        // RenderHelp forces a dodgy link so need to hardcode or do something else
+        echo JCckDev::renderHelp( 'field', 'pdf-plugin' );
         echo JCckDev::renderSpacer( JText::_( 'COM_CCK_STORAGE' ), JText::_( 'COM_CCK_STORAGE_DESC' ) );
         echo JCckDev::getForm( 'core_storage', $this->item->storage, $config );
         ?>
