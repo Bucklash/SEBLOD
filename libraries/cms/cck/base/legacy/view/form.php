@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -18,7 +18,7 @@ class JCckBaseLegacyViewForm extends JViewLegacy
 	protected $state;
 	
 	// display
-	public function display( $tpl = NULL )
+	public function display( $tpl = null )
 	{
 		if ( $this->getlayout() == 'delete' ) {
 			$this->prepareDelete();
@@ -34,18 +34,18 @@ class JCckBaseLegacyViewForm extends JViewLegacy
 	}
 	
 	// prepareDelete
-	public function prepareDelete()
+	protected function prepareDelete()
 	{
 		Helper_Admin::addToolbarDelete( $this->vName, $this->vTitle );
 	}
 	
 	// prepareDisplay
-	public function prepareDisplay()
+	protected function prepareDisplay()
 	{
 	}
 	
 	// completeUI
-	public function completeUI()
+	protected function completeUI()
 	{
 		$title	=	( ( is_object( $this->item ) && $this->item->title != '' ) ? '"'.$this->item->title.'"' : JText::_( 'COM_CCK_ADD_NEW' ) ).' '.JText::_( 'COM_CCK_'.$this->vName );
 		
@@ -53,7 +53,7 @@ class JCckBaseLegacyViewForm extends JViewLegacy
 	}
 
 	// prepareUI
-	public function prepareUI()
+	protected function prepareUI()
 	{
 		$this->css		=	array( 'w30'=>'span4',
 								   'w70'=>'span8',
@@ -64,7 +64,7 @@ class JCckBaseLegacyViewForm extends JViewLegacy
 	}
 	
 	// prepareToolbar
-	public function prepareToolbar()
+	protected function prepareToolbar()
 	{
 	}
 }

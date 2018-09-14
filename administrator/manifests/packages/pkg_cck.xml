@@ -5,11 +5,11 @@
 	<packagename>cck</packagename>
 	<packager>Octopoos</packager>
 	<packagerurl>https://www.seblod.com</packagerurl>
-	<copyright>Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.</copyright>
+	<copyright>Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.</copyright>
 	<license>GNU General Public License version 2 or later.</license>
 	<creationDate>January 2011</creationDate>
 	<description></description>
-	<version>3.14.0</version>
+	<version>3.17.0</version>
 	
 	<scriptfile>pkg_script.php</scriptfile>
 	
@@ -39,7 +39,6 @@
 			<file type="template" id="seb_blog" client="site">tpl_seb_blog.zip</file>
 			<file type="template" id="seb_table" client="site">tpl_seb_table.zip</file>
 			<!-- Plugin // CCK Field -->
-			<file type="plugin" id="42" group="cck_field">plg_cck_field_42.zip</file>
 			<file type="plugin" id="button_free" group="cck_field">plg_cck_field_button_free.zip</file>
 			<file type="plugin" id="button_submit" group="cck_field">plg_cck_field_button_submit.zip</file>
 			<file type="plugin" id="calendar" group="cck_field">plg_cck_field_calendar.zip</file>

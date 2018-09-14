@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -21,7 +21,7 @@ $listDir		=	$this->state->get( 'list.direction' );
 $top			=	'content';
 
 $config			=	JCckDev::init( array( '42', 'button_submit', 'select_simple', 'text' ), true, array( 'vName'=>$this->vName ) );
-$cck			=	JCckDev::preload( array( 'core_filter_input', 'core_filter_go', 'core_filter_search', 'core_filter_clear', 'core_location_filter',
+$cck			=	JCckDev::preload( array( 'core_filter_input', 'core_filter_go', 'core_filter_search', 'core_filter_clear',
 										 'core_state_filter' ) );
 JText::script( 'COM_CCK_CONFIRM_DELETE' );
 Helper_Include::addDependencies( $this->getName(), $this->getLayout() );
@@ -74,7 +74,7 @@ Helper_Include::addDependencies( $this->getName(), $this->getLayout() );
 			<td class="center hidden-phone"><?php Helper_Display::quickSlideTo( 'pagination-bottom', $i + 1 ); ?></td>
 			<td class="center hidden-phone"><?php echo JHtml::_( 'grid.id', $i, $item->id ); ?></td>
 			<td width="30px" class="center">
-				<a target="_blank" href="<?php echo $link2; ?>"<?php echo $action_attr; ?>>
+				<a target="_blank" rel="noopener noreferrer" href="<?php echo $link2; ?>"<?php echo $action_attr; ?>>
 					 <?php echo $action; ?>
 				</a>
 			</td>
@@ -131,6 +131,7 @@ Helper_Display::quickCopyright();
 $js	=	'
 		(function ($){
 			JCck.Dev = {
+				count:'.count( $this->items ).',
 				status:0,
 				addNew: function() {
 					var grp = $("#site_grp").val();
@@ -154,9 +155,8 @@ $js	=	'
 						clickBar: 1
 					}).init();
 				}
-			}
-			Joomla.orderTable = function()
-			{
+			};
+			Joomla.orderTable = function() {
 				table = document.getElementById("sortTable");
 				direction = document.getElementById("directionTable");
 				order = table.options[table.selectedIndex].value;
@@ -166,7 +166,7 @@ $js	=	'
 					dirn = direction.options[direction.selectedIndex].value;
 				}
 				Joomla.tableOrdering(order, dirn, "");
-			}
+			};
 			Joomla.submitbutton = function(task, cid) {
 				if (task == "'.$this->vName.'s.delete") {
 					if (confirm(Joomla.JText._("COM_CCK_CONFIRM_DELETE"))) {
@@ -176,7 +176,7 @@ $js	=	'
 					}
 				}
 				Joomla.submitform(task);
-			}
+			};
 			$(document).ready(function() {
 				$("#collapseModal2").on("hidden", function () {
 					$("#toolbar-new > button").blur();
@@ -184,15 +184,28 @@ $js	=	'
 				$(document).keypress(function(e) {
 					if (!$(":input:focus").length) {
 						e.preventDefault();
+						var k = e.which;
 
-						if (e.which == 64) {
+						if (k == 64) {
 							if ( $("#filter_search").val() != "" ) {
 								$("#filter_search").select();
 							} else {
 								$("#filter_search").focus();
 							}
-						} else if (e.which == 110) {
+						} else if (k == 110) {
 							$("#toolbar-new > button").click();
+						} else if (k == 13 && document.adminForm.boxchecked.value==1) {
+							$("#toolbar-edit > button").click();
+						} else if (JCck.Dev.count > 0 && k >= 48 && k <= 57) {
+							if (k == 48) {
+								k = 58;
+							}
+							var tk = k - 49;
+
+							if ($("#cb"+tk).length) {
+								$("[name=\'toggle\']").click().click();
+								$("#cb"+tk).click();
+							}
 						}
 					}
 				});

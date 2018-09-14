@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -17,12 +17,12 @@ jimport( 'joomla.filesystem.folder' );
 class com_cckInstallerScript
 {
 	// install
-	function install( $parent )
+	public function install( $parent )
 	{
 	}
 	
 	// uninstall
-	function uninstall( $parent )
+	public function uninstall( $parent )
 	{
 		// Post Install Log
 		self::_postInstallMessage( 'uninstall', $parent );
@@ -84,7 +84,7 @@ class com_cckInstallerScript
 	}
 	
 	// update
-	function update( $parent )
+	public function update( $parent )
 	{
 		// Post Install Log
 		self::_postInstallMessage( 'update', $parent );
@@ -211,7 +211,7 @@ class com_cckInstallerScript
 	}
 	
 	// preflight
-	function preflight( $type, $parent )
+	public function preflight( $type, $parent )
 	{
 		$app		=	JFactory::getApplication();
 		$lang		=	JFactory::getLanguage();
@@ -244,7 +244,7 @@ class com_cckInstallerScript
 	}
 	
 	// postflight
-	function postflight( $type, $parent )
+	public function postflight( $type, $parent )
 	{
 		$app	=	JFactory::getApplication();
 		$db		=	JFactory::getDbo();
@@ -261,43 +261,47 @@ class com_cckInstallerScript
 				$db->execute();
 			}
 		} elseif ( 'install' ) {
-			$rule	=	'{"core.admin":{"7":1},"core.manage":{"6":1},"core.create":[],"core.delete":[],"core.delete.own":{"6":1},"core.edit":[],"core.edit.state":[],"core.edit.own":[],"core.addto.cart":{"7":1},"core.admin.form":{"7":1},"core.export":{"7":1},"core.process":{"7":1}}';
+			$rule	=	'{"core.admin":{"7":1},"core.manage":{"6":1},"core.delete.own":{"6":1},"core.addto.cart":{"7":1},"core.admin.form":{"7":1},"core.export":{"7":1},"core.process":{"7":1}}';
 			$query	=	'UPDATE #__assets SET rules = "'.$db->escape( $rule ).'" WHERE name = "com_cck"';
 			$db->setQuery( $query );
 			$db->execute();
 		}
 		
-		/* Todo: loop */
+		// Additional stuff
 		$src	=	JPATH_ADMINISTRATOR.'/components/com_cck/install/cli/cck_job.php';
 		if ( JFile::exists( $src ) ) {
 			JFile::delete( JPATH_SITE.'/cli/cck_job.php' );
 			JFile::copy( $src, JPATH_SITE.'/cli/cck_job.php' );
+			JFolder::delete( JPATH_ADMINISTRATOR.'/components/com_cck/install/cli/' );
 		}
 
 		$src	=	JPATH_ADMINISTRATOR.'/components/com_cck/install/tmpl/raw.php';
 		$dest	=	JPATH_ADMINISTRATOR.'/templates/'.$app->getTemplate().'/raw.php';
-		if ( !JFile::exists( $dest ) ) {
-			JFile::copy( $src, $dest );
-		}
-		$query	=	$db->getQuery( true );
-		$query->select( $db->quoteName( array( 'template' ) ) )
-			  ->from( $db->quoteName( '#__template_styles' ) )
-			  ->where( $db->quoteName( 'client_id' ) . ' = 0' )
-			  ->where( $db->quoteName( 'home' ) . ' = 1' );
-		$db->setQuery( $query );
-		
-		if ( $site_template = $db->loadResult() ) {
-			$dest	=	JPATH_SITE.'/templates/'.$site_template.'/raw.php';
+		if ( JFile::exists( $src ) ) {
 			if ( !JFile::exists( $dest ) ) {
 				JFile::copy( $src, $dest );
 			}
+			$query	=	$db->getQuery( true );
+			$query->select( $db->quoteName( array( 'template' ) ) )
+				  ->from( $db->quoteName( '#__template_styles' ) )
+				  ->where( $db->quoteName( 'client_id' ) . ' = 0' )
+				  ->where( $db->quoteName( 'home' ) . ' = 1' );
+			$db->setQuery( $query );
+		
+			if ( $site_template = $db->loadResult() ) {
+				$dest	=	JPATH_SITE.'/templates/'.$site_template.'/raw.php';
+				if ( !JFile::exists( $dest ) ) {
+					JFile::copy( $src, $dest );
+				}
+			}
+			JFolder::delete( JPATH_ADMINISTRATOR.'/components/com_cck/install/tmpl/' );
 		}
-
+		
 		$src	=	JPATH_ADMINISTRATOR.'/components/com_cck/install/cms';
 		if ( JFolder::exists( $src ) ) {
 			JFolder::copy( $src, JPATH_SITE.'/libraries/cms/cck', '', true );
+			JFolder::delete( $src );
 		}
-		/* Todo: loop */
 		
 		if ( $type == 'install' ) {
 			// Post Install Log
@@ -306,7 +310,7 @@ class com_cckInstallerScript
 	}
 	
 	// _getVersion
-	function _getVersion( $default = '2.0.0' )
+	public function _getVersion( $default = '2.0.0' )
 	{
 		$db		=	JFactory::getDbo();
 		
@@ -320,7 +324,7 @@ class com_cckInstallerScript
 	}
 
 	// _postInstallMessage
-	function _postInstallMessage( $event, $parent )
+	public function _postInstallMessage( $event, $parent )
 	{
 		if ( !version_compare( JVERSION, '3.2', 'ge' ) ) {
 			return;
@@ -348,7 +352,7 @@ class com_cckInstallerScript
 			} else {
 				$user_link	=	'index.php?option=com_users&task=user.edit&id='.$user_id;
 			}
-			$user_name	=	'<a href="'.$user_link.'" target="_blank">'.$user->name.'</a>';
+			$user_name	=	'<a href="'.$user_link.'" target="_blank" rel="noopener noreferrer">'.$user->name.'</a>';
 			$text		=	JText::sprintf( 'LIB_CCK_POSTINSTALL_'.strtoupper( $event ).'_DESCRIPTION', $user_name, JFactory::getDate()->format( JText::_( 'DATE_FORMAT_LC2' ) ) );
 		}
 		$title		=	'SEBLOD '.$version;

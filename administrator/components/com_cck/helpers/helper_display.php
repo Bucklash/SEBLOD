@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -20,8 +20,8 @@ class Helper_Display extends CommonHelper_Display
 	{
 		?>
 		<div class="copyright">
-			<strong><a target="_blank" href="<?php echo CCK_WEBSITE; ?>"><?php echo CCK_LABEL; ?></a></strong>&nbsp;<?php echo JText::sprintf( 'COM_CCK_COPYRIGHT_SEBLOD', JText::_( 'COM_CCK_'.CCK_BUILDER ) ); ?>
-			<br /><?php echo JText::_( 'JVERSION' ).' '. CCK_VERSION . ' &copy 2009 - 2017'; ?>
+			<strong><a target="_blank" rel="noopener noreferrer" href="<?php echo CCK_WEBSITE; ?>"><?php echo CCK_LABEL; ?></a></strong>&nbsp;<?php echo JText::sprintf( 'COM_CCK_COPYRIGHT_SEBLOD', JText::_( 'COM_CCK_'.CCK_BUILDER ) ); ?>
+			<br /><?php echo JText::_( 'JVERSION' ).' '. CCK_VERSION . ' &copy 2009 - 2018'; ?>
 			<?php
 			if ( $cpanel !== false ) {
 				$info	=	'General Availability | Site runs on PHP '.PHP_VERSION;

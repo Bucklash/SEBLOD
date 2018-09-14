@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -43,15 +43,25 @@ class plgCCK_FieldJForm_UserGroups extends JCckPluginField
 		$text	=	'';
 		if ( is_array( $value ) ) {
 			$value	=	implode( ',', $value );
+		} else {
+			$value 	=	str_replace( array( '[', ']' ), '', $value );
 		}
 		if ( $value != '' ) {
-			$text	=	JCckDatabase::loadColumn( 'SELECT a.title FROM #__usergroups AS a WHERE id IN ('.$value.') ORDER BY FIELD(id, '.$value.')' );
-			$text	=	implode( ',', $text );
+			$texts	=	JCckDatabase::loadColumn( 'SELECT a.title FROM #__usergroups AS a WHERE id IN ('.$value.') ORDER BY FIELD(id, '.$value.')' );
+			$text	=	implode( ',', $texts );
 		}
 
 		// Set
 		$field->text		=	$text;
 		$field->value		=	$value;
+
+		$values				=	explode( ',', $value );
+		if ( count( $values ) ) {
+			$field->values			=	array();
+			foreach ( $values as $k=>$v ) {
+				$field->values[$k]	=	(object)array( 'text'=>$texts[$k], 'typo_target'=>'text', 'value'=>$v );
+			}
+		}
 		$field->typo_target	=	'text';
 	}
 	
@@ -98,6 +108,11 @@ class plgCCK_FieldJForm_UserGroups extends JCckPluginField
 		// Prepare
 		$class	=	( $field->css ) ? ' class="'.$field->css.'"' : '';
 		$form	=	JHtml::_( 'access.usergroups', $name, $value );		// JForm UserGroups ?!
+
+		if ( $field->required && $form != '' ) {
+			$form	=	str_replace( '<input ', '<input class="validate[required]" ', $form );
+		}
+
 		$form	=	'<div id="'.$name.'"'.$class.'>'.$form.'</div>';
 
 		// Set
@@ -111,7 +126,7 @@ class plgCCK_FieldJForm_UserGroups extends JCckPluginField
 
 			if ( $values != '' ) {
 				$field->text	=	JCckDatabase::loadColumn( 'SELECT title FROM #__usergroups WHERE id IN ('.(string)$values.')' );
-				$field->text	=	implode( ',', $field->text ); //todo	
+				$field->text	=	implode( ',', $field->text ); /* TODO#SEBLOD: */
 			} else {
 				$field->text	=	'';
 			}

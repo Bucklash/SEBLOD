@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -159,7 +159,7 @@ $js		=	'
 						return "radio";
 					}
 					return "";
-				}
+				};
 				$.fn.toggleMultiple = function(offset) {
 					if (this.is("select")) {
 						if (this.prop("multiple")) {
@@ -185,9 +185,10 @@ $js		=	'
 							this.removeClass("radio").addClass("checkbox");
 							this.removeClass("radios").addClass("checkboxes");
 						}
+						JCck.Dev.resize(offset);
 					}
 					return "";
-				}
+				};
 				JCck.Dev = {
 					always:false,
 					reset: function() {
@@ -278,7 +279,7 @@ $js		=	'
 							}
 						}
 					}
-    			}
+    			};
 				$(document).ready(function(){
 					var client = "'.$this->item->title.'";
 					var toggle = "'.$toggle.'";
@@ -322,7 +323,7 @@ $js		=	'
 					}
 					if (toggle=="1") {
 						JCck.Dev.resize(32);
-						$("div.toggle-selection").html(\'<a href="#" id="toggle_selection">Toggle</a>\');
+						$("div.toggle-selection").html(\'<a href="javascript:void(0);" id="toggle_selection">Toggle</a>\');
 						if ($("#'.$this->item->name.'").isMultiple()) {
 							JCck.Dev.always = true;
 						}
@@ -346,7 +347,7 @@ $js		=	'
 			';
 Helper_Include::addDependencies( 'box', 'edit' );
 $doc->addStyleSheet( JUri::root( true ).'/media/cck/css/cck.admin.css' );
-$doc->addStyleDeclaration( 'div.cck_forms.cck_admin div.cck_form {float:none;}table.DynarchCalendar-topCont{top:0px!important;left:16px!important;} form{margin:0!important;}' );
+$doc->addStyleDeclaration( 'div.cck_forms.cck_admin div.cck_form {float:none;}table.DynarchCalendar-topCont{top:0!important;left:16px!important;} form{margin:0!important;}' );
 $doc->addScriptDeclaration( $js );
 
 JText::script( 'COM_CCK_MATCH_ANY_WORDS' );

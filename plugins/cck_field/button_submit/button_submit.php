@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -40,9 +40,9 @@ class plgCCK_FieldButton_Submit extends JCckPluginField
 	// onCCK_FieldConstruct_TypeForm
 	public static function onCCK_FieldConstruct_TypeForm( &$field, $style, $data = array(), &$config = array() )
 	{
-		$data['computation']	=	NULL;
-		$data['live']			=	NULL;
-		$data['validation']		=	NULL;
+		$data['computation']	=	null;
+		$data['live']			=	null;
+		$data['validation']		=	null;
 
 		if ( !isset( $config['construction']['variation'][self::$type] ) ) {
 			$data['variation']	=	array(
@@ -66,9 +66,9 @@ class plgCCK_FieldButton_Submit extends JCckPluginField
 	// onCCK_FieldConstruct_SearchSearch
 	public static function onCCK_FieldConstruct_SearchSearch( &$field, $style, $data = array(), &$config = array() )
 	{
-		$data['live']		=	NULL;
-		$data['match_mode']	=	NULL;
-		$data['validation']	=	NULL;
+		$data['live']		=	null;
+		$data['match_mode']	=	null;
+		$data['validation']	=	null;
 
 		if ( !isset( $config['construction']['variation'][self::$type] ) ) {
 			$data['variation']	=	array(
@@ -107,16 +107,12 @@ class plgCCK_FieldButton_Submit extends JCckPluginField
 		$field->label	=	'';
 
 		// Prepare
-		$pre_task	=	'';
-		$options2	=	JCckDev::fromJSON( $field->options2 );
-		$task		=	( isset( $options2['task'] ) && $options2['task'] ) ? $options2['task'] : 'save';
-		$task_auto	=	( isset( $options2['task_auto'] ) && $options2['task_auto'] == '0' ) ? 0 : 1;
-		$task_id	=	( isset( $options2['task_id'] ) && $options2['task_id'] ) ? $options2['task_id'] : 0;
+		$options2		=	JCckDev::fromJSON( $field->options2 );
+		$task			=	( isset( $options2['task'] ) && $options2['task'] ) ? $options2['task'] : 'save';
+		$task_auto		=	( isset( $options2['task_auto'] ) && $options2['task_auto'] == '0' ) ? 0 : 1;
+		$task_id		=	( isset( $options2['task_id'] ) && $options2['task_id'] ) ? $options2['task_id'] : 0;
 		
-		if ( $task_id ) {
-			$pre_task	=	htmlspecialchars( 'jQuery("#'.$form_id.'").append(\'<input type="hidden" name="tid" value="'.$task_id.'">\');' );
-		}
-		$class		=	'button btn' . ( $field->css ? ' '.$field->css : '' );
+		$class			=	'button btn' . ( $field->css ? ' '.$field->css : '' );
 		
 		if ( $task == 'export' || $task == 'process' ) {
 			$click	=	'';
@@ -150,12 +146,11 @@ class plgCCK_FieldButton_Submit extends JCckPluginField
 		}
 
 		if ( $form != '' ) {
-			$uri	=	JUri::getInstance()->toString();
-			$form	=	'<form action="'.JRoute::_( 'index.php?option=com_cck' ).'" autocomplete="off" enctype="multipart/form-data" method="post" id="'.$form_id.'" name="'.$form_id.'">'
+			$form	=	'<form action="'.JRoute::_( 'index.php?option=com_cck' ).'" autocomplete="off" enctype="multipart/form-data" method="get" id="'.$form_id.'" name="'.$form_id.'">'
 					.	$form
 					.	'<input type="hidden" name="task" value="'.$task.'" />'
 					.	'<input type="hidden" name="cid" value="'.$config['id'].'">'
-					.	'<input type="hidden" name="return" value="'.base64_encode( $uri ).'">'
+					.	'<input type="hidden" name="return" value="'.base64_encode( JUri::getInstance()->toString() ).'">'
 					.	'<input type="hidden" name="tid" value="'.$task_id.'">'
 					.	JHtml::_( 'form.token' )
 					.	'</form>';
@@ -214,15 +209,15 @@ class plgCCK_FieldButton_Submit extends JCckPluginField
 				$click		=	'';
 				$pre_task	=	'';
 				$config['doQuery2']	=	true;
-				parent::g_addProcess( 'beforeRenderForm', self::$type, $config, array( 'name'=>$field->name, 'id'=>$id, 'task'=>$task, 'task_auto'=>$task_auto, 'task_id'=>$task_id ) );
+				parent::g_addProcess( 'beforeRenderForm', self::$type, $config, array( 'name'=>$field->name, 'id'=>$id, 'task'=>$task, 'task_auto'=>$task_auto, 'task_id'=>$task_id, 'fieldnames'=>$field->options ) );
 			} elseif ( $task == 'process_ajax' ) {
 				$click		=	'';
 				$pre_task	=	'';
 				$config['doQuery2']	=	true;
-				parent::g_addProcess( 'beforeRenderForm', self::$type, $config, array( 'name'=>$field->name, 'id'=>$id, 'task'=>$task, 'task_auto'=>$task_auto, 'task_id'=>$task_id ) );
+				parent::g_addProcess( 'beforeRenderForm', self::$type, $config, array( 'name'=>$field->name, 'id'=>$id, 'task'=>$task, 'task_auto'=>$task_auto, 'task_id'=>$task_id, 'fieldnames'=>$field->options ) );
 			} elseif ( $task == 'export' || $task == 'process' || $task == 'list.export' || $task == 'list.process' ) {
-				$uri		=	JUri::getInstance()->toString();
-				$pre_task	.=	htmlspecialchars( 'jQuery("#'.$config['formId'].'").append(\'<input type="hidden" name="return" value="'.base64_encode( $uri ).'">\');' );
+				$pre_task	.=	htmlspecialchars( 'jQuery("#'.$config['formId'].'").append(\'<input type="hidden" name="return" value="'.base64_encode( JUri::getInstance()->toString() ).'">\');' )
+							.	htmlspecialchars( 'jQuery("#'.$config['formId'].'").append(\''.JHtml::_( 'form.token' ).'\');' );
 
 				$click		=	$pre_task.$config['submit'].'(\''.$task.'\');return false;';
 				if ( $field->variation != 'toolbar_button' ) {
@@ -383,75 +378,145 @@ class plgCCK_FieldButton_Submit extends JCckPluginField
 				return;
 			}
 			if ( isset( $config[$target] ) && $config[$target] != '' ) {
+				static $loaded	=	0;
+				$fieldnames		=	array();
+				$step			=	1;
+				$vars			=	'';
+
+				if ( $process['fieldnames'] ) {
+					$fieldnames	=	explode( '||', $process['fieldnames'] );
+				}
+
 				JText::script( 'COM_CCK_COMPLETED' );
 
-				$params	=	JComponentHelper::getParams( 'com_cck_exporter' );
-				$step	=	(int)$params->get( 'mode_ajax_count', 25 );
-				$js 	=	'
-							(function ($){
-								JCck.Core.SubmitButton = {
-									batch:[],
-									css:"",
-									items:['.$config[$target].'],
-									step:'.(int)$step.',
-									total:'.( substr_count( $config[$target], ',' ) + 1 ).',
-									uniqid:"'.uniqid().'",
-									width:0,
-									ajaxLoopRequest: function(el) {
-										var values = JCck.Core.SubmitButton.batch.splice(0, JCck.Core.SubmitButton.step).join("&cid[]=");
-										var end = ( JCck.Core.SubmitButton.batch.length > 0 ) ? 0 : 1;
-										$.ajax({
-											cache: false,
-											data: "cid[]="+values+"&tid='.(int)$process['task_id'].'&search='.$config['type'].'&end="+end+"&uniqid="+JCck.Core.SubmitButton.uniqid,
-											url:  "'.JCckDevHelper::getAbsoluteUrl( 'auto', 'task='.str_replace( '_ajax', 'Ajax', $process['task'] ).'&format=raw' ).'",
-											complete: function(jqXHR) {
-												var w = parseInt($(el+" .bar")[0].style.width);
-												$(el+" .bar").css("width",parseInt(w+JCck.Core.SubmitButton.width)+"%");
-												if (JCck.Core.SubmitButton.batch.length) {
-													JCck.Core.SubmitButton.ajaxLoopRequest(el);
-												} else {
-													$(el+" .bar").css("width","100%");
-													var resp = JSON.parse(jqXHR.responseText);
+				if ( $process['task'] == 'export_ajax' ) {
+					$step	=	(int)JComponentHelper::getParams( 'com_cck_exporter' )->get( 'mode_ajax_count', 25 );
+					$vars	=	'&search='.$config['type'];
+				} elseif ( $process['task'] == 'process_ajax' ) {
+					$step	=	(int)JComponentHelper::getParams( 'com_cck_toolbox' )->get( 'mode_ajax_count', 25 );
+				}
 
-													if (typeof resp == "object") {
-														if ( resp.output_path !== undefined ) {
-															window.setTimeout(function(){
-																$(el+" .bar").css("font-size","inherit").css("padding",JCck.Core.SubmitButton.css).text(Joomla.JText._("COM_CCK_COMPLETED"));
-															},500);
-															
-															document.location.href = resp.output_path;
-														} else {
-															document.location.reload();
+				if ( !$loaded ) {
+					$js 	=	'
+								if("undefined"===typeof JCck.More){JCck.More={}};
+								(function ($){
+									JCck.More.ButtonSubmit = {
+										batch:[],
+										count:0,
+										css:"",
+										formId:"'.$config['formId'].'",
+										instances: [],
+										kvp: "",
+										return: "'.base64_encode( JUri::getInstance()->toString() ).'",
+										token:Joomla.getOptions("csrf.token")+"=1",
+										uniq_id:"'.uniqid().'",
+										width:0,
+										ajaxLoopRequest: function(el) {
+											var start = ( JCck.More.ButtonSubmit.batch.length == JCck.More.ButtonSubmit.instances[el].total ) ? 1 : 0;
+											var values = JCck.More.ButtonSubmit.batch.splice(0, JCck.More.ButtonSubmit.instances[el].step).join("&cid[]=");											
+											var end = ( JCck.More.ButtonSubmit.batch.length > 0 ) ? 0 : 1;
+											$.ajax({
+												cache: false,
+												data: "cid[]="+values+"&tid="+JCck.More.ButtonSubmit.instances[el].task_id+"&start="+start+"&end="+end+"&uniqid="+JCck.More.ButtonSubmit.uniq_id+JCck.More.ButtonSubmit.kvp,
+												type: "POST",
+												url:  JCck.More.ButtonSubmit.instances[el].url+"&"+JCck.More.ButtonSubmit.token,
+												complete: function(jqXHR) {
+													var w = parseInt($(el+" .bar")[0].style.width);
+													$(el+" .bar").css("width",parseInt(w+JCck.More.ButtonSubmit.width)+"%");
+													
+													if (JCck.More.ButtonSubmit.batch.length) {
+														JCck.More.ButtonSubmit.ajaxLoopRequest(el);
+													} else {
+														$(el+" .bar").css("width","100%");
+														var resp = JSON.parse(jqXHR.responseText);
+
+														if (typeof resp == "object") {
+															if (!resp.error) {
+																JCck.More.ButtonSubmit.count++;
+															}
+															if (resp.output_path !== undefined) {
+																window.setTimeout(function(){
+																	$(el+" .bar").css("font-size","inherit").css("padding",JCck.More.ButtonSubmit.css).text(Joomla.JText._("COM_CCK_COMPLETED"));
+																},500);
+																
+																document.location.href = resp.output_path;
+															} else {
+																var type = "message";
+
+																if (!JCck.More.ButtonSubmit.count) {
+																	type = "error";
+																}
+																document.location.href = "index.php?option=com_cck&task=outputMessage&type="+type+"&return="+JCck.More.ButtonSubmit.return+"&"+JCck.More.ButtonSubmit.token;
+															}
 														}
 													}
 												}
-											}
-										});
-									}
-								}
-								$(document).ready(function() {
-									$("#'.$process['id'].'").on("click", function() {
-										var el = "#"+$(this).attr("id");
-										var w = parseFloat($(this)[0].getBoundingClientRect().width);
-										var h = $(this).css("height");
-
-										JCck.Core.SubmitButton.css = $(this).css("padding");
-										$(this).prop("disabled",true).addClass("btn-progress").css("width", w).css("height", h).css("padding", 0);
-										$(this).html(\'<div class="progress"><div class="bar" style="width:0%;"></div></div>\');
-										$(el+" > div").css("height", "100%").css("margin", "0").css("padding", "0");
-
-										JCck.Core.SubmitButton.batch = [];
-
-										if (document.'.$config['formId'].'.boxchecked.value!=0) {	
-											$(\'input:checkbox[name="cid[]"]:checked\').each(function(i) {
-												JCck.Core.SubmitButton.batch[i] = $(this).val();
 											});
-										} else {
-											JCck.Core.SubmitButton.batch = JCck.Core.SubmitButton.items;
+										},
+										initProcess: function(el, data) {
+											JCck.More.ButtonSubmit.instances[el] = data;
+
+											var w = parseFloat($(el)[0].getBoundingClientRect().width);
+											var h = $(el).css("height");
+
+											JCck.More.ButtonSubmit.css = $(el).css("padding");
+											$(el).prop("disabled",true).addClass("btn-progress").css("width", w).css("height", h).css("padding", 0);
+											$(el).html(\'<div class="progress"><div class="bar" style="width:0%;"></div></div>\');
+											$(el+" > div").css("height", "100%").css("margin", "0").css("padding", "0");
+
+											JCck.More.ButtonSubmit.batch = [];
+
+											if (document[JCck.More.ButtonSubmit.formId].boxchecked !== undefined && document[JCck.More.ButtonSubmit.formId].boxchecked.value!=0) {	
+												$(\'input:checkbox[name="cid[]"]:checked\').each(function(i) {
+													JCck.More.ButtonSubmit.batch[i] = $(this).val();
+												});
+											} else {
+												JCck.More.ButtonSubmit.batch = JCck.More.ButtonSubmit.instances[el].items;
+											}
+											JCck.More.ButtonSubmit.instances[el].total = JCck.More.ButtonSubmit.batch.length;
+											JCck.More.ButtonSubmit.width = parseInt(JCck.More.ButtonSubmit.instances[el].step/JCck.More.ButtonSubmit.instances[el].total*100);
+
+											JCck.More.ButtonSubmit.kvp = "";
+											$.each(JCck.More.ButtonSubmit.instances[el].fields, function(k,v) {
+  												JCck.More.ButtonSubmit.kvp	+=	"&"+v+"="+$("#"+v).myVal();
+  											});
+										},
+										isValid: function()
+										{
+											if (typeof jQuery.fn.validationEngine === "function") {
+												if ($("#"+JCck.More.ButtonSubmit.formId).length && $("#"+JCck.More.ButtonSubmit.formId).validationEngine("validate") === false) {
+													return false;
+												}
+											}
+											return true;
 										}
-										JCck.Core.SubmitButton.total = JCck.Core.SubmitButton.batch.length;
-										JCck.Core.SubmitButton.width = parseInt(JCck.Core.SubmitButton.step/JCck.Core.SubmitButton.total*100);
-										JCck.Core.SubmitButton.ajaxLoopRequest(el);
+									};
+								})(jQuery);
+								';
+					$loaded	=	1;
+					JFactory::getDocument()->addScriptDeclaration( $js );
+				}
+				$js		=	'';
+
+				if ( !$process['task_auto'] ) {
+					$js	=	'if (document[JCck.More.ButtonSubmit.formId].boxchecked.value==0){alert(\''.htmlspecialchars( addslashes( JText::_( 'JLIB_HTML_PLEASE_MAKE_A_SELECTION_FROM_THE_LIST' ) ) ).'\'); return false;}';
+				}
+
+				$js 	=	'
+							(function ($){
+								$(document).ready(function() {
+									$("#'.$process['id'].'").on("click", function() {'.$js.'
+										if (!JCck.More.ButtonSubmit.isValid()) { return false; }
+										var data = {
+											"fields":'.json_encode( $fieldnames ).',
+											"items":['.$config[$target].'],
+											"step":'.(int)$step.',
+											"task_id":'.(int)$process['task_id'].',
+											"total":'.( substr_count( $config[$target], ',' ) + 1 ).',
+											"url":"'.JCckDevHelper::getAbsoluteUrl( 'auto', 'task='.str_replace( '_ajax', 'Ajax', $process['task'] ).'&format=raw' ).$vars.'"
+										}
+										JCck.More.ButtonSubmit.initProcess("#"+$(this).attr("id"), data);
+										JCck.More.ButtonSubmit.ajaxLoopRequest("#"+$(this).attr("id"));
 									});
 								});
 							})(jQuery);

@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -19,34 +19,6 @@ class CCKModelSite extends JCckBaseLegacyModelAdmin
 {
 	protected $text_prefix	=	'COM_CCK';
 	protected $vName		=	'site';
-	
-	// canDelete
-	protected function canDelete( $record )
-	{
-		$user	=	JFactory::getUser();
-		
-		if ( ! empty( $record->folder ) ) {
-			// Folder Permissions
-			return $user->authorise( 'core.delete', CCK_COM.'.folder.'.(int)$record->folder );
-		} else {
-			// Component Permissions
-			return parent::canDelete( $record );
-		}
-	}
-
-	// canEditState
-	protected function canEditState( $record )
-	{
-		$user	=	JFactory::getUser();
-
-		if ( ! empty( $record->folder ) ) {
-			// Folder Permissions
-			return $user->authorise( 'core.edit.state', CCK_COM.'.folder.'.(int)$record->folder );
-		} else {
-			// Component Permissions
-			return parent::canEditState( $record );
-		}
-	}
 	
 	// populateState
 	protected function populateState()
@@ -126,7 +98,7 @@ class CCKModelSite extends JCckBaseLegacyModelAdmin
 			unset( $data['exclusions'] );
 		}
 		
-		// todo: call generic->store = JSON
+		/* TODO#SEBLOD: call generic->store = JSON */
 		if ( isset( $data['json'] ) && is_array( $data['json'] ) ) {
 			foreach ( $data['json'] as $k => $v ) {
 				if ( is_array( $v ) ) {
@@ -135,7 +107,7 @@ class CCKModelSite extends JCckBaseLegacyModelAdmin
 			}
 		}
 		
-		// todo: call plugins->prepareStore()
+		/* TODO#SEBLOD: call plugins->prepareStore() */
 		$data['groups']		=	$this->_implodeValues( $data['groups'], $data['guest_only_group'] );
 		$data['viewlevels']	=	$this->_implodeValues( $data['viewlevels'], $data['guest_only_viewlevel'] );
 		

@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -360,8 +360,8 @@ class plgCCK_FieldSelect_Simple extends JCckPluginField
 		if ( $return === true ) {
 			return $value;
 		}
-		$field->text	=	$text;	//todo: move up
-		$field->value	=	$value;	//todo: move up
+		$field->text	=	$text; /* TODO#SEBLOD: move up */
+		$field->value	=	$value; /* TODO#SEBLOD: move up */
 		parent::g_onCCK_FieldPrepareStore( $field, $name, $value, $config );
 	}
 	

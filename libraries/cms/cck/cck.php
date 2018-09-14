@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -14,15 +14,15 @@ defined( '_JEXEC' ) or die;
 abstract class JCck
 {
 	public static $_me				=	'cck';
-	public static $_config			=	NULL;
-	public static $_user			=	NULL;
+	public static $_config			=	null;
+	public static $_user			=	null;
 	
-	protected static $_host			=	NULL;
-	protected static $_site			=	NULL;
+	protected static $_host			=	null;
+	protected static $_site			=	null;
 	protected static $_sites		=	array();
 	protected static $_sites_info	=	array();
 	
-	public static function callFunc( $class, $method, &$args = NULL, $ref = false )
+	public static function callFunc( $class, $method, &$args = null, $ref = false )
 	{
 		return $class::$method( $args );
 	}
@@ -240,13 +240,17 @@ abstract class JCck
 	// getSite
 	public static function getSite()
 	{
+		if ( is_object( self::$_sites[self::$_host] ) && is_string( self::$_sites[self::$_host]->configuration ) ) {
+			self::$_sites[self::$_host]->configuration	=	new JRegistry( self::$_sites[self::$_host]->configuration );
+		}
+
 		return self::$_sites[self::$_host];
 	}
 	
 	// getSiteById
 	public static function getSiteById( $id )
 	{
-		static $sites	=	NULL;
+		static $sites	=	null;
 
 		if ( !is_array( $sites ) ) {
 			$sites		=	array();
@@ -289,10 +293,6 @@ abstract class JCck
 	// getUser
 	public static function getUser( $userid = 0, $content_type = '', $profile = true )
 	{
-		// Legacy Code, just in case..
-		if ( is_bool( $content_type ) ) {
-			return JCckLegacy::getUser( $userid, $content_type, $profile );
-		}
 		$update		=	false;
 
 		if ( is_array( $userid ) ) {
@@ -316,16 +316,6 @@ abstract class JCck
 		return self::$_user;
 	}
 	
-	// getUser_Value
-	public static function getUser_Value( $name, $default = '' )
-	{
-		if ( ! self::$_user ) {
-			self::_setUser();
-		}
-				
-		return ( @self::$_user->$name != '' ) ? @self::$_user->$name : $default;
-	}
-	
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Stuff
 	
 	// _
@@ -337,8 +327,11 @@ abstract class JCck
 		}
 		
 		$doc	=	JFactory::getDocument();
-		if ( $key == 'cck.ecommerce' ) { // todo: explode & dispatch
+		if ( $key == 'cck.ecommerce' ) { /* TODO#SEBLOD: explode & dispatch */
+			JHtml::_( 'behavior.core' );
+
 			$version	=	'2.25.0';
+
 			if ( is_file( JPATH_ADMINISTRATOR.'/components/com_cck_ecommerce/_VERSION.php' ) ) {
 				require_once JPATH_ADMINISTRATOR.'/components/com_cck_ecommerce/_VERSION.php';
 				$version	=	new JCckEcommerceVersion;
@@ -361,7 +354,7 @@ abstract class JCck
 		
 		if ( $dev !== false && !( isset( $app->cck_jquery_dev ) && $app->cck_jquery_dev === true ) ) {
 			if ( $dev === true ) {
-				$doc->addScript( $root.'/media/cck/js/cck.dev-3.7.0.min.js' );
+				$doc->addScript( $root.'/media/cck/js/cck.dev-3.17.0.min.js' );
 				$doc->addScript( $root.'/media/cck/js/jquery.ui.effects.min.js' );
 				$app->cck_jquery_dev	=	true;
 			} elseif ( is_array( $dev ) && count( $dev ) ) {
@@ -383,7 +376,7 @@ abstract class JCck
 			if ( JCck::isSite() && JCck::getSite()->context ) {
 				$context	=	'/'.JCck::getSite()->context;
 			}
-			$doc->addScript( $root.'/media/cck/js/cck.core-3.13.0.min.js' );
+			$doc->addScript( $root.'/media/cck/js/cck.core-3.17.0.min.js' );
 			$doc->addScriptDeclaration( 'JCck.Core.baseURI = "'.JUri::base( true ).$context.'";' );
 			$doc->addScriptDeclaration( 'JCck.Core.sourceURI = "'.substr( JUri::root(), 0, -1 ).'";' );
 			

@@ -1,10 +1,10 @@
 <?php
 /**
-* @version 			SEBLOD 3.x More
+* @version 			SEBLOD 3.x Core
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
-* @url				http://www.seblod.com
+* @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -18,11 +18,13 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 	protected static $friendly	=	1;
 	protected static $path;
 
+	protected $serverOffset		=	null;
 	protected $userTimeZone		=	null;
 
 	// __construct
 	public function __construct( &$subject, $config = array() )
 	{
+		$this->serverOffset	=	JFactory::getConfig()->get( 'offset' );
 		$this->userTimeZone	=	new DateTimeZone( JFactory::getUser()->getParam( 'timezone', JFactory::getConfig()->get( 'offset' ) ) );
 
 		parent::__construct( $subject, $config );
@@ -51,7 +53,7 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 		
 		// Set
 		$value	=	trim( $value );
-		if ( $value == '' || $value == '0000-00-00 00:00:00' ) {
+		if ( (int)$value == 0 ) {
 			$field->value	=	'';
 			$field->text	=	'';
 		} else {
@@ -66,6 +68,20 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 			$field->text	=	( $value == '' ) ? '' : $date->format( $format, true, true );
 		}
 		$field->typo_target	=	'text';
+	}
+
+	// onCCK_FieldPrepareExport
+	public function onCCK_FieldPrepareExport( &$field, $value = '', &$config = array() )
+	{
+		if ( static::$type != $field->type ) {
+			return;
+		}
+		
+		if ( (int)$value > 0 ) {
+			$field->output	=	$value;
+		} else {
+			$field->output	=	'';
+		}
 	}
 	
 	// onCCK_FieldPrepareForm
@@ -86,9 +102,9 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 			$id		=	$field->name;
 			$name	=	$field->name;
 		}
-		$value		=	( $value != '' ) ? $value : $field->defaultvalue;
-		$value		=	( $value != ' ' ) ? $value : '';
-		// $value		=	htmlspecialchars( $value );
+		$value		=	$value != '' ? $value : $field->defaultvalue;
+		$value		=	trim( $value );
+		$value		=	(int)$value == 0 ? '' : $value;
 		
 		// Validate
 		$validate	=	'';
@@ -96,6 +112,28 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 			plgCCK_Field_ValidationRequired::onCCK_Field_ValidationPrepareForm( $field, $id, $config );
 			parent::g_onCCK_FieldPrepareForm_Validation( $field, $id, $config );
 			$validate	=	( count( $field->validate ) ) ? ' validate['.implode( ',', $field->validate ).']' : '';
+		}
+
+		$convert		=	( isset( $options2['format'] ) && $options2['format'] ) ? $options2['format'] : 'translate';
+		$format_date	=	'';
+		$format_time	=	'';
+		$modify			=	( isset( $options2['modify'] ) && $options2['modify'] ) ? $options2['modify'] : '';
+		$show_time		=	( isset( $options2['time'] ) && $options2['time'] ) ? true : false;
+
+		if ( $convert != 'translate' ) {
+			$format_date	=	'%Y-%m-%d';
+
+			if ( $show_time ) {
+				$format_date	.=	' %H:%M:%S';
+			}
+
+			$format_date	=	' format="'.$format_date.'"';
+		}
+		if ( $show_time ) {
+			$format_time	.=	' timeformat="'.(int)$options2['time'].'"';
+		}
+		if ( (int)$value > 0 && $modify ) {
+			$value	=	JFactory::getDate( $value )->modify( str_replace( '+', '-', $modify ) )->toSql();
 		}
 
 		// Prepare
@@ -108,11 +146,11 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 								name="'.$name.'"
 								id="'.$id.'"
 								label="'.htmlspecialchars( $field->label ).'"
-								showtime="'.( isset( $options2['time'] ) && $options2['time'] ? 'true' : 'false' ).'"
+								showtime="'.( $show_time ? 'true' : 'false' ).'"'.$format_time.'
 								todaybutton="'.( ( isset( $options2['today'] ) && $options2['today'] ) || !isset( $options2['today'] ) ? 'true' : 'false' ).'"
 								weeknumbers="'.( isset( $options2['week_numbers'] ) && $options2['week_numbers'] ? 'true' : 'false' ).'"
-								translateformat="true"
-								filter="user_utc"
+								translateformat="'.( $convert == 'translate' ? 'true' : 'false' ).'"'.$format_date.'
+								filter="'.( isset( $options2['format_filter'] ) && $options2['format_filter'] ? 'user_utc' : 'server_utc' ).'"
 								class="'.$class.'"
 								'.$readonly.'
 							/>
@@ -135,6 +173,12 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 				parent::g_addScriptDeclaration( $field->script );
 			}
 		} else {
+			if ( (int)$value > 0 ) {
+				if ( !$show_time ) {
+					$value	=	JFactory::getDate( $value )->format( 'Y-m-d' );
+				}
+			}
+
 			parent::g_getDisplayVariation( $field, $field->variation, $value, $value, $form, $id, $name, '<input', '', '', $config );
 		}
 		$field->value	=	$value;
@@ -153,15 +197,27 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 		}
 		$value	=	trim( $value );
 
-		if ( $value != '' && $value != '0000-00-00 00:00:00' ) {
-			$date			=	JFactory::getDate( $value, $this->userTimeZone );
-			$timezone		=	new DateTimeZone( 'UTC' );
+		if ( (int)$value > 0 ) {
+			$date		=	JFactory::getDate( $value, $this->userTimeZone );
+
+			$options2	=	JCckDev::fromJSON( $field->options2 );
+			$modify		=	( isset( $options2['modify'] ) && $options2['modify'] ) ? $options2['modify'] : '';
+
+			if ( $modify ) {
+				$date->modify( $modify );
+			}
+			$timezone	=	new DateTimeZone( 'UTC' );
 			$date->setTimezone( $timezone );
-			$value	=	$date->toSql();
+			$value		=	$date->toSql();
 		}
 
 		// Prepare
 		self::onCCK_FieldPrepareForm( $field, $value, $config, $inherit, $return );
+
+		if ( (int)$field->value > 0 && $modify ) {
+			$field->value	=	JFactory::getDate( $field->value )->modify( $modify )->toSql();
+
+		}
 		
 		// Return
 		if ( $return === true ) {
@@ -183,15 +239,35 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 			$name	=	$field->name;
 		}
 		$value	=	trim( $value );
-		
+
 		// Validate
 		parent::g_onCCK_FieldPrepareStore_Validation( $field, $name, $value, $config );
 
-		if ( $value != '' && $value != '0000-00-00 00:00:00' ) {
-			$date			=	JFactory::getDate( $value, $this->userTimeZone );
-			$timezone		=	new DateTimeZone( 'UTC' );
-			$date->setTimezone( $timezone );
-			$value	=	$date->toSql();
+		if ( (int)$value > 0 ) {
+			$options2		=	JCckDev::fromJSON( $field->options2 );
+			$format_filter	=	( isset( $options2['format_filter'] ) && $options2['format_filter'] ) ? $options2['format_filter'] : 'user_utc';
+			$modify			=	( isset( $options2['modify'] ) && $options2['modify'] ) ? $options2['modify'] : '';
+			
+			if ( $format_filter == 'raw' ) {
+				$date		=	JFactory::getDate( $value, 'GMT' );
+				if ( $modify ) {
+					$date->modify( $modify );
+				}
+				$value		=	$date->toSql();
+			} else {
+				if ( $format_filter == 'server_utc' ) {
+					$date	=	JFactory::getDate( $value, $this->serverOffset );
+				} else {
+					$date	=	JFactory::getDate( $value, $this->userTimeZone );
+				}
+				if ( $modify ) {
+					$date->modify( $modify );
+				}
+
+				$timezone	=	new DateTimeZone( 'UTC' );
+				$date->setTimezone( $timezone );
+				$value		=	$date->toSql();
+			}
 		}
 		
 		// Set or Return
@@ -199,6 +275,7 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 			return $value;
 		}
 		$field->value	=	$value;
+
 		parent::g_onCCK_FieldPrepareStore( $field, $name, $value, $config );
 	}
 	
@@ -258,6 +335,18 @@ class plgCCK_FieldJform_Calendar extends JCckPluginField
 		echo '<script src="'.$root.'/media/system/js/fields/calendar-locales/en.js" type="text/javascript"></script>';
 		echo '<script src="'.$root.'/media/system/js/fields/calendar-locales/date/gregorian/date-helper.js" type="text/javascript"></script>';
 		echo '<script src="'.$root.'/media/system/js/fields/calendar.js" type="text/javascript"></script>';
+	}
+
+	// getTextFromOptions
+	public static function getTextFromOptions( $field, $value, $config )
+	{
+		$options2	=	json_decode( $field->options2 );
+
+		if ( !( isset( $options2->time ) && (int)$options2->time ) ) {
+			$value	=	JFactory::getDate( $value )->format( 'Y-m-d' );
+		}
+
+		return $value;
 	}
 
 	// isFriendly

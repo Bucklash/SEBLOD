@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -14,7 +14,7 @@ defined( '_JEXEC' ) or die;
 class CCKViewForm extends JViewLegacy
 {
 	// display
-	public function display( $tpl = NULL )
+	public function display( $tpl = null )
 	{
 		$app					=	JFactory::getApplication();
 		$layout					=	$app->input->get( 'tmpl' );
@@ -51,6 +51,7 @@ class CCKViewForm extends JViewLegacy
 		$this->return_page	=	$app->input->getBase64( 'return' );
 		$option				=	$this->option;
 		$params				=	$app->getParams();
+		$session			=	JFactory::getSession();
 		$view				=	$this->getName();
 		
 		$live				=	urldecode( $params->get( 'live' ) );
@@ -77,7 +78,7 @@ class CCKViewForm extends JViewLegacy
 		} elseif ( $config->get( 'sitename_pagetitles', 0 ) == 2 ) {
 			$title	=	JText::sprintf( 'JPAGETITLE', $title, $config->get( 'sitename' ) );
 		}
-		$config		=	NULL;
+		$config		=	null;
 		$this->document->setTitle( $title );
 		
 		if ( $params->get( 'menu-meta_description' ) ) {
@@ -97,10 +98,10 @@ class CCKViewForm extends JViewLegacy
 		include JPATH_SITE.'/libraries/cck/base/form/form_inc.php';
 		$unique	=	$preconfig['formId'].'_'.@$type->name;
 		
-		if ( isset( $config['id'] ) ) {
-			JFactory::getSession()->set( 'cck_hash_'.$unique, JApplication::getHash( $id.'|'.$type->name.'|'.$config['id'].'|'.$config['copyfrom_id'] ) );
-		}
-		
+		$session->set( 'cck_hash_'.$unique, JApplication::getHash( (int)$id.'|'.@$type->name.'|'.@(int)$config['id'].'|'.@(int)$config['copyfrom_id'] ) );
+		$session->set( 'cck_hash_'.$unique.'_context', json_encode( $config['context'] ) );
+		$session->set( 'cck_task', 'form' );
+
 		// Set
 		if ( !is_object( @$options ) ) {
 			$options	=	new JRegistry;
@@ -111,6 +112,8 @@ class CCKViewForm extends JViewLegacy
 			if ( is_object( $type ) ) {
 				$this->title		=	JText::_( 'APP_CCK_FORM_'.$type->name.'_TITLE_'.( ( isset( $config['isNew'] ) && $config['isNew'] ) ? 'ADD' : 'EDIT' ) );
 			}
+		} elseif ( $params->get( 'display_form_title', '' ) == '3' ) {
+			$this->title				=	JText::_( 'COM_CCK_' . str_replace( ' ', '_', trim( $params->get( 'title_form_title', '' ) ) ) );
 		} elseif ( $params->get( 'display_form_title', '' ) == '1' ) {
 			$this->title			=	$params->get( 'title_form_title', '' );
 		} elseif ( $params->get( 'display_form_title', '' ) == '0' ) {

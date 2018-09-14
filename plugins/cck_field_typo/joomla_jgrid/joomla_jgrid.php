@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -45,7 +45,7 @@ class plgCCK_Field_TypoJoomla_Jgrid extends JCckPluginTypo
 		}
 
 		static $i		=	0;
-		static $formId	=	NULL;
+		static $formId	=	null;
 		static $pks		=	array();
 		$pk				=	$config['pk'];
 		if ( !isset( $pks[$pk] ) ) {
@@ -56,44 +56,7 @@ class plgCCK_Field_TypoJoomla_Jgrid extends JCckPluginTypo
 		switch ( $type ) {
 			case 'activation':
 			case 'block':
-				static $loaded_users	=	0;
-				static $user			=	NULL;
-				if ( !$loaded_users ) {
-					require_once JPATH_ADMINISTRATOR.'/components/com_users/helpers/html/users.php';
-					$loaded_users		=	1;
-					$user				=	JFactory::getUser();
-				}
-				if ( $type == 'activation' ) {
-					$activated	=	empty( $value ) ? 0 : 1;
-					$title		=	( $activated == 0 ) ? 'COM_CCK_ACTIVATED' : 'COM_CCK_UNACTIVATED';
-					$value		=	JHtml::_('jgrid.state', JHtmlUsers::activateStates(), $activated, $pks[$pk], 'users.', false /*(boolean)$activated*/ );
-					$value		=	str_replace( array( 'title=""', 'title="COM_USERS_ACTIVATED"' ), 'title="'.JText::_( $title ).'"', $value );
-						
-					if ( !( $class == '' || $class == 'btn btn-micro hasTooltip' ) ) {
-						$class	.=	' disabled';
-						$value	=	preg_replace( '#class="[a-zA-Z0-9\-\ ]*" #U', 'class="'.$class.'"', $value );
-					}
-					/*
-					$value		=	str_replace( 'return listItemTask(', 'return JCck.Core.doTask(', $value );
-					$value		=	str_replace( '\'users.activate\'', '\'update.activate\', document.getElementById(\''.$formId.'\')', $value );
-					*/
-				} else {
-					$value		=	$field->value;
-					$self		=	$user->id == $pk;
-					$title		=	( $value == 1 ) ? 'COM_CCK_BLOCKED' : 'COM_CCK_ENABLED';
-					$value		=	JHtml::_( 'jgrid.state', JHtmlUsers::blockStates(), $value, $pks[$pk], 'users.', false /*!$self*/ );
-					$value		=	str_replace( 'title=""', 'title="'.JText::_( $title ).'"', $value );
-
-					if ( !( $class == '' || $class == 'btn btn-micro hasTooltip' ) ) {
-						$class	.=	' disabled';
-						$value	=	preg_replace( '#class="[a-zA-Z0-9\-\ ]*" #U', 'class="'.$class.'"', $value );
-					}
-					/*
-					$value		=	str_replace( 'return listItemTask(', 'return JCck.listItemTask(', $value );
-					$value	=	str_replace( '\'users.block\'', '\'update.block\', document.getElementById(\''.$formId.'\')', $value );
-					$value	=	str_replace( '\'users.unblock\'', '\'update.unblock\', document.getElementById(\''.$formId.'\')', $value );
-					*/
-				}
+				parent::g_addProcess( 'beforeRenderContent', self::$type, $config, array( 'name'=>$field->name, 'type'=>$type, 'value'=>$value, 'class'=>$class, 'pk'=>$pk, 'pk_i'=>$pks[$pk] ) );
 
 				$config['formWrapper']	=	true;
 				break;
@@ -104,7 +67,7 @@ class plgCCK_Field_TypoJoomla_Jgrid extends JCckPluginTypo
 				if ( !isset( $dropdown[$pk] ) ) {
 					$class	=	$typo->get( 'class1', '' );
 					$class	=	$class ? ' '.$class : '';
-					$value	=	'<button data-toggle="dropdown" class="dropdown-toggle btn'.$class.'"><span class="caret"></span></button>'
+					$value	=	'<button type="button" data-toggle="dropdown" class="dropdown-toggle btn'.$class.'"><span class="caret"></span></button>'
 							.	'<ul class="dropdown-menu flex-column-reverse"></ul>';
 
 					$dropdown[$pk]		=	array( 'parent'=>$field->name, 'html'=>'' );
@@ -142,9 +105,14 @@ class plgCCK_Field_TypoJoomla_Jgrid extends JCckPluginTypo
 			case 'form':
 			case 'form_disabled':
 			case 'form_hidden':
-				$class			=	$typo->get( 'class2', '' );
+				$class				=	$typo->get( 'class2', '' );
+				$unset_validation	=	false;
+
 				if ( !isset( $config['doValidation'] ) ) {
 					$config['doValidation']	=	0;
+					$unset_validation		=	true;
+				} else {
+					$doValidation	=	$config['doValidation'];
 				}
 				$hasIdentifier		=	$typo->get( 'use_identifier', '1' );
 				$identifier			=	( $typo->get( 'identifier', 'id' ) == 'pk' ) ? $config['pk'] : $config['id'];
@@ -180,12 +148,38 @@ class plgCCK_Field_TypoJoomla_Jgrid extends JCckPluginTypo
 					$field->variation	=	'disabled';
 				} elseif ( $type == 'form_hidden' ) {
 					$field->variation	=	'hidden';
+				} else {
+					if ( $typo->get( 'required' ) == 'required' ) {
+						// JFactory::getLanguage()->load( 'plg_cck_field_validation_required', JPATH_ADMINISTRATOR );
+
+						// require_once JPATH_PLUGINS.'/cck_field_validation/required/required.php';
+
+						$config['doValidation']	=	2;
+						$field->required		=	'required';
+						$field->required_alert	=	'';
+					}
 				}
 				JEventDispatcher::getInstance()->trigger( 'onCCK_FieldPrepareForm', array( &$field, $field->value, &$config, $inherit ) );
-				$field->form		=	JCck::callFunc_Array( 'plgCCK_Field'.$field->type, 'onCCK_FieldRenderForm', array( $field, &$config ) );
-				$value				=	$field->form;
-
+				
+				$field->form			=	JCck::callFunc_Array( 'plgCCK_Field'.$field->type, 'onCCK_FieldRenderForm', array( $field, &$config ) );
+				$value					=	$field->form;
 				$config['formWrapper']	=	true;
+
+				if ( $config['doValidation'] ) {
+					// static $validation_loaded	=	0;
+					
+					// if ( !$validation_loaded )	{
+					// 	$validation_loaded		=	1;
+						
+					// 	JCckDev::addValidation( ( count( $config['validation'] ) ? implode( ',', $config['validation'] ) : '' ), '', '_' );
+					// }
+				}
+
+				if ( $unset_validation ) {
+					unset( $config['doValidation'] );
+				} else {
+					$config['doValidation']	=	$doValidation;
+				}
 				break;
 			case 'increment':
 				$identifier_name	=	$typo->get( 'identifier_name', '' );
@@ -205,12 +199,14 @@ class plgCCK_Field_TypoJoomla_Jgrid extends JCckPluginTypo
 				if ( !$formId ) {
 					$formId	=	( @$config['formId'] != '' ) ? $config['formId'] : 'seblod_form';
 				}
+				$class		=	$typo->get( 'class1', '' );
+				$class		=	$class ? ' class="' . $class . '"' : '';
 				$value		=	JHtml::_( 'grid.id', $pks[$pk], $value );
 				$value		=	str_replace( ' />', ' data-cck-remove-before-search="" />', $value );
 				if ( $typo->get( 'trigger' ) ) {
-					$value	=	str_replace( 'this.checked);"', 'this.checked, document.getElementById(\''.$formId.'\')); jQuery(\'#boxchecked\').trigger(\'change\');"', $value );
+					$value	=	str_replace( 'this.checked);"', 'this.checked, document.getElementById(\''.$formId.'\')); jQuery(\'#boxchecked\').trigger(\'change\');"' . $class, $value );
 				} else {					
-					$value	=	str_replace( 'this.checked', 'this.checked, document.getElementById(\''.$formId.'\')', $value );
+					$value	=	str_replace( 'this.checked);"', 'this.checked, document.getElementById(\''.$formId.'\'));"' . $class, $value );
 				}
 
 				$config['formWrapper']	=	true;
@@ -219,8 +215,11 @@ class plgCCK_Field_TypoJoomla_Jgrid extends JCckPluginTypo
 				$value		=	'<label for="cb'.$pks[$pk].'">'.$value.'</label>';
 				break;
 			case 'sort':
+			case 'sort_grip':
+				$canDo			=	false;
 				$parentId		=	$config['parent_id'];
 				static $orders	=	array();
+				static $user	=	null;
 
 				if ( !isset( $orders[$parentId] ) ) {
 					$orders[$parentId]	=	0;
@@ -228,25 +227,56 @@ class plgCCK_Field_TypoJoomla_Jgrid extends JCckPluginTypo
 				$orders[$parentId]++;
 				$order			=	$orders[$parentId];
 
-				static $loaded 	= 	false;
-				$listDir		=	'asc';
+				if ( $type == 'sort' ) {
+					static $loaded 	= 	false;
+					static $can		=	array();
 
-				if ( !$loaded ) {
-					if ( ( isset( $field->state ) && $field->state ) || !isset( $field->state ) ) {
-						$app			=	JFactory::getApplication();
-						$formId			=	( @$config['formId'] != '' ) ? $config['formId'] : 'seblod_form';
-						$tableWrapper	=	$formId . ' table.table';
-						$saveOrderUrl	=	JRoute::_( 'index.php?option=com_cck&task=saveOrderAjax&tmpl=component', false );
-						JHtml::_( 'sortablelist.sortable', $tableWrapper, $formId, $listDir, $saveOrderUrl, false, true );
-						$loaded			= 	true;
+					if ( !isset( $can[$config['type_id']] ) ) {
+						$user				=	JFactory::getUser();
+						$can				=	array( $config['type_id']=>array(
+													'edit'=>$user->authorise( 'core.edit', 'com_cck.form.'.$config['type_id'] ),
+													'edit.own'=>$user->authorise( 'core.edit.own', 'com_cck.form.'.$config['type_id'] )
+												) );
 					}
+					if ( $can[$config['type_id']]['edit'] && $can[$config['type_id']]['edit.own']
+						|| ( $can[$config['type_id']]['edit'] && !$can[$config['type_id']]['edit.own'] && ( $config['author'] != $user->id ) )
+						|| ( $can[$config['type_id']]['edit.own'] && ( $config['author'] == $user->id ) ) ) {
+						$canDo	=	true;
+					}
+
+					if ( !$loaded && $canDo ) {
+						if ( ( isset( $field->state ) && $field->state ) || !isset( $field->state ) ) {
+							$app			=	JFactory::getApplication();
+							$formId			=	( @$config['formId'] != '' ) ? $config['formId'] : 'seblod_form';
+							$listDir		=	'asc';
+							$loaded			= 	true;
+							$tableWrapper	=	$formId . ' table.table';
+							
+							$task			=	$typo->get( 'task', '' );
+							$task_id		=	$typo->get( 'task_id_process', '' );
+
+							if ( $task == 'process_ajax' && $task_id ) {
+								$saveOrderUrl	=	JCckDevHelper::getAbsoluteUrl( 'auto', 'task=processAjax&format=raw&tid='.$task_id.'&'.JSession::getFormToken().'=1' );
+							} else {
+								$saveOrderUrl	=	JRoute::_( 'index.php?option=com_cck&task=saveOrderAjax&tmpl=component&'.JSession::getFormToken().'=1', false );
+							}
+
+							JHtml::_( 'sortablelist.sortable', $tableWrapper, $formId, $listDir, $saveOrderUrl, false, true );
+						}
+					}
+				} else {
+					$canDo	=	true;
 				}
 
-				$value 	= 	'<span class="sortable-handler">'
-						.	'<span class="icon-menu"></span>'
-						.	'<input type="text" style="display:none" name="order[]" size="5" value="'.$order.'" data-cck-remove-before-search="" />'
-						.	'</span>';
-
+				if ( $canDo ) {
+					$value 	= 	'<span class="sortable-handler">'
+							.	'<span class="icon-menu"></span>'
+							.	'<input type="text" style="display:none" name="order[]" size="5" value="'.$order.'" data-cck-remove-before-search="" />'
+							.	'</span>';
+				} else {
+					$value	=	'<input type="text" style="display:none" name="order[]" size="5" value="'.$order.'" data-cck-remove-before-search="" />';
+				}
+				
 				$config['formWrapper']	=	true;
 				break;
 			case 'state':
@@ -339,6 +369,88 @@ class plgCCK_Field_TypoJoomla_Jgrid extends JCckPluginTypo
 					}
 					$value		=	preg_replace( '#class="[a-zA-Z0-9\-\ ]*" title#U', 'class="'.$class.'" title', $value );
 				}
+				$fields[$name]->typo	=	$value;
+			}
+		} elseif ( $type == 'block' || $type == 'activation' ) {
+			static $loaded_users	=	0;
+			static $user			=	null;
+			if ( !$loaded_users ) {
+				require_once JPATH_ADMINISTRATOR.'/components/com_users/helpers/html/users.php';
+				$loaded_users		=	1;
+				$user				=	JFactory::getUser();
+			}
+			$class		=	$process['class'];
+
+			if ( $type == 'activation' ) {
+				$activated	=	empty( $fields[$name]->value ) ? 0 : 1;
+				$title		=	( $activated == 0 ) ? 'COM_CCK_ACTIVATED' : 'COM_CCK_UNACTIVATED';
+				$value		=	JHtml::_('jgrid.state', JHtmlUsers::activateStates(), $activated, $process['pk_i'], 'users.', false /*(boolean)$activated*/ );
+
+				if ( $fields[$name]->link && $activated ) {
+					$hasLink		=	true;
+					$value			=	str_replace( '<a ', '<a href="'.$fields[$name]->link.'"', $value );
+				} else {
+					$hasLink		=	false;
+				}
+				
+				// if ( !( $class == '' || $class == 'btn btn-micro hasTooltip' ) ) {
+					// $class	.=	' disabled';
+					// $value	=	preg_replace( '#class="[a-zA-Z0-9\-\ ]*" #U', 'class="'.$class.'"', $value );
+				// }
+				if ( !( $class == '' || $class == 'btn btn-micro hasTooltip' ) ) {
+					if ( !$hasLink ) {
+						$class	.=	' disabled';
+					} else {
+						if ( $activated ) {
+							$class	=	str_replace( ' disabled', '', $class );
+						}
+					}
+					if ( $hasLink && isset( $fields[$name]->link_title ) && $fields[$name]->link_title ) {
+						$value	=	preg_replace( '#title=".*"#U', 'title="'.$fields[$name]->link_title.'"', $value );
+					} else {
+						$value	=	str_replace( array( 'title=""', 'title="COM_USERS_ACTIVATED"' ), 'title="'.JText::_( $title ).'"', $value );
+					}
+					$value		=	preg_replace( '#class="[a-zA-Z0-9\-\ ]*" #U', 'class="'.$class.'"', $value );
+				}
+				/*
+				$value		=	str_replace( 'return listItemTask(', 'return JCck.Core.doTask(', $value );
+				$value		=	str_replace( '\'users.activate\'', '\'update.activate\', document.getElementById(\''.$formId.'\')', $value );
+				*/
+				$fields[$name]->typo	=	$value;
+			} else {
+				$value		=	$fields[$name]->value;
+				$self		=	$user->id == $process['pk'];
+				$title		=	( $value == 1 ) ? 'COM_CCK_BLOCKED' : 'COM_CCK_ENABLED';
+				$value		=	JHtml::_( 'jgrid.state', JHtmlUsers::blockStates(), $value, $process['pk_i'], 'users.', false /*!$self*/ );
+
+				if ( $fields[$name]->link ) {
+					$hasLink		=	true;
+					$value			=	str_replace( '<a ', '<a href="'.$fields[$name]->link.'"', $value );
+				} else {
+					$hasLink		=	false;
+				}
+				// if ( !( $class == '' || $class == 'btn btn-micro hasTooltip' ) ) {
+					// $class	.=	' disabled';
+					// $value	=	preg_replace( '#class="[a-zA-Z0-9\-\ ]*" #U', 'class="'.$class.'"', $value );
+				// }
+				if ( !( $class == '' || $class == 'btn btn-micro hasTooltip' ) ) {
+					if ( !$hasLink ) {
+						$class	.=	' disabled';
+					} else {
+						$class	=	str_replace( ' disabled', '', $class );
+					}
+					if ( $hasLink && isset( $fields[$name]->link_title ) && $fields[$name]->link_title ) {
+						$value	=	preg_replace( '#title=".*"#U', 'title="'.$fields[$name]->link_title.'"', $value );
+					} else {
+						$value	=	str_replace( 'title=""', 'title="'.JText::_( $title ).'"', $value );
+					}
+					$value		=	preg_replace( '#class="[a-zA-Z0-9\-\ ]*" #U', 'class="'.$class.'"', $value );
+				}
+				/*
+				$value		=	str_replace( 'return listItemTask(', 'return JCck.listItemTask(', $value );
+				$value	=	str_replace( '\'users.block\'', '\'update.block\', document.getElementById(\''.$formId.'\')', $value );
+				$value	=	str_replace( '\'users.unblock\'', '\'update.unblock\', document.getElementById(\''.$formId.'\')', $value );
+				*/
 				$fields[$name]->typo	=	$value;
 			}
 		} elseif ( $type == 'dropdown' ) {

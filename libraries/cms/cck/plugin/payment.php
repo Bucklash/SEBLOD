@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -60,6 +60,7 @@ class JCckPluginPayment extends JPlugin
 			$processing =   JCckDatabaseCache::loadObjectListArray( 'SELECT type, scriptfile, options FROM #__cck_more_processings WHERE published = 1 ORDER BY ordering', 'type' );
 
 			if ( isset( $processing[$event] ) ) {
+				ob_start();
 				foreach ( $processing[$event] as $p ) {
 					if ( is_file( JPATH_SITE.$p->scriptfile ) ) {
 						$options	=	new JRegistry( $p->options );
@@ -67,6 +68,7 @@ class JCckPluginPayment extends JPlugin
 						include_once JPATH_SITE.$p->scriptfile;
 					}
 				}
+				ob_end_clean();
 			}
 		}
 	}

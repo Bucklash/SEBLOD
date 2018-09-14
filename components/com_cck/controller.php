@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -31,6 +31,68 @@ class CCKController extends JControllerLegacy
 		$this->registerTask( 'save4later', 'save' );
 	}
 
+	// ajax
+	public function ajax()
+	{
+		JSession::checkToken( 'get' ) or jexit( JText::_( 'JINVALID_TOKEN' ) );
+
+		$app	=	JFactory::getApplication();
+		$file	=	$app->input->getString( 'file', '' );
+
+		if ( $file != '' ) {
+			if ( JCckDevHelper::checkAjaxScript( $file ) ) {
+				$file	=	JPATH_ROOT.'/'.$file;
+
+				jimport( 'joomla.filesystem.file' );
+
+				if ( is_file( $file ) && JFile::getExt( $file ) == 'php' ) {
+					include_once $file;
+				}
+			}
+		}
+	}
+
+	// cancel
+	public function cancel( $key = 'config' )
+	{
+		JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
+		
+		$app	=	JFactory::getApplication();
+		$config	=	$app->input->post->get( $key, array(), 'array' );
+		$id		=	(int)$config['id'];
+		
+		if ( $id > 0 ) {
+			$core	=	JCckDatabase::loadObject( 'SELECT pk, storage_location as location FROM #__cck_core WHERE id = '.(int)$id );
+			if ( $core->location != '' ) {
+				require_once JPATH_SITE.'/plugins/cck_storage_location/'.$core->location.'/'.$core->location.'.php';
+				JCck::callFunc( 'plgCCK_Storage_Location'.$core->location, 'checkIn', $core->pk );
+			}
+		}
+		
+		$this->setRedirect( $this->_getReturnPage() );
+	}
+	
+	// delete
+	public function delete()
+	{
+		JSession::checkToken( 'get' ) or jexit( JText::_( 'JINVALID_TOKEN' ) );
+		
+		$app	=	JFactory::getApplication();
+		$model	=	$this->getModel( 'list' );
+		$cid	=	$app->input->get( 'cid', array(), 'array' );
+		$cid	=	ArrayHelper::toInteger( $cid );
+		
+		if ( $nb = $model->delete( $cid ) ) {
+			$msg		=	JText::_( 'COM_CCK_SUCCESSFULLY_DELETED' ); /* TODO#SEBLOD: JText::plural( 'COM_CCK_N_SUCCESSFULLY_DELETED', $nb ); */
+			$msgType	=	'message';
+		} else {
+			$msg		=	JText::_( 'JERROR_AN_ERROR_HAS_OCCURRED' );
+			$msgType	=	'error';
+		}
+		
+		$this->setRedirect( $this->_getReturnPage(), $msg, $msgType );
+	}
+	
 	// display
 	public function display( $cachable = false, $urlparams = false )
 	{
@@ -62,73 +124,14 @@ class CCKController extends JControllerLegacy
 
 		parent::display( $cachable, $safeurlparams );
 	}
-	
-	// ajax
-	public function ajax()
-    {
-		$app	=	JFactory::getApplication();
-		$file	=	$app->input->getString( 'file', '' );
-		$file	=	JPATH_SITE.'/'.$file;
 
-		jimport('joomla.filesystem.file');
-
-		if ( is_file( $file ) && JFile::getExt( $file ) == 'php' ) {
-			include_once $file;
-		}
-	}
-	
-	// cancel
-	public function cancel( $key = 'config' )
-	{
-		JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
-		
-		$app	=	JFactory::getApplication();
-		$config	=	$app->input->post->get( $key, array(), 'array' );
-		$id		=	(int)$config['id'];
-		
-		if ( $id > 0 ) {
-			$core	=	JCckDatabase::loadObject( 'SELECT pk, storage_location as location FROM #__cck_core WHERE id = '.(int)$id );
-			if ( $core->location != '' ) {
-				require_once JPATH_SITE.'/plugins/cck_storage_location/'.$core->location.'/'.$core->location.'.php';
-				JCck::callFunc( 'plgCCK_Storage_Location'.$core->location, 'checkIn', $core->pk );
-			}
-		}
-		
-		$this->setRedirect( $this->_getReturnPage() );
-	}
-	
-	// delete
-	public function delete()
-	{
-		// JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
-		
-		$app	=	JFactory::getApplication();
-		$model	=	$this->getModel( 'list' );
-		$cid	=	$app->input->get( 'cid', array(), 'array' );
-		$cid	=	ArrayHelper::toInteger( $cid );
-		
-		if ( $nb = $model->delete( $cid ) ) {
-			$msg		=	JText::_( 'COM_CCK_SUCCESSFULLY_DELETED' ); // todo: JText::plural( 'COM_CCK_N_SUCCESSFULLY_DELETED', $nb );
-			$msgType	=	'message';
-		} else {
-			$msg		=	JText::_( 'JERROR_AN_ERROR_HAS_OCCURRED' );
-			$msgType	=	'error';
-		}
-		
-		$this->setRedirect( $this->_getReturnPage(), $msg, $msgType );
-	}
-	
 	// download
 	public function download()
 	{
-		$app		=	JFactory::getApplication();
-		$id			=	$app->input->getInt( 'id', 0 );
-		$fieldname	=	$app->input->getString( 'file', '' );
-		$collection	=	$app->input->get( 'collection', '' );
-		$xi			=	$app->input->getInt( 'xi', 0 );
-		$client		=	$app->input->get( 'client', 'content' );
-		$restricted	=	'';
-		$user		=	JFactory::getUser();
+		$app			=	JFactory::getApplication();
+		$id				=	$app->input->getInt( 'id', 0 );
+		$fieldname		=	$app->input->getString( 'file', '' );
+		$to_be_erased	=	false;
 		
 		if ( ! $id ) {
 			$file	=	$fieldname;
@@ -143,6 +146,9 @@ class CCKController extends JControllerLegacy
 				if ( count( $paths ) ) {
 					$paths[]	=	'tmp/';
 					foreach ( $paths as $p ) {
+						if ( empty( $p ) ) {
+							continue;
+						}
 						if ( strpos( $path, JPATH_ROOT.'/'.$p ) !== false ) {
 							$allowed	=	true;
 							break;
@@ -152,140 +158,47 @@ class CCKController extends JControllerLegacy
 				if ( !$allowed ) {
 					$this->setRedirect( JUri::root(), JText::_( 'COM_CCK_ALERT_FILE_NOT_AUTH' ), "error" );
 					return;
+				} else {
+					$to_be_erased	=	true;
 				}
 			} elseif ( strpos( $path, JPATH_ROOT.'/tmp/' ) === false ) {
 				$this->setRedirect( JUri::root(), JText::_( 'COM_CCK_ALERT_FILE_NOT_AUTH' ), "error" );
 				return;
+			} else {
+				$to_be_erased	=	true;
+			}
+			if ( $to_be_erased ) {
+				if ( strpos( $path, JPATH_ROOT.'/tmp/' ) === false ) {
+					$to_be_erased	=	false;
+					$paths			=	JCck::getConfig_Param( 'media_paths_tmp', '' );
+
+					if ( $paths != '' ) {
+						$paths			=	strtr( $paths, array( "\r\n"=>'<br />', "\r"=>'<br />', "\n"=>'<br />' ) );
+						$paths			=	explode( '<br />', $paths );
+
+						if ( count( $paths ) ) {
+							foreach ( $paths as $p ) {
+								if ( empty( $p ) ) {
+									continue;
+								}
+								if ( strpos( $path, JPATH_ROOT.'/'.$p ) !== false ) {
+									$to_be_erased	=	true;
+									break;
+								}
+							}
+						}
+					}
+				}
 			}
 		} else {
-			$field		=	JCckDatabase::loadObject( 'SELECT a.* FROM #__cck_core_fields AS a WHERE a.name="'.JCckDatabase::escape( ( ( $collection != '' ) ? $collection : $fieldname ) ).'"' ); //#
-			$query		=	'SELECT a.id, a.pk, a.author_id, a.cck as type, a.storage_location, b.'.$field->storage_field.' as value, c.id as type_id, a.store_id'
-						.	' FROM #__cck_core AS a'
-						.	' LEFT JOIN '.$field->storage_table.' AS b on b.id = a.pk'
-						.	' LEFT JOIN #__cck_core_types AS c on c.name = a.cck'
-						.	' WHERE a.id ='.(int)$id;
-			$core		=	JCckDatabase::loadObject( $query );
+			$config	=	JCckDevHelper::getDownloadInfo( $id, $fieldname );
 
-			if ( !is_object( $core ) ) {
-				$this->setRedirect( JUri::root(), JText::_( 'COM_CCK_ALERT_FILE_DOESNT_EXIST' ), 'error' );
-				return;
-			}
-			JPluginHelper::importPlugin( 'cck_storage_location' );
-
-			if ( !JCck::callFunc_Array( 'plgCCK_Storage_Location'.$core->storage_location, 'access', array( $core->pk, false ) ) ) {
-				$this->setRedirect( JUri::root(), JText::_( 'COM_CCK_ALERT_FILE_DOESNT_EXIST' ), 'error' );
-				return;
+			if ( $config === false || isset( $config['error'] ) && $config['error'] ) {
+				$this->setRedirect( JUri::root(), $config['message'], "error" );
+				return;	
 			}
 
-			JPluginHelper::importPlugin( 'cck_storage' );
-			JPluginHelper::importPlugin( 'cck_field' );
-
-			$config		=	array(
-								'author'=>$core->author_id,
-								'client'=>$client,
-								'collection'=>$collection,
-								'fieldname'=>$fieldname,
-								'id'=>$core->id,
-								'isNew'=>0,
-								'location'=>$core->storage_location,
-								'pk'=>$core->pk,
-								'pkb'=>0,
-								'store_id'=>$core->store_id,
-								'storages'=>array(),
-								'task'=>'download',
-								'type'=>$core->type,
-								'type_id'=>$core->type_id,
-								'xi'=>$xi
-							);
-			$dispatcher		=	JEventDispatcher::getInstance();
-			$field->value	=	$core->value;
-			$pk				=	$core->pk;
-			$value			=	'';
-			
-			$dispatcher->trigger( 'onCCK_StoragePrepareDownload', array( &$field, &$value, &$config ) );
-			
-			// Access
-			$clients	=	JCckDatabase::loadObjectList( 'SELECT a.fieldid, a.client, a.access, a.restriction, a.restriction_options FROM #__cck_core_type_field AS a LEFT JOIN #__cck_core_types AS b ON b.id = a.typeid'
-														. ' WHERE a.fieldid = '.(int)$field->id.' AND b.name="'.(string)$config['type'].'"', 'client' );
-			$access		=	( isset( $clients[$client]->access ) ) ? (int)$clients[$client]->access : 0;
-			$autorised	=	$user->getAuthorisedViewLevels();
-			$restricted	=	( isset( $clients[$client]->restriction ) ) ? $clients[$client]->restriction : '';
-			if ( !( $access > 0 && array_search( $access, $autorised ) !== false ) ) {
-				$this->setRedirect( JUri::root(), JText::_( 'COM_CCK_ALERT_FILE_NOT_AUTH' ), "error" );
-				return;
-			}
-			
-			if ( $restricted ) {
-				JPluginHelper::importPlugin( 'cck_field_restriction' );
-				$field->restriction			=	$restricted;
-				$field->restriction_options	=	$clients[$client]->restriction_options;
-				$allowed	=	JCck::callFunc_Array( 'plgCCK_Field_Restriction'.$restricted, 'onCCK_Field_RestrictionPrepareContent', array( &$field, &$config ) );
-				
-				if ( $allowed ) {
-					require_once JPATH_LIBRARIES.'/cck/base/form/form.php';
-
-					$name		=	$field->name;
-					$parent		=	JCckDatabase::loadResult( 'SELECT parent FROM #__cck_core_types WHERE name = "'.(string)$config['type'].'"' );
-					$fields		=	CCK_Form::getFields( array( $config['type'], $parent ), $config['client'], -1, '', true );
-					
-					if ( count( $fields ) ) {
-						foreach ( $fields as $field2 ) {
-							$value2	=	'';
-
-							if ( $field2->name ) {
-								$Pt	=	$field2->storage_table;
-								if ( $Pt && ! isset( $config['storages'][$Pt] ) ) {
-									$config['storages'][$Pt]	=	'';
-									$dispatcher->trigger( 'onCCK_Storage_LocationPrepareContent', array( &$field2, &$config['storages'][$Pt], $config['pk'], &$config ) );
-								}
-								
-								$dispatcher->trigger( 'onCCK_StoragePrepareContent', array( &$field2, &$value2, &$config['storages'][$Pt] ) );
-								if ( is_string( $value2 ) ) {
-									$value2		=	trim( $value2 );
-								}
-								
-								$dispatcher->trigger( 'onCCK_FieldPrepareContent', array( &$field2, $value2, &$config ) );
-
-								// Was it the last one?
-								// if ( $config['error'] ) {
-									// break;
-								// }
-							}
-						}
-					}
-					
-					// Merge
-					if ( count( $config['fields'] ) ) {
-						foreach ( $config['fields'] as $k=>$v ) {
-							if ( $v->restriction != 'unset' ) {
-								$fields[$k]	=	$v;
-							}
-						}
-						$config['fields']	=	NULL;
-						unset( $config['fields'] );
-					}
-
-					if ( isset( $config['process']['beforeRenderContent'] ) && count( $config['process']['beforeRenderContent'] ) ) {
-						JCckDevHelper::sortObjectsByProperty( $config['process']['beforeRenderContent'], 'priority' );
-
-						foreach ( $config['process']['beforeRenderContent'] as $process ) {
-							if ( $process->type ) {
-								JCck::callFunc_Array( 'plg'.$process->group.$process->type, 'on'.$process->group.'BeforeRenderContent', array( $process->params, &$fields, &$config['storages'], &$config ) );
-							}
-						}
-					}
-
-					$allowed	=	(bool)$fields[$name]->state;
-				}
-
-				if ( $allowed !== true ) {
-					$this->setRedirect( JUri::root(), JText::_( 'COM_CCK_ALERT_FILE_NOT_AUTH' ), "error" );
-					return;
-				}
-			}
-			$field		=	JCckDatabase::loadObject( 'SELECT a.* FROM #__cck_core_fields AS a WHERE a.name="'.JCckDatabase::escape( $fieldname ).'"' ); //#
-			$dispatcher->trigger( 'onCCK_FieldPrepareDownload', array( &$field, $value, &$config ) );
-			$file		=	$field->filename;
+			$file	=	( isset( $config['file'] ) ) ? $config['file'] : '';
 		}
 
 		$path	=	JPATH_ROOT.'/'.$file;
@@ -298,8 +211,7 @@ class CCKController extends JControllerLegacy
 			}
 			$name	=	substr( $path, strrpos( $path, '/' ) + 1, strrpos( $path, '.' ) );
 			if ( $path ) {
-				$task2	=	isset( $field->task ) ? $field->task : 'download';
-				if ( $task2 == 'read' ) {
+				if ( isset( $config['task2'] ) && $config['task2'] == 'read' ) {
 					$this->setRedirect( JUri::root( true ).'/'.$file );
 				} else {
 					if ( $id ) {
@@ -316,7 +228,7 @@ class CCKController extends JControllerLegacy
 								}
 							}
 						}
-						$this->_download_hits( $id, $fieldname, $collection, $xi );
+						$this->_download_hits( $id, $fieldname, $config['collection'], $config['xi'] );
 
 						JCckDatabase::execute( 'UPDATE #__cck_core SET download_hits = download_hits+1 WHERE id = '.(int)$config['id'] );
 					}
@@ -333,7 +245,9 @@ class CCKController extends JControllerLegacy
 	// export
 	public function export()
 	{
-		// JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
+		if ( !JSession::checkToken( 'get' ) ) {
+			JSession::checkToken( 'post' ) or jexit( JText::_( 'JINVALID_TOKEN' ) );
+		}
 		
 		if ( !is_file( JPATH_ADMINISTRATOR.'/components/com_cck_exporter/models/cck_exporter.php' ) ) {
 			$this->setRedirect( $this->_getReturnPage(), JText::_( 'JERROR_AN_ERROR_HAS_OCCURRED' ), 'error' );
@@ -365,6 +279,8 @@ class CCKController extends JControllerLegacy
 	// exportAjax
 	public function exportAjax()
 	{
+		JSession::checkToken( 'get' ) or jexit( JText::_( 'JINVALID_TOKEN' ) );
+
 		if ( !is_file( JPATH_ADMINISTRATOR.'/components/com_cck_exporter/models/cck_exporter.php' ) ) {
 			$this->setRedirect( $this->_getReturnPage(), JText::_( 'JERROR_AN_ERROR_HAS_OCCURRED' ), 'error' );
 			return;
@@ -400,7 +316,7 @@ class CCKController extends JControllerLegacy
 		echo json_encode( $return );
 	}
 
-	// getRoute
+	// getRoute (deprecated)
 	public function getRoute()
 	{
 		$app		=	JFactory::getApplication();
@@ -439,45 +355,31 @@ class CCKController extends JControllerLegacy
 		echo JCck::callFunc_Array( 'plgCCK_Storage_Location'.$location, 'getRoute', array( $pk, $sef, $itemId, array( 'type'=>$type ) ) );
 	}
 
-	// processAjax
-	public function processAjax()
+	// outputMessage
+	public function outputMessage()
 	{
-		if ( !is_file( JPATH_ADMINISTRATOR.'/components/com_cck_toolbox/models/cck_toolbox.php' ) ) {
-			$this->setRedirect( $this->_getReturnPage(), JText::_( 'JERROR_AN_ERROR_HAS_OCCURRED' ), 'error' );
-			return;
-		}
-		
-		$app		=	JFactory::getApplication();
-		$config		=	array();
-		$ids		=	$app->input->get( 'cid', array(), 'array' );
-		$task_id	=	$app->input->getInt( 'tid', 0 );
-		$ids		=	ArrayHelper::toInteger( $ids );
-		
-		require_once JPATH_ADMINISTRATOR.'/components/com_cck_toolbox/models/cck_toolbox.php';
-		$model		=	JModelLegacy::getInstance( 'CCK_Toolbox', 'CCK_ToolboxModel' );
-		$params		=	JComponentHelper::getParams( 'com_cck_toolbox' );
+		JSession::checkToken( 'get' ) or jexit( JText::_( 'JINVALID_TOKEN' ) );
 
-		$config		=	array();
-		$model->process( $params, $task_id, $ids, $config );
-		
-		$return		=	array(
-							'error'=>0,
-							'id'=>@$config['id'],
-							'isNew'=>1,
-							'pk'=>@$config['pk']
-						);
+		$app	=	JFactory::getApplication();
+		$link	=	$this->_getReturnPage();
 
-		if ( !$return['pk'] ) {
-			$return['error']	=	1;
+		$msgType	=	$app->input->get( 'type', 'message' );
+
+		if ( $msgType == 'error' ) {
+			$msg	=	JText::_( 'JERROR_AN_ERROR_HAS_OCCURRED' );
+		} else {
+			$msg	=	JText::_( 'COM_CCK_SUCCESSFULLY_PROCESSED' );
 		}
-		
-		echo json_encode( $return );
+
+		$this->setRedirect( $link, $msg, $msgType );
 	}
 
 	// process
 	public function process()
 	{
-		// JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
+		if ( !JSession::checkToken( 'get' ) ) {
+			JSession::checkToken( 'post' ) or jexit( JText::_( 'JINVALID_TOKEN' ) );
+		}
 		
 		if ( !is_file( JPATH_ADMINISTRATOR.'/components/com_cck_toolbox/models/cck_toolbox.php' ) ) {
 			$this->setRedirect( $this->_getReturnPage(), JText::_( 'JERROR_AN_ERROR_HAS_OCCURRED' ), 'error' );
@@ -487,10 +389,23 @@ class CCKController extends JControllerLegacy
 		$app		=	JFactory::getApplication();
 		$config		=	array();
 		$ids		=	$app->input->get( 'cid', array(), 'array' );
+		$task_cid	=	'int';
 		$task_id	=	$app->input->getInt( 'tid', 0 );
-		$ids		=	ArrayHelper::toInteger( $ids );
 		
+		if ( $task_id ) {
+			$processing	=	JCckDatabase::loadObject( 'SELECT options FROM #__cck_more_processings WHERE published = 1 AND id = '.(int)$task_id );
+			
+			if ( is_object( $processing ) && $processing->options != '' ) {
+				$processing->options	=	new JRegistry( $processing->options );
+				$task_cid				=	$processing->options->get( 'input_cid', 'int' );
+			}
+		}
+		if ( $task_cid == 'int' ) {
+			$ids		=	ArrayHelper::toInteger( $ids );
+		}
+
 		require_once JPATH_ADMINISTRATOR.'/components/com_cck_toolbox/models/cck_toolbox.php';
+
 		$model		=	JModelLegacy::getInstance( 'CCK_Toolbox', 'CCK_ToolboxModel' );
 		$params		=	JComponentHelper::getParams( 'com_cck_toolbox' );
 		
@@ -523,6 +438,64 @@ class CCKController extends JControllerLegacy
 		}
 	}
 
+	// processAjax
+	public function processAjax()
+	{
+		JSession::checkToken( 'get' ) or jexit( JText::_( 'JINVALID_TOKEN' ) );
+
+		if ( !is_file( JPATH_ADMINISTRATOR.'/components/com_cck_toolbox/models/cck_toolbox.php' ) ) {
+			$this->setRedirect( $this->_getReturnPage(), JText::_( 'JERROR_AN_ERROR_HAS_OCCURRED' ), 'error' );
+			return;
+		}
+		
+		$app		=	JFactory::getApplication();
+		$config		=	array(
+							'uniqid'=>$app->input->get( 'uniqid', '' )
+						);
+		$ids		=	$app->input->get( 'cid', array(), 'array' );
+		$task_cid	=	'int';
+		$task_id	=	$app->input->getInt( 'tid', 0 );
+
+		if ( $task_id ) {
+			$processing	=	JCckDatabase::loadObject( 'SELECT options FROM #__cck_more_processings WHERE published = 1 AND id = '.(int)$task_id );
+			
+			if ( is_object( $processing ) && $processing->options != '' ) {
+				$processing->options	=	new JRegistry( $processing->options );
+				$task_cid				=	$processing->options->get( 'input_cid', 'int' );
+			}
+		}
+		if ( $task_cid == 'int' ) {
+			$ids		=	ArrayHelper::toInteger( $ids );
+		}
+
+		require_once JPATH_ADMINISTRATOR.'/components/com_cck_toolbox/models/cck_toolbox.php';
+		
+		$model		=	JModelLegacy::getInstance( 'CCK_Toolbox', 'CCK_ToolboxModel' );
+		$params		=	JComponentHelper::getParams( 'com_cck_toolbox' );
+		$result		=	$model->process( $params, $task_id, $ids, $config );
+		$return		=	array(
+							'error'=>0,
+							'id'=>@$config['id'],
+							'isNew'=>1,
+							'pk'=>@$config['pk']
+						);
+
+		if ( $result === false ) {
+			$return['error']	=	1;
+		} elseif ( !$return['pk'] ) { /* TODO#SEBLOD: this shouldn't be executed for standalones */
+			$task_input	=	0;
+
+			if ( isset( $processing ) && is_object( $processing->options ) ) {
+				$task_input			=	(int)$processing->options->get( 'input', '0' );
+			}
+			if ( !$task_input ) {
+				$return['error']	=	1;
+			}
+		}
+		
+		echo json_encode( $return );
+	}
+
 	// route
 	public function route()
 	{
@@ -537,30 +510,10 @@ class CCKController extends JControllerLegacy
 		echo JRoute::_( $url );
 	}
 
-	// saveAjax
-	public function saveAjax()
-	{
-		$config		=	$this->save( true );
-		$return		=	array(
-							'error'=>0,
-							'id'=>@$config['id'],
-							'isNew'=>@$config['isNew'],
-							'pk'=>$config['pk']
-						);
-		
-		if ( !$return['pk'] ) {
-			$return['error']	=	1;
-		}
-		
-		echo json_encode( $return );
-	}
-
 	// save	
 	public function save( $isAjax = false )
 	{
-		if ( $isAjax !== true ) {
-			JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
-		}
+		JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
 		
 		$app		=	JFactory::getApplication();
 		$model		=	$this->getModel( 'form' );
@@ -596,7 +549,7 @@ class CCKController extends JControllerLegacy
 			}
 		}
 		
-		if ( $id ) {
+		if ( (int)$id > 0 || $id === -1 ) {
 			if ( $config['message_style'] ) {
 				if ( isset( $config['message'] ) && $config['message'] != '' ) {
 					$msg	=	( $config['doTranslation'] ) ? JText::_( 'COM_CCK_' . str_replace( ' ', '_', trim( $config['message'] ) ) ) : $config['message'];
@@ -752,9 +705,31 @@ class CCKController extends JControllerLegacy
 		}
 	}
 
+	// saveAjax
+	public function saveAjax()
+	{
+		JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
+
+		$config		=	$this->save( true );
+		$return		=	array(
+							'error'=>0,
+							'id'=>@$config['id'],
+							'isNew'=>@$config['isNew'],
+							'pk'=>$config['pk']
+						);
+		
+		if ( !$return['pk'] ) {
+			$return['error']	=	1;
+		}
+		
+		echo json_encode( $return );
+	}
+
 	// saveOrderAjax
 	public function saveOrderAjax()
 	{
+		JSession::checkToken( 'get' ) or jexit( JText::_( 'JINVALID_TOKEN' ) );
+		
 		$app	=	JFactory::getApplication();
 		$pks 	= 	$app->input->post->get( 'cid', array(), 'array' );
 		$order 	= 	$app->input->post->get( 'order', array(), 'array' );

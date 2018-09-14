@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -14,7 +14,7 @@ defined( '_JEXEC' ) or die;
 abstract class JCckToolbox
 {
 	public static $_me		=	'cck_toolbox';
-	public static $_config	=	NULL;
+	public static $_config	=	null;
 	public static $_urls	=	array();
 	
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Config
@@ -163,11 +163,53 @@ abstract class JCckToolbox
 	// run
 	public static function run( $name )
 	{
-		$job			=	JCckDatabase::loadObject( 'SELECT id, run_as FROM #__cck_more_jobs WHERE name = "'.$name.'" AND published = 1' );
+		$host	=	'';
+		$job	=	JCckDatabase::loadObject( 'SELECT id, run_as, run_url, run_url_custom FROM #__cck_more_jobs WHERE name = "'.$name.'" AND published = 1' );
 
 		if ( !is_object( $job ) ) {
 			return;
 		}
+		if ( $job->run_url != '' ) {
+			if ( $job->run_url == -1 ) {
+				$url	=	$job->run_url_custom;
+			} else {
+				$url	=	JCckDatabase::loadResult( 'SELECT name FROM #__cck_core_sites WHERE id = '.(int)$job->run_url );
+			}
+
+			$pos	=	strpos( $url, '/' );
+
+			if ( $pos !== false ) {
+				$host	=	substr( $url, 0, $pos );
+				$url	=	substr( $url, $pos );
+			} else {
+				$host	=	$url;
+				$url	=	'';
+			}
+
+			if ( $url != '' ) {
+				if ( $url[0] != '/' ) {
+					$url	=	'/'.$url;
+				}
+				$length		=	strlen( $url );
+
+				if ( $url[$length - 1] != '/' ) {
+					$url	.=	'/';
+				}
+
+				$url	.=	'index.php';
+
+				$_SERVER['PHP_SELF']	=	$url;
+				$_SERVER['REQUEST_URI']	=	$url;
+				$_SERVER['SCRIPT_NAME']	=	$url;
+			}
+		}
+		
+		// Fool the system into thinking we are running as JSite, from the front-end.
+		$_SERVER['HTTP_HOST']	=	$host;
+		
+		JFactory::getApplication( 'site' );
+		
+		// Force identity
 		if ( !$job->run_as ) {
 			$job->run_as	=	(int)JCck::getConfig_Param( 'integration_user_default_author' );
 		}
@@ -209,7 +251,7 @@ abstract class JCckToolbox
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Processings
 	
 	// process
-	public static function process( $event )
+	public static function process( $event, $config = array() )
 	{
 		$processing	=	JCckDatabaseCache::loadObjectListArray( 'SELECT type, scriptfile, options FROM #__cck_more_processings WHERE published = 1 ORDER BY ordering', 'type' );
 
@@ -217,8 +259,18 @@ abstract class JCckToolbox
 			foreach ( $processing[$event] as $p ) {
 				if ( is_file( JPATH_SITE.$p->scriptfile ) ) {
 					$options	=	new JRegistry( $p->options );
-					
-					include_once JPATH_SITE.$p->scriptfile;
+
+					/*
+					$trigger	=	new JCckProcessing;
+
+					$trigger->set( 'event', $event );
+					$trigger->set( 'options', $options );
+					$trigger->set( 'script', JPATH_SITE.$p->scriptfile );
+
+					$trigger->execute( $config );
+					*/
+
+					include JPATH_SITE.$p->scriptfile;
 				}
 			}
 		}

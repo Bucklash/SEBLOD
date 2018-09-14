@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -24,7 +24,7 @@ class CCKViewType extends JViewLegacy
 	protected $vTitle	=	_C2_TEXT;
 	
 	// display
-	function display( $tpl = null )
+	public function display( $tpl = null )
 	{
 		switch ( $this->getlayout() ) {
 			case 'delete':
@@ -67,13 +67,13 @@ class CCKViewType extends JViewLegacy
 	}
 	
 	// prepareDelete
-	function prepareDelete()
+	protected function prepareDelete()
 	{		
 		Helper_Admin::addToolbarDelete( $this->vName, 'COM_CCK_'.$this->vTitle );
 	}
 	
 	// prepareDisplay
-	function prepareDisplay()
+	protected function prepareDisplay()
 	{
 		$app			=	JFactory::getApplication();
 		$this->form		=	$this->get( 'Form' );
@@ -111,7 +111,7 @@ class CCKViewType extends JViewLegacy
 	}
 	
 	// prepareDisplay_Ajax
-	function prepareDisplay_Ajax()
+	protected function prepareDisplay_Ajax()
 	{
 		$featured	=	(int)$this->state->get( 'skeleton_id', 0 );
 		$folder		=	( $featured ) ? 0 : $this->item->folder;
@@ -167,13 +167,13 @@ class CCKViewType extends JViewLegacy
 	}
 
 	// prepareDisplay_Ajax2
-	function prepareDisplay_Ajax2( $isScoped )
+	protected function prepareDisplay_Ajax2( $isScoped )
 	{
 		$and		=	'';
 		$featured	=	(int)$this->state->get( 'skeleton_id', 0 );
 		$folder		=	$this->state->get( 'skeleton_id', $this->item->folder );
 
-		if ( $featured == 11 ) { // TODO: dynamic mapping
+		if ( $featured == 11 ) { /* TODO#SEBLOD: dynamic mapping */
 			$this->item->storage_location	=	'joomla_category';
 		} elseif ( $featured == 13 ) {
 			$this->item->storage_location	=	'joomla_user';
@@ -202,13 +202,13 @@ class CCKViewType extends JViewLegacy
 		$this->fieldsAv			=	Helper_Workshop::getFieldsAv( 'type', $this->item, $and, 'a.folder != '.(int)$folder, $or );
 		$this->type_fields		=	JCckDatabase::loadObjectList( 'SELECT fieldid, GROUP_CONCAT(DISTINCT typeid separator " c-") AS cc FROM #__cck_core_type_field group by fieldid', 'fieldid' );
 		
-		// Languages (todo: optimize)
+		// Languages /* TODO#SEBLOD: optimize */
 		Helper_Admin::getPluginOptions( 'field', 'cck_', true, false, true );
 		JPluginHelper::importPlugin( 'cck_field' );
 	}
 	
 	// setPosition
-	function setPosition( $name, $title = '' )
+	public function setPosition( $name, $title = '' )
 	{
 		$title	=	( !empty( $title ) ) ? $title : $name;
 		$legend	=	'<input class="thin blue" type="text" name="ffp[pos-'.$name.'][legend]" value="'.htmlspecialchars( @$this->positions[$name]->legend ).'" size="22" />';

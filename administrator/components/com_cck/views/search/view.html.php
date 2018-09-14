@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -24,7 +24,7 @@ class CCKViewSearch extends JViewLegacy
 	protected $vTitle	=	_C4_TEXT;
 	
 	// display
-	function display( $tpl = null )
+	public function display( $tpl = null )
 	{
 		switch ( $this->getlayout() ) {
 			case 'delete':
@@ -69,7 +69,7 @@ class CCKViewSearch extends JViewLegacy
 	}
 	
 	// completeUI
-	function completeUI()
+	protected function completeUI()
 	{
 		$title	=	'COM_CCK_SEARCH_TYPE';
 
@@ -82,13 +82,13 @@ class CCKViewSearch extends JViewLegacy
 	}
 
 	// prepareDelete
-	function prepareDelete()
+	protected function prepareDelete()
 	{		
 		Helper_Admin::addToolbarDelete( $this->vName, 'COM_CCK_'.$this->vTitle );
 	}
 	
 	// prepareDisplay
-	function prepareDisplay()
+	protected function prepareDisplay()
 	{
 		$app			=	JFactory::getApplication();
 		$this->form		=	$this->get( 'Form' );
@@ -108,7 +108,7 @@ class CCKViewSearch extends JViewLegacy
 			$this->panel_class	=	'closed';
 			$this->panel_style	=	'display:none; ';
 			$name				=	$this->item->name;
-			$app->setUserState( CCK_COM.'.edit.search.client', NULL );
+			$app->setUserState( CCK_COM.'.edit.search.client', null );
 		} else {
 			$this->isNew		=	1;
 			$this->panel_class	=	'open';

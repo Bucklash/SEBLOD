@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -34,7 +34,7 @@ class CCK_Item
 	var $js2;
 	
 	// __construct
-	function __construct( $template = '', $type = '', $pk = 0 )
+	public function __construct( $template = '', $type = '', $pk = 0 )
 	{
 		$this->config		=	array();
 		$this->id			=	'cck'.$pk;
@@ -204,7 +204,7 @@ class CCK_Item
 
 	// renderField
 	public function getField( $fieldname ) { return $this->renderField( $fieldname ); } // (deprecated)
-	public function renderField( $fieldname, $options = NULL )
+	public function renderField( $fieldname, $options = null )
 	{
 		$field	=	$this->get( $fieldname );
 		$html	=	'';
@@ -228,7 +228,7 @@ class CCK_Item
 						$html	=	$label.$html;
 					}
 				} elseif ( $this->markup ) {
-					// todo
+					/* TODO#SEBLOD: */
 				} else {					
 					// Description
 					$desc	=	'';
@@ -258,7 +258,7 @@ class CCK_Item
 	{
 		$field	=	$this->get( $fieldname );
 		
-		if ( !is_object( $field ) || !$field->display ) {
+		if ( !is_object( $field ) || !$field->state ) {
 			return '';
 		}
 		
@@ -303,7 +303,7 @@ class CCK_Item
 			$options	=	new JRegistry;
 			$options->loadString( $this->positions_m[$position]->variation_options );
 		} else {
-			$options	=	NULL;
+			$options	=	null;
 		}
 		if ( ! $variation ) {
 			$variation	=	( isset( $this->positions_m[$position]->variation ) && $this->positions_m[$position]->variation ) ? $this->positions_m[$position]->variation : (string)$this->getStyleParam( 'variation_default', '' );

@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -40,7 +40,7 @@ if ( $legacy == 1 ) {
 	$legend		=	JText::_( 'LIB_CCK_INTEGRATION_SELECT_A_FORM' );
 	$legend2	=	'';
 }
-$doc->addStyleDeclaration( 'div.modal-footer button.pull-left{position:relative; top:8px;}' );
+$doc->addStyleDeclaration( 'div.modal-footer a.pull-left{position:relative; top:8px;}' );
 ?>
 
 <div class="modal modal-small hide fade" id="<?php echo $target_id; ?>">
@@ -99,9 +99,9 @@ $doc->addStyleDeclaration( 'div.modal-footer button.pull-left{position:relative;
 		?>
 	</div>
 	<div class="modal-footer">
-		<button class="btn btn-mini btn-success pull-left" type="button" onclick="window.open('https://www.seblod.com/store/extensions/applications/', '_blank'); return false;">
+		<a href="javascript:void(0);" class="btn btn-mini btn-success pull-left" onclick="window.open('https://www.seblod.com/store/extensions/applications/', '_blank'); return false;" rel="noopener noreferrer">
 			<?php echo JText::_( 'LIB_CCK_INTEGRATION_GET_MORE_APPS' ); ?>
-		</button>
+		</a>
 		<button class="btn" type="button" data-dismiss="modal">
 			<?php echo JText::_( 'JCANCEL' ); ?>
 		</button>

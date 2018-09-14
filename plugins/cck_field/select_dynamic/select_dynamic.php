@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -121,7 +121,7 @@ class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 		/* tmp */
 
 		self::_languageDetection( $lang_code, $value2, $options2 );
-		$options_2			=	self::_getOptionsList( $options2, $field->bool2, $lang_code, true );
+		$options_2			=	self::_getOptionsList( $options2, $field->bool2, $lang_code, $config, true );
 		$field->options		=	$options_1.$options_2;
 
 		// Set
@@ -140,9 +140,17 @@ class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 		if ( static::$type != $field->type ) {
 			return;
 		}
-		
+
+		static $options	=	null;
+
+		if ( !is_string( $options ) ) {
+			$options		=	$field->options;
+		} else {
+			$field->options	=	$options;
+		}
+
 		self::onCCK_FieldPrepareContent( $field, $value, $config );
-		
+
 		$field->output	=	$field->text;
 	}
 
@@ -300,7 +308,7 @@ class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 				}
 				if ( $opt_name && $opt_value && $opt_table ) {
 					$query			=	'SELECT '.$opt_name.','.$opt_value.$opt_attr.$opt_table.$opt_where.$opt_orderby.$opt_limit;
-					$query			=	JCckDevHelper::replaceLive( $query );
+					$query			=	JCckDevHelper::replaceLive( $query, '', $config );
 					if ( $config['client'] == '' || $config['client'] == 'dev' ) {
 						$tables		=	JCckDatabaseCache::getTableList();
 						$prefix		=	JFactory::getDbo()->getPrefix();
@@ -309,13 +317,15 @@ class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 						$items		=	JCckDatabase::loadObjectList( $query );
 					}
 				}
+			} elseif ( $field->bool2 == 2 ) {
+				$items2	=	JCckDatabase::getTableList();
 			} else {
 				if ( @$options2['query'] != '' ) {
 					// Language Detection
 					$lang_code		=	'';
 					self::_languageDetection( $lang_code, $value, $options2 );
 					$query			=	str_replace( '[lang]', $lang_code, $options2['query'] );
-					$query			=	JCckDevHelper::replaceLive( $query );
+					$query			=	JCckDevHelper::replaceLive( $query, '', $config );
 					if ( ( strpos( $query, ' value ' ) !== false ) || ( strpos( $query, 'AS value' ) !== false ) || ( strpos( $query, ' value,' ) !== false ) ) {
 						$items	=	JCckDatabase::loadObjectList( $query );
 					} else {
@@ -330,7 +340,15 @@ class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 				$opt_value	=	'value';
 				$opt_group	=	'optgroup';
 			}
-			if ( count( $items ) ) {
+
+			if ( isset( $items2 ) ) {
+				if ( count( $items2 ) ) {
+					foreach ( $items2 as $o ) {
+						$opts[]		=	JHtml::_( 'select.option', $o, $o, 'value', 'text' );
+						$options[]	=	$o.'='.$o;
+					}
+				}
+			} elseif ( count( $items ) ) {
 				if ( $opt_group ) {
 					$group	=	'';
 					foreach ( $items as $o ) {
@@ -345,11 +363,11 @@ class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 							$attr['attr']	=	'';
 							foreach ( $attribs as $k=>$a ) {
 								$ka				=	'attr'.( $k + 1 );
-								if ( isset( $o->{$ka} ) ) {
-									$va			=	$o->{$ka};
+								if ( isset( $o->$ka ) ) {
+									$va			=	$o->$ka;
 								} else {
 									$ka			=	( isset( $options2['attr'.( $k + 1 )] ) ) ? $options2['attr'.( $k + 1 )] : '';
-									$va			=	( $ka != '' && isset( $o->{$ka} ) ) ? $o->{$ka} : '';
+									$va			=	( $ka != '' && isset( $o->$ka ) ) ? $o->$ka : '';
 								}
 								$attr['attr']	.=	' '.$a.'="'.$va.'"';
 							}
@@ -370,11 +388,11 @@ class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 							foreach ( $attribs as $k=>$a ) {
 								$ka				=	'attr'.( $k + 1 );
 
-								if ( isset( $o->{$ka} ) ) {
-									$va			=	$o->{$ka};
+								if ( isset( $o->$ka ) ) {
+									$va			=	$o->$ka;
 								} else {
 									$ka			=	( isset( $options2['attr'.( $k + 1 )] ) ) ? $options2['attr'.( $k + 1 )] : '';
-									$va			=	( $ka != '' && isset( $o->{$ka} ) ) ? $o->{$ka} : '';
+									$va			=	( $ka != '' && isset( $o->$ka ) ) ? $o->$ka : '';
 								}
 								$attr['attr']	.=	' '.$a.'="'.$va.'"';
 							}
@@ -567,7 +585,7 @@ class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 		$lang_code		=	'';
 		$options2		=	JCckDev::fromJSON( $field->options2 );
 		self::_languageDetection( $lang_code, $value2, $options2 );
-		$options_2		=	self::_getOptionsList( $options2, $field->bool2, $lang_code );
+		$options_2		=	self::_getOptionsList( $options2, $field->bool2, $lang_code, $config );
 		$field->options	=	$options_1.$options_2;
 		
 		// Validate
@@ -614,11 +632,14 @@ class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 			$lang_tag	=	JFactory::getLanguage()->getTag();
 			$lang_code	=	( isset( $languages[$lang_tag] ) ) ? strtoupper( $languages[$lang_tag]->sef ) : '';
 		}
+		
 		$value			=	str_replace( '[lang]', $lang_code, $value );
 		$languages		=	explode( ',', @$options2['language_codes'] );
+		
 		if ( ! in_array( $lang_code, $languages ) ) {
 			$lang_code	=	@$options2['language_default'] ? $options2['language_default'] : '';
 		}
+		
 		$lang_code		=	strtolower( $lang_code );
 	}
 	
@@ -683,11 +704,11 @@ class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 	}
 
 	// _getOptionsList
-	protected static function _getOptionsList( $options2, $free_sql, $lang_code, $static = false )
+	protected static function _getOptionsList( $options2, $sql_type, $lang_code, $config, $static = false )
 	{
 		$options	=	'';
 		
-		if ( $free_sql == 0 ) {
+		if ( $sql_type == 0 ) {
 			$opt_table		=	isset( $options2['table'] ) ? ' FROM '.$options2['table'] : '';
 			$opt_name		=	isset( $options2['name'] ) ? $options2['name'] : '';
 			$opt_value		=	isset( $options2['value'] ) ? $options2['value'] : '';
@@ -702,7 +723,7 @@ class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 			
 			if ( $opt_name && $opt_table ) {
 				$query		=	'SELECT '.$opt_name.','.$opt_value.$opt_table.$opt_where.$opt_orderby;
-				$query		=	JCckDevHelper::replaceLive( $query );
+				$query		=	JCckDevHelper::replaceLive( $query, '', $config );
 				$lists		=	( $static ) ? JCckDatabaseCache::loadObjectList( $query ) : JCckDatabase::loadObjectList( $query );
 				if ( count( $lists ) ) {
 					foreach ( $lists as $list ) {
@@ -710,12 +731,19 @@ class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 					}
 				}
 			}
+		} elseif ( $sql_type == 2 ) {
+			$lists		=	JCckDatabaseCache::getTableList();
+			if ( count( $lists ) ) {
+				foreach ( $lists as $list ) {
+					$options	.=	@$list.'='.@$list.'||';
+				}
+			}
 		} else {
 			$opt_query	=	isset( $options2['query'] ) ? $options2['query'] : '';
 			
 			// Language Detection
 			$opt_query	=	str_replace( '[lang]', $lang_code, $opt_query );
-			$opt_query	=	JCckDevHelper::replaceLive( $opt_query );
+			$opt_query	=	JCckDevHelper::replaceLive( $opt_query, '', $config );
 			$lists		=	( $static ) ? JCckDatabaseCache::loadObjectList( $opt_query ) : JCckDatabase::loadObjectList( $opt_query );
 			if ( count( $lists ) ) {
 				foreach ( $lists as $list ) {
@@ -726,25 +754,49 @@ class plgCCK_FieldSelect_Dynamic extends JCckPluginField
 		
 		return $options;
 	}
+
+	// _getOptionsListProperty
+	protected static function _getOptionsListProperty( $property, $field, $value, $config = array() )
+	{
+		$divider	=	'';
+		$lang_code	=	'';
+		$method		=	'get'.ucfirst( $property).'FromOptions';
+		$options2	=	JCckDev::fromJSON( $field->options2 );
+		$value2		=	'';
+		
+		/* tmp */
+		$jtext						=	$config['doTranslation'];
+		$config['doTranslation']	=	0;
+		/* tmp */
+
+		// Prepare
+		self::_languageDetection( $lang_code, $value2, $options2 );
+		
+		if ( $field->bool3 ) {
+			$divider	=	( $field->divider != '' ) ? $field->divider : ',';
+		}
+		
+		$options_2			=	self::_getOptionsList( $options2, $field->bool2, $lang_code, $config );
+		$field->options		=	( $field->options ) ? $field->options.'||'.$options_2 : $options_2;
+		$result				=	parent::$method( $field, $value, $config );
+
+		/* tmp */
+		$config['doTranslation']	=	$jtext;
+		/* tmp */
+
+		return $result;
+	}
+	
+	// getTextFromOptions
+	public static function getTextFromOptions( $field, $value, $config = array() )
+	{
+		return self::_getOptionsListProperty( 'text', $field, $value, $config );
+	}
 	
 	// getValueFromOptions
 	public static function getValueFromOptions( $field, $value, $config = array() )
 	{
-		// Init
-		$options2	=	JCckDev::fromJSON( $field->options2 );
-		$divider	=	'';
-		$lang_code	=	'';
-		$value2		=	'';
-		
-		// Prepare
-		self::_languageDetection( $lang_code, $value2, $options2 );
-		if ( $field->bool3 ) {
-			$divider	=	( $field->divider != '' ) ? $field->divider : ',';
-		}
-		$options_2			=	self::_getOptionsList( $options2, $field->bool2, $lang_code );
-		$field->options		=	( $field->options ) ? $field->options.'||'.$options_2 : $options_2;
-		
-		return parent::getValueFromOptions( $field, $value, $config );
+		return self::_getOptionsListProperty( 'value', $field, $value, $config );
 	}
 	
 	// isConvertible

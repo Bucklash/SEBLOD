@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -93,7 +93,7 @@ class plgCCK_Field_LinkContent_Delete extends JCckPluginLink
 		$link_title		=	$link->get( 'title', '' );
 		$link_title2	=	$link->get( 'title_custom', '' );
 		
-		$field->link		=	'index.php?option=com_cck&task='.$task.'&cid='.$id.'&Itemid='.$itemId.( $return ? '&return='.$return : '' );
+		$field->link		=	'index.php?option=com_cck&task='.$task.'&cid='.$id.'&Itemid='.$itemId.( $return ? '&return='.$return : '' ).'&'.JSession::getFormToken().'=1';
 		$field->link		=	JRoute::_( $field->link );
 		$field->link_class	=	$link_class ? $link_class : ( isset( $field->link_class ) ? $field->link_class : '' );
 		if ( $link->get( 'confirm', 1 ) ) {
@@ -101,13 +101,20 @@ class plgCCK_Field_LinkContent_Delete extends JCckPluginLink
 		}
 		if ( $config['client'] == 'search' ) {
 			$field->link	=	'';
+			$hasConfirm		=	 ( isset( $field->link_onclick ) ) ? true : false;
 
-			if ( isset( $field->link_onclick ) ) {
-				$field->link_onclick	.=	'else{'.htmlspecialchars( 'jQuery("#'.$config['formId'].'").append(\'<input type="hidden" name="return" value="'.$return.'">\');' )
-										.	'JCck.Core.submitForm(\'delete\', document.getElementById(\''.$config['formId'].'\'));}';
+			if ( $hasConfirm ) {
+				$field->link_onclick	.=	'else{';
 			} else {
-				$field->link_onclick	=	'JCck.Core.submitForm(\'delete\', document.getElementById(\''.$config['formId'].'\'));';
+				$field->link_onclick	=	'';
 			}
+			$field->link_onclick		.=	htmlspecialchars( 'jQuery("#'.$config['formId'].'").append(\'<input type="hidden" name="return" value="'.$return.'">\');' )
+										.	htmlspecialchars( 'jQuery("#'.$config['formId'].'").append(\''.JHtml::_( 'form.token' ).'\');' )
+										.	'JCck.Core.submitForm(\'delete\', document.getElementById(\''.$config['formId'].'\'));';
+			if ( $hasConfirm ) {
+				$field->link_onclick	.=	'}';
+			}
+
 			$field->link_onclick	=	'if (document.'.$config['formId'].'.boxchecked.value==0){alert(\''.htmlspecialchars( addslashes( JText::_( 'JLIB_HTML_PLEASE_MAKE_A_SELECTION_FROM_THE_LIST' ) ) ).'\');}else{'.$field->link_onclick.'}';
 		}
 		$field->link_state	=	$link->get( 'state', 1 );

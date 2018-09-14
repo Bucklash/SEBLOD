@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -26,6 +26,8 @@ class CCKModelTypes extends JModelList
 				'folder', 'a.folder', 'folder_title',
 				'published', 'a.published',
 				'location', 'a.location',
+				'parent', 'a.parent',
+				'parent_inherit', 'a.parent_inherit',
 				'storage_location', 'a.storage_location',
 				'checked_out', 'a.checked_out',
 				'checked_out_time', 'a.checked_out_time',
@@ -88,6 +90,8 @@ class CCKModelTypes extends JModelList
 				'a.template_content as template_content,' .
 				'a.published as published,' .
 				'a.location as location,' .
+				'a.parent as parent,' .
+				'a.parent_inherit as parent_inherit,' .
 				'a.storage_location as storage_location,' .
 				'a.checked_out as checked_out,' .
 				'a.checked_out_time as checked_out_time'
@@ -106,6 +110,10 @@ class CCKModelTypes extends JModelList
 		// Join User
 		$query->select( 'u.name AS editor' );
 		$query->join( 'LEFT', '#__users AS u ON u.id = a.checked_out' );
+
+		// Join Assets
+		$query->select( 'p.rules AS rules' );
+		$query->join( 'LEFT', '#__assets AS p ON p.id = a.asset_id' );
 
 		// Where
 		if ( $app->input->get( 'goto', '' ) == 'form' ) {

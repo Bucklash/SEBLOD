@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -153,7 +153,8 @@ class plgCCK_FieldUpload_File extends JCckPluginField
 			$field->text		=	( $file_title != '' ) ? $file_title : ( ( @$options2['storage_format'] ) ? $value : substr( $value, strrpos( $value, '/' ) + 1 ) );
 			$field->hits		=	self::_getHits( $config['id'], $field->name, $collection, $xi );
 			$field->file_size	=	( file_exists( $file ) ) ? self::_formatBytes( filesize( $file ) ) : self::_formatBytes( 0 );
-			$field->link		=	'index.php?option=com_cck&task=download'.$link_more.'&file='.$field->name.'&id='.$config['id'];
+			$field->extension	=	( strrpos( $file, '.' ) ) ? strtolower( substr( $file, strrpos( $file, '.' ) + 1 ) ) : '';
+			$field->link		=	JRoute::_( 'index.php?option=com_cck&task=download'.$link_more.'&file='.$field->name.'&id='.$config['id'] );
 			$field->linked		=	true;
 			$field->html		=	'<a href="'.$field->link.'" title="'.$file_title.'">'.$field->text.'</a>';
 			$field->typo_target	=	'text';
@@ -174,12 +175,31 @@ class plgCCK_FieldUpload_File extends JCckPluginField
 		// Path Folder
 		$f_opt2		=	JCckDev::fromJSON( $field->options2 );
 		$file		=	'';
+		
 		if ( isset( $f_opt2['storage_format'] ) && $f_opt2['storage_format'] ) {
 			$file	.=	$f_opt2['path'];
 			$file	.=	( isset( $f_opt2['path_user'] ) && $f_opt2['path_user'] ) ? $config['author'].'/' : '';
 			$file	.=	( isset( $f_opt2['path_content'] ) && $f_opt2['path_content'] ) ? $config['pk'].'/' : '';
 		}
-		$file		.=	$field->value;
+		
+		$file			.=	$field->value;
+		
+		if ( JFactory::getSession()->get( 'cck_task' ) == 'form' ) {
+			$permissions	=	( isset( $f_opt2['folder_permissions'] ) && $f_opt2['folder_permissions'] ) ? octdec( $f_opt2['folder_permissions'] ) : 0755;
+			$preview_ext	=	JCck::getConfig_Param( 'media_preview_extensions', '' );		
+
+			if ( $preview_ext ) {
+				$preview_ext	=	explode( ',', $preview_ext );
+
+				if ( $file && is_file( JPATH_SITE.'/'.$file ) && $permissions === 493 ) {
+					$ext	=	JFile::getExt( JPATH_SITE.'/'.$file );
+
+					if ( in_array( $ext, $preview_ext ) ) {
+						$field->task	=	'read';
+					}
+				}
+			}
+		}
 
 		$field->filename	=	$file;
 	}
@@ -337,16 +357,17 @@ class plgCCK_FieldUpload_File extends JCckPluginField
 		$attr	=	'class="'.$class.'" size="'.$field->size.'"'.$onchange . ( $field->attributes ? ' '.$field->attributes : '' );
 		$form	=	'<input type="file" id="'.$id.'" name="'.$name.'" '.$attr.' />';
 		if ( $options2['custom_path'] == '1' ) {
-			$lock	=	'<a class="switch lock_file" href="javascript:void(0);"><span class="linkage linked"></span></a>';	//TODO
+			$lock	=	'<a class="switch lock_file" href="javascript:void(0);"><span class="linkage linked"></span></a>'; /* TODO#SEBLOD: */
 		}
 		
 		if ( $chkbox != '' ) {
-			$form	.=	'<span class="hasTooltip" title="'.JText::_( 'COM_CCK_CHECK_TO_DELETE_FILE' ).'">'.$chkbox.'</span>';	//TODO
+			$form	.=	'<span class="hasTooltip" title="'.JText::_( 'COM_CCK_CHECK_TO_DELETE_FILE' ).'">'.$chkbox.'</span>'; /* TODO#SEBLOD: */
 		}
 		$form	=	$form.$form_more.$lock.$form_more2.$form_more3;
 		if ( $options2['preview'] != -1 && $value['file_location'] && $value2 != '' ) {
 			$more	=	( $collection ) ? '&collection='.$collection.'&xi='.$xk : '';
 			$label	=	JText::_( 'COM_CCK_PREVIEW' );
+
 			if ( isset( $config['id'] ) && $config['id'] ) {
 				$link	=	JRoute::_( 'index.php?option=com_cck&task=download'.$more.'&file='.( ( !$config['client'] && $inherit['name'] ) ? $inherit['name'] : $field->name ).'&id='.$config['id'] );
 				$target	=	'';
@@ -354,7 +375,22 @@ class plgCCK_FieldUpload_File extends JCckPluginField
 				$link	=	JUri::root().$value2;
 				$target	=	'target="_blank"';
 			}
-			$title	=	( $value['file_title'] != '' ) ? $value['file_title'] : ( ( strrpos( $value2, '/' ) === false ) ? $value2 : substr( $value2, strrpos( $value2, '/' ) + 1 ) );
+			$title			=	( $value['file_title'] != '' ) ? $value['file_title'] : ( ( strrpos( $value2, '/' ) === false ) ? $value2 : substr( $value2, strrpos( $value2, '/' ) + 1 ) );
+			$preview_ext	=	JCck::getConfig_Param( 'media_preview_extensions', '' );
+			
+			if ( $preview_ext ) {
+				$permissions	=	( isset( $options2['folder_permissions'] ) && $options2['folder_permissions'] ) ? octdec( $options2['folder_permissions'] ) : 0755;
+				$preview_ext	=	explode( ',', $preview_ext );
+
+				if ( $value2 && is_file( JPATH_SITE.'/'.$value2 ) && $permissions === 493 ) {
+					$ext	=	JFile::getExt( JPATH_SITE.'/'.$value2 );
+
+					if ( in_array( $ext, $preview_ext ) ) {
+						$target	=	' target="_blank"';
+					}
+				}
+			}
+
 			if ( $options2['preview'] == 8 ) {
 				$label		=	'';
 				$preview	=	'<span class="cck_preview">'.$title.'</span>';
@@ -488,7 +524,7 @@ class plgCCK_FieldUpload_File extends JCckPluginField
 			}
 		}
 		$legal_ext	=	explode( ',', $legal_ext );
-		$userfile 	=	( $array_x ) ? JRequest::getVar( $parent, NULL, 'files', 'array' ) : JRequest::getVar( $name, NULL, 'files', 'array' );
+		$userfile 	=	( $array_x ) ? JRequest::getVar( $parent, null, 'files', 'array' ) : JRequest::getVar( $name, null, 'files', 'array' );
 		if ( is_array( $userfile['name'] ) ) {
 			if ( $array_x ) {
 				$userfile_name			=	$userfile['name'][$xk][$name];
@@ -583,6 +619,7 @@ class plgCCK_FieldUpload_File extends JCckPluginField
 		if ( ! $maxsize || ( $maxsize && $userfile['size'] < $maxsize ) ) {
 			if ( $userfile && $userfile['name'] && $userfile['tmp_name'] ) {
 				$item_custom_name	=	$userfile['name'];
+				$item_custom_path	=	'';
 				if ( @$options2['custom_path'] ) {
 					if ( strrpos( $item_custom_dir, '.' ) === false ) {
 						$item_custom_path	=	( $item_custom_dir == '' ) ? substr( $itemPath, 0, strrpos( $itemPath, '/' ) + 1 ) : ( ( $item_custom_dir[strlen( $item_custom_dir ) - 1] == '/' ) ? $item_custom_dir : $item_custom_dir.'/' );

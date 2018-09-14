@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -152,7 +152,9 @@ class plgCCK_FieldTextarea extends JCckPluginField
 		}
 		
 		// Make it safe
-		$value		=	JComponentHelper::filterText( $value );
+		if ( $field->bool7 ) {
+			$value	=	JComponentHelper::filterText( $value );
+		}
 
 		// Validate
 		parent::g_onCCK_FieldPrepareStore_Validation( $field, $name, $value, $config );
@@ -202,39 +204,37 @@ class plgCCK_FieldTextarea extends JCckPluginField
 	// _br2nl
 	protected static function _br2nl( $text )
 	{
-		return  preg_replace( '/\<br(\s*)?\/?\>/i', "\n", $text );
+		return preg_replace( '/\<br(\s*)?\/?\>/i', "\n", $text );
 	}
 
 	// _bn2br
 	protected static function _bn2br( $text )
 	{
-		return  preg_replace( '/\\n/i', "<br />", $text );
+		return preg_replace( '/\\n/i', "<br />", $text );
 	}
 
 	// _p2nl
 	protected static function _p2nl( $text )
 	{
-		return  preg_replace( '/\<p\>\<\/p\>/i', "\n", $text );
+		return preg_replace( '/\<p\>\<\/p\>/i', "\n", $text );
 	}
 
 	// _bn2p
 	protected static function _bn2p( $text )
 	{
-		$text	=	'<p>'.$text.'</p>';
-		return  preg_replace( '/\\n/i', "</p><p>", $text );
+		return preg_replace( '/\\n/i', "</p><p>", '<p>'.$text.'</p>' );
 	}
 
 	// _bn2p_br
 	protected static function _bn2br_in_p( $text )
 	{
-		$text	=	'<p>'.$text.'</p>';
-		return  preg_replace( '/\\n/i', "<br />", $text );
+		return preg_replace( '/\\n/i', "<br />", '<p>'.$text.'</p>' );
 	}
 
 	// _bn2clear
 	protected static function _bn2clear( $text )
 	{
-		return	preg_replace( '/\\n\\r/i', '', $text );
+		return preg_replace( '/\\n\\r/i', '', $text );
 	}
 }
 ?>

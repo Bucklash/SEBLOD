@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -16,6 +16,7 @@ JLoader::register( 'JTableUsergroup', JPATH_PLATFORM.'/joomla/database/table/use
 class plgCCK_Storage_LocationJoomla_User_Group extends JCckPluginLocation
 {
 	protected static $type			=	'joomla_user_group';
+	protected static $type_alias	=	'UserGroup';
 	protected static $table			=	'#__usergroups';
 	protected static $table_object	=	array( 'Usergroup', 'JTable' );
 	protected static $key			=	'id';
@@ -98,7 +99,7 @@ class plgCCK_Storage_LocationJoomla_User_Group extends JCckPluginLocation
 		$table	=	$field->storage_table;
 		if ( !isset( $config['primary'] ) ) {
 			$config['primary']	=	self::$type;
-			$config['pkb']		=	JCckDatabase::loadResult( 'SELECT pkb FROM #__cck_core WHERE storage_location="'.self::$type.'" AND pk='.(int)$config['pk'] ); // todo: move+improve
+			$config['pkb']		=	JCckDatabase::loadResult( 'SELECT pkb FROM #__cck_core WHERE storage_location="'.self::$type.'" AND pk='.(int)$config['pk'] ); /* TODO#SEBLOD: move+improve */
 		}
 		
 		// Set
@@ -134,7 +135,7 @@ class plgCCK_Storage_LocationJoomla_User_Group extends JCckPluginLocation
 				}
 			}
 		}
-		//$config['author']	=	''; //todo
+		// $config['author']	=	''; /* TODO#SEBLOD: */
 	}
 	
 	// onCCK_Storage_LocationPrepareList
@@ -343,25 +344,31 @@ class plgCCK_Storage_LocationJoomla_User_Group extends JCckPluginLocation
 	// -------- -------- -------- -------- -------- -------- -------- -------- // SEF
 	
 	// buildRoute
-	public static function buildRoute( &$query, &$segments, $config, $menuItem = NULL )
+	public static function buildRoute( &$query, &$segments, $config, $menuItem = null )
 	{
 		require_once JPATH_SITE.'/plugins/cck_storage_location/joomla_article/joomla_article.php';
 		plgCCK_Storage_LocationJoomla_Article::buildRoute( $query, $segments, $config, $menuItem );
 	}
 	
-	// getRoute	//todo: make a parent::getBridgeRoute..
+	// getRoute	/* TODO#SEBLOD: make a parent::getBridgeRoute.. */
 	public static function getRoute( $item, $sef, $itemId, $config = array() )
 	{
 		if ( is_numeric( $item ) ) {
 			$core	=	JCckDatabase::loadObject( 'SELECT cck, pkb FROM #__cck_core WHERE storage_location = "'.self::$type.'" AND pk = '.(int)$item );
+			
 			if ( !is_object( $core ) ) {
 				return '';
 			}
 			$pk				=	$core->pkb;
 			$config['type']	=	$core->cck;
 		} else {
+			if ( !is_object( $item ) ) {
+				return '';
+			}
+
 			$pk		=	( isset( $item->pk ) ) ? $item->pk : $item->id;
 			$pk		=	JCckDatabase::loadResult( 'SELECT pkb FROM #__cck_core WHERE storage_location = "'.self::$type.'" AND pk = '.(int)$pk );
+			
 			if ( !$pk ) {
 				return '';
 			}
@@ -371,7 +378,7 @@ class plgCCK_Storage_LocationJoomla_User_Group extends JCckPluginLocation
 		return plgCCK_Storage_LocationJoomla_Article::getRoute( $pk, $sef, $itemId, $config );
 	}
 	
-	// getRouteByStorage //todo: make a parent::getBridgeRoute.. + optimize ($storage->)
+	// getRouteByStorage /* TODO#SEBLOD: make a parent::getBridgeRoute.. + optimize ($storage->) */
 	public static function getRouteByStorage( &$storage, $sef, $itemId, $config = array() )
 	{
 		if ( isset( $storage[self::$table]->_route ) ) {
@@ -431,12 +438,6 @@ class plgCCK_Storage_LocationJoomla_User_Group extends JCckPluginLocation
 	public static function checkIn( $pk = 0 )
 	{
 		return true;
-	}
-	
-	// getId
-	public static function getId( $config )
-	{
-		return JCckDatabase::loadResult( 'SELECT id FROM #__cck_core WHERE storage_location="'.self::$type.'" AND pk='.(int)$config['pk'] );
 	}
 }
 ?>

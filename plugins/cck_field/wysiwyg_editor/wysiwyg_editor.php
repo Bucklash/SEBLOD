@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -140,7 +140,7 @@ class plgCCK_FieldWysiwyg_editor extends JCckPluginField
 
 				$component				=	$app->input->get( 'option' );
 				if ( ( $component == 'com_cck' && $app->input->get( 'view' ) != 'form' )
-					|| $component == 'com_cck_ecommerce' || $component == 'com_cck_toolbox' || $component == 'com_cck_webservices' ) { // todo: remove later
+					|| $component == 'com_cck_ecommerce' || $component == 'com_cck_toolbox' || $component == 'com_cck_webservices' ) { /* TODO#SEBLOD: remove later */
 					$class				.=	' btn';
 				}
 				$class					=	'class="'.trim( $class ).'" ';

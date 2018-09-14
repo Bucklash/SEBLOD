@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -52,6 +52,19 @@ abstract class JCckEcommercePromotion
 							continue;
 						}
 					} else {
+						continue;
+					}
+				}
+				if ( $p->usage_limit ) {
+					$query	=	'SELECT COUNT(a.id)'
+							.	' FROM #__cck_more_ecommerce_promotion_usage AS a'
+							.	' LEFT JOIN #__cck_more_ecommerce_orders AS b ON b.id = a.order_id'
+							.	' WHERE a.promotion_id = '.(int)$p->id
+							.	' AND b.user_id = '.(int)$user->id
+							.	' AND b.state > 0';
+					$usage	=	(int)JCckDatabase::loadResult( $query );
+
+					if ( $usage > 0 ) {
 						continue;
 					}
 				}
@@ -117,6 +130,7 @@ abstract class JCckEcommercePromotion
 							$total						=	$promotion;
 							$results['items'][$p->id]	=	array(
 																'code'=>@(string)$params['code'],
+																'id'=>$p->id,
 																'promotion'=>$p->discount,
 																'promotion_amount'=>'',
 																'target'=>@$params['target'],
@@ -133,6 +147,7 @@ abstract class JCckEcommercePromotion
 							$total						=	( $total < 0 ) ? 0 : $total;
 							$results['items'][$p->id]	=	array(
 																'code'=>@(string)$params['code'],
+																'id'=>$p->id,
 																'promotion'=>$p->discount,
 																'promotion_amount'=>(string)$promotion,
 																'target'=>@$params['target'],
@@ -148,6 +163,7 @@ abstract class JCckEcommercePromotion
 							$total						=	$total - $promotion;
 							$results['items'][$p->id]	=	array(
 																'code'=>@(string)$params['code'],
+																'id'=>$p->id,
 																'promotion'=>$p->discount,
 																'promotion_amount'=>(string)$promotion,
 																'target'=>@$params['target'],
@@ -163,16 +179,23 @@ abstract class JCckEcommercePromotion
 							$total						=	$total - $promotion;
 							$results['items'][$p->id]	=	array(
 																'code'=>@(string)$params['code'],
+																'id'=>$p->id,
 																'promotion'=>$p->discount,
 																'promotion_amount'=>(string)$promotion,
 																'target'=>@$params['target'],
 																'text'=>$text,
 																'title'=>$p->title,
-																'type'=>$p->type
+																'type'=>$p->type,
 															);
                             break;
 						default:
 							break;
+					}
+
+					if ( isset( $results['items'][$p->id] ) && $p->usage_limit ) {
+						$results['items'][$p->id]['usage_limit']	=	true;
+					} else {
+						$results['items'][$p->id]['usage_limit']	=	false;
 					}
 				}
 			}
@@ -200,12 +223,15 @@ abstract class JCckEcommercePromotion
 		$coupon	=	JFactory::getApplication()->input->getString( 'coupon', '' );
 
 		if ( $coupon == '' && !$strict ) {
-			$user		=	JCck::getUser();
-			require_once JPATH_SITE.'/modules/mod_cck_ecommerce_cart/helper.php';
-			$cart_id	=	modCCKeCommerceCartHelper::getActive( $user, 'cart' );
-			$cart		=	JCckEcommerce::getCart( (int)$cart_id );
-			$order_id	=	$cart->order_id;
-			
+			if ( $order_id = JCckEcommerce::isCheckout( true ) ) {
+				// OK
+			} else {
+				$user		=	JCck::getUser();
+				require_once JPATH_SITE.'/modules/mod_cck_ecommerce_cart/helper.php';
+				$cart_id	=	modCCKeCommerceCartHelper::getActive( $user, 'cart' );
+				$cart		=	JCckEcommerce::getCart( (int)$cart_id );
+				$order_id	=	$cart->order_id;	
+			}
 			if ( $order_id ) {
 				$order	=	JCckDatabaseCache::loadObject( 'SELECT info_promotions FROM #__cck_more_ecommerce_orders AS a WHERE a.id = '.(int)$order_id );
 				

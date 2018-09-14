@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -73,6 +73,22 @@ class plgCCK_FieldLink extends JCckPluginField
 			$field->link_target	=	$target;
 			$field->link_class	=	$class;
 			$field->link_rel	=	$rel;
+
+			if ( $field->link_target == '_blank' ) {
+				$rel		=	trim( JCck::getConfig_Param( 'link_rel_blank', 'noopener noreferrer' ) );
+
+				if ( isset( $field->link_rel ) && $field->link_rel != '' ) {
+					$rel	=	explode( ' ', $rel );
+
+					if ( count( $rel ) ) {
+						$link_rel	=	explode( ' ', $field->link_rel );
+						$rel		=	array_merge( $link_rel, array_diff( $rel, $link_rel ) );
+						$rel		=	implode( ' ', $rel );
+					}
+				}
+				$field->link_rel	=	trim( $rel );
+			}
+
 			$field->linked		=	true;
 			$class				=	( $class != '' ) ? 'class="'.$class.'" ' : '';
 			$rel				=	( $rel != '' ) ? ' rel="'.$rel.'"' : '';
@@ -249,7 +265,7 @@ class plgCCK_FieldLink extends JCckPluginField
 		if ( count( $value ) > 0 && ( $value['link'] || $value['text'] ) ) {
 			$value	=	JCckDev::toJSON( $value );
 		} else {
-			$value	=	NULL;
+			$value	=	null;
 		}
 		// Set or Return
 		if ( $return === true ) {

@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -52,7 +52,7 @@ $js		=	'
 						this.close();
 						return;
 					}
-    			}
+    			};
 				$(document).ready(function(){
 					var data = parent.jQuery("#'.$name.'_match_value").val();
 					$("#match_value").val(data);

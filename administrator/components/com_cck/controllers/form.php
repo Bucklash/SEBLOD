@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -26,31 +26,23 @@ class CCKControllerForm extends JControllerForm
 		$this->registerTask( 'save2new', 'save' );
 		$this->registerTask( 'save2view', 'save' );
 	}
-	
-	// saveAjax
-	public function saveAjax()
+
+	// cancel
+	public function cancel( $key = null )
 	{
-		$config		=	$this->save( null, null, true );
-		$return		=	array(
-							'error'=>0,
-							'id'=>@(int)$config['id'],
-							'isNew'=>@$config['isNew'],
-							'pk'=>$config['pk']
-						);
+		JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
 		
-		if ( !$return['pk'] ) {
-			$return['error']	=	1;
-		}
+		/* TODO#SEBLOD: checkin, etc.. */
 		
-		echo json_encode( $return );
+		$link	=	$this->_getRedirectQuery( true );
+		
+		$this->setRedirect( htmlspecialchars_decode( $link ) );
 	}
 
 	// save
 	public function save( $key = null, $urlVar = null, $isAjax = false )
 	{
-		if ( $isAjax !== true ) {
-			JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
-		}
+		JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
 		
 		$app		=	JFactory::getApplication();
 		$model		=	$this->getModel( 'form' );
@@ -121,17 +113,25 @@ class CCKControllerForm extends JControllerForm
 		
 		$this->setRedirect( htmlspecialchars_decode( $link ), $msg, $msgType );
 	}
-	
-	// cancel
-	public function cancel( $key = null )
+
+	// saveAjax
+	public function saveAjax()
 	{
 		JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
 		
-		// Todo::Checkin,etc..
+		$config		=	$this->save( null, null, true );
+		$return		=	array(
+							'error'=>0,
+							'id'=>@(int)$config['id'],
+							'isNew'=>@$config['isNew'],
+							'pk'=>$config['pk']
+						);
 		
-		$link	=	$this->_getRedirectQuery( true );
+		if ( !$return['pk'] ) {
+			$return['error']	=	1;
+		}
 		
-		$this->setRedirect( htmlspecialchars_decode( $link ) );
+		echo json_encode( $return );
 	}
 	
 	// _getPreconfig

@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -24,8 +24,8 @@ $template_name	=	Helper_Admin::getDefaultTemplate();
 $top			=	'content';
 
 $config			=	JCckDev::init( array( '42', 'button_submit', 'select_simple', 'text' ), true, array( 'vName'=>$this->vName ) );
-$cck			=	JCckDev::preload( array( 'core_filter_input', 'core_filter_go', 'core_filter_search', 'core_filter_clear', 'core_location_filter',
-										 'core_folder_filter', 'core_state_filter', 'core_folder', 'core_dev_text', 'core_storage_location2', 'core_client_filter' ) );
+$cck			=	JCckDev::preload( array( 'core_filter_input', 'core_filter_go', 'core_filter_search', 'core_filter_clear',
+										 	 'core_state_filter', 'core_dev_text' ) );
 JText::script( 'COM_CCK_CONFIRM_DELETE' );
 Helper_Include::addDependencies( $this->getName(), $this->getLayout() );
 ?>
@@ -81,13 +81,25 @@ Helper_Include::addDependencies( $this->getName(), $this->getLayout() );
 		$linkFolder		=	JRoute::_( 'index.php?option='.$this->option.'&task=folder.edit&id='. $item->folder );
 		$linkVersion	=	JRoute::_( 'index.php?option='.$this->option.'&view=versions&filter_e_type=type&e_id='.$item->id );
 		
+		$permissions	=	'';
+
+		if ( $item->rules && $item->rules != '{}' ) {
+			$rules			=	str_replace( array( '"core.create.max.parent":{"8":0}', '"core.create.max.parent.author":{"8":0}', '"core.create.max.author":{"8":0}' ), '', $item->rules );
+			$count			=	(int)substr_count( $rules, 'core.' );
+			
+			if ( $count ) {
+				$key			=	( $count == 1 ) ? 'COM_CCK_N_PERMISSIONS_1' : 'COM_CCK_N_PERMISSIONS';
+				$permissions	=	' <span class="icon-users small hasTooltip" style="color:#666666;" title="'.JText::sprintf( $key, $count ).'" data-trigger="click" data-placement="right"></span>';
+			}
+		}
+
 		Helper_Admin::addFolderClass( $css, $item->folder, $item->folder_color, $item->folder_colorchar );
 		?>
 		<tr class="row<?php echo $i % 2; ?>" height="64px;">
 			<td class="center hidden-phone"><?php Helper_Display::quickSlideTo( 'pagination-bottom', $i + 1 ); ?></td>
 			<td class="center hidden-phone"><?php echo JHtml::_( 'grid.id', $i, $item->id ); ?></td>
 			<td width="30px" class="center hidden-phone">
-            	<?php if ( $item->published && $item->adminFields && $item->location != 'site' && $item->location != 'none' && $canCreateItem ) { ?>
+            	<?php if ( $item->published && ( $item->adminFields || $item->parent && $item->parent_inherit ) && $item->location != 'hidden' && $item->location != 'none' && $item->location != 'site' && $canCreateItem ) { ?>
 					<a target="_self" href="<?php echo $link2; ?>"<?php echo $action_attr; ?>>
 						<?php echo $action; ?>
 					</a>
@@ -100,9 +112,9 @@ Helper_Include::addDependencies( $this->getName(), $this->getLayout() );
 						echo JHtml::_( 'jgrid.checkedout', $i, $item->editor, $item->checked_out_time, $this->vName.'s.', $canCheckin )."\n";
 					}
 					if ( $canEdit && ! $checkedOut ) {
-						echo '<a href="'.$link.'">'.$this->escape( $item->title ).'</a><div class="small">'.$this->escape( $item->name ).'</div>';
+						echo '<a href="'.$link.'">'.$this->escape( $item->title ).'</a><div class="small">'.$this->escape( $item->name ).$permissions.'</div>';
 					} else {
-						echo '<span>'.$this->escape( $item->title ).'</span><div class="small">'.$this->escape( $item->name ).'</div>';
+						echo '<span>'.$this->escape( $item->title ).'</span><div class="small">'.$this->escape( $item->name ).$permissions.'</div>';
 					}
 					?>
 				</div>
@@ -196,9 +208,8 @@ $js	=	'
 					document.location.href = url;
 					return false;
 				}
-			}
-			Joomla.orderTable = function()
-			{
+			};
+			Joomla.orderTable = function() {
 				table = document.getElementById("sortTable");
 				direction = document.getElementById("directionTable");
 				order = table.options[table.selectedIndex].value;
@@ -208,7 +219,7 @@ $js	=	'
 					dirn = direction.options[direction.selectedIndex].value;
 				}
 				Joomla.tableOrdering(order, dirn, "");
-			}
+			};
 			Joomla.submitbutton = function(task, cid) {
 				if (task == "'.$this->vName.'s.delete") {
 					if (confirm(Joomla.JText._("COM_CCK_CONFIRM_DELETE"))) {
@@ -218,7 +229,7 @@ $js	=	'
 					}
 				}
 				Joomla.submitform(task);
-			}
+			};
 			$(document).ready(function() {
 				$("#collapseModal2").on("hidden", function () {
 					$("#toolbar-new > button").blur();
@@ -226,19 +237,38 @@ $js	=	'
 				$(document).keypress(function(e) {
 					if (!$(":input:focus").length) {
 						e.preventDefault();
+						var k = e.which;
 
-						if (e.which == 64) {
+						if (k == 64) {
 							if ( $("#filter_search").val() != "" ) {
 								$("#filter_search").select();
+								if ( $("#filter_location").val() == "id" ) {
+									$("#filter_location").val("title").trigger("liszt:updated");
+								}
 							} else {
 								$("#filter_search").focus();
 							}
-						} else if (e.which == 110) {
+						} else if (k == 110) {
 							$("#toolbar-new > button").click();
-						} else if (JCck.Dev.count == 1 && e.which >= 49 && e.which <= 52) {
+						} else if (k == 13 && document.adminForm.boxchecked.value==1) {
+							var v = $("[name=\'cid[]\']:checked").val();
+							$("#filter_location").val("id");
+							$("#filter_search").val(v);
+							$("#core_filter_go").click();
+						} else if (JCck.Dev.count == 1 && k >= 49 && k <= 52) {
 							var n = e.which - 48;
 							if ($(\'[data-edit-trigger="\'+n+\'"]\').length) {
 								document.location.href=$(\'[data-edit-trigger="\'+n+\'"]\').attr("href");
+							}
+						} else if (JCck.Dev.count > 1 && k >= 48 && k <= 57) {
+							if (k == 48) {
+								k = 58;
+							}
+							var tk = k - 49;
+
+							if ($("#cb"+tk).length) {
+								$("[name=\'toggle\']").click().click();
+								$("#cb"+tk).click();
 							}
 						}
 					}

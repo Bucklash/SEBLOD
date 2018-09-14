@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -12,12 +12,7 @@ defined( '_JEXEC' ) or die;
 
 // Prepare
 JPluginHelper::importPlugin( 'cck_field_link' );
-$p_title	=	0;
-$p_typo		=	1;
-if ( $p_typo ) {
-	JPluginHelper::importPlugin( 'cck_field_typo' );
-}
-
+JPluginHelper::importPlugin( 'cck_field_typo' );
 JPluginHelper::importPlugin( 'cck_storage' );
 JPluginHelper::importPlugin( 'cck_storage_location' );
 
@@ -42,6 +37,15 @@ if ( $list['isCore'] ) {
 	}
 	$ids		=	substr( $ids, 0, -1 );
 	$pks		=	substr( $pks, 0, -1 );
+} else {
+	for ( $i = 0; $i < $count; $i++ ) {
+		if ( isset( $items[$i]->id ) ) {
+			$ids	.=	$items[$i]->id.',';
+		}
+	}
+	if ( $ids != '' ) {
+		$ids	=	substr( $ids, 0, -1 );
+	}
 }
 $storages		=	array( '_'=>'' );
 $suffix			=	'';
@@ -55,18 +59,19 @@ if ( $debug == -1 ) {
 if ( $count ) {
 	for ( $i = 0; $i < $count; $i++ ) {
 		if ( isset( $items[$i]->pk ) ) {
-			$PK						=	$items[$i]->pk;
+			$PK							=	$items[$i]->pk;
 		} else {
-			$PK						=	$i;
-			$items[$i]->author		=	0;
-			$items[$i]->cck			=	'';
-			$items[$i]->loc			=	$list['location'];
-			$items[$i]->parent		=	'';
-			$items[$i]->pid			=	0;
-			$items[$i]->pk			=	$i;
-			$items[$i]->pkb			=	0;
-			$items[$i]->type_id		=	0;
-			$items[$i]->type_alias	=	'';
+			$PK							=	$i;
+			$items[$i]->author			=	0;
+			$items[$i]->author_session	=	'';
+			$items[$i]->cck				=	'';
+			$items[$i]->loc				=	$list['location'];
+			$items[$i]->parent			=	'';
+			$items[$i]->pid				=	0;
+			$items[$i]->pk				=	$i;
+			$items[$i]->pkb				=	0;
+			$items[$i]->type_id			=	0;
+			$items[$i]->type_alias		=	'';
 		}
 		$item	=	new CCK_Item( $templateStyle->name, $search->name, $items[$i]->pk );
 		
@@ -74,10 +79,10 @@ if ( $count ) {
 		if ( $count2 ) {
 			$config		=	array(
 								'author'=>$items[$i]->author,
+								'author_session'=>$items[$i]->author_session,
 								'client'=>'item',
 								'doSEF'=>$list['doSEF'],
 								'doTranslation'=>JCck::getConfig_Param( 'language_jtext', 0 ),
-								'doTypo'=>$p_typo,
 								'error'=>0,
 								'fields'=>array(),
 								'formId'=>$list['formId'],
@@ -91,6 +96,7 @@ if ( $count ) {
 								'pk'=>$items[$i]->pk,
 								'pkb'=>$items[$i]->pkb,
 								'pks'=>$pks,
+								'sef_aliases'=>$list['sef_aliases'],
 								'storages'=>array(),
 								'type'=>$items[$i]->cck,
 								'type_id'=>(int)$items[$i]->type_id,
@@ -144,7 +150,7 @@ if ( $count ) {
 							JCckPluginLink::g_setHtml( $field, $target );
 						}
 					}
-					if ( @$field->typo && ( $field->$target !== '' || $field->typo_label == -2 ) && $p_typo ) {
+					if ( @$field->typo && ( $field->$target !== '' || $field->typo_label == -2 ) ) {
 						$dispatcher->trigger( 'onCCK_Field_TypoPrepareContent', array( &$field, $field->typo_target, &$config ) );
 					} else {
 						$field->typo	=	'';
@@ -171,11 +177,11 @@ if ( $count ) {
 						$fieldsI[$k]	=	$v;
 					}
 				}
-				$config['fields']	=	NULL;
+				$config['fields']	=	null;
 				unset( $config['fields'] );
 			}
 			
-			// Todo: ->legend2 may be deprecated (from here) in a near future... in order to move at template level.
+			/* TODO#SEBLOD: ->legend2 may be deprecated (from here) in a near future... in order to move at template level. */
 			if ( $i == 0 ) {
 				foreach ( $positions as $p_key=>$p_fields ) {
 					$legend2	=	'';
@@ -226,10 +232,10 @@ if ( $count ) {
 		if ( $count3 ) {
 			$config		=	array(
 								'author'=>$items[$i]->author,
+								'author_session'=>$items[$i]->author_session,
 								'client'=>'item',
 								'doSEF'=>$list['doSEF'],
 								'doTranslation'=>JCck::getConfig_Param( 'language_jtext', 0 ),
-								'doTypo'=>$p_typo,
 								'error'=>0,
 								'fields'=>array(),
 								'formId'=>$list['formId'],
@@ -243,6 +249,7 @@ if ( $count ) {
 								'pk'=>$items[$i]->pk,
 								'pkb'=>$items[$i]->pkb,
 								'pks'=>$pks,
+								'sef_aliases'=>$list['sef_aliases'],
 								'storages'=>array(),
 								'type'=>$items[$i]->cck,
 								'type_id'=>(int)$items[$i]->type_id,
@@ -296,7 +303,7 @@ if ( $count ) {
 							JCckPluginLink::g_setHtml( $field, $target );
 						}
 					}
-					if ( @$field->typo && ( $field->$target !== '' || $field->typo_label == -2 ) && $p_typo ) {
+					if ( @$field->typo && ( $field->$target !== '' || $field->typo_label == -2 ) ) {
 						$dispatcher->trigger( 'onCCK_Field_TypoPrepareContent', array( &$field, $field->typo_target, &$config ) );
 					} else {
 						$field->typo	=	'';
@@ -329,11 +336,11 @@ if ( $count ) {
 						$fieldsI[$k]	=	$v;
 					}
 				}
-				$config['fields']	=	NULL;
+				$config['fields']	=	null;
 				unset( $config['fields'] );
 			}
 			
-			// Todo: ->legend2 may be deprecated (from here) in a near future... in order to move at template level.
+			/* TODO#SEBLOD: ->legend2 may be deprecated (from here) in a near future... in order to move at template level. */
 			if ( $i == 0 ) {
 				foreach ( $positions2 as $p_key=>$p_fields ) {
 					$legend2	=	'';

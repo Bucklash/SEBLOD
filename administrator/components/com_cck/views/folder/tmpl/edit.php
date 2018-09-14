@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -23,7 +23,7 @@ Helper_Include::addDependencies( $this->getName(), $this->getLayout() );
             <?php echo JCckDev::renderForm( 'core_title_folder', $this->item->title, $config ); ?>
         </ul>
         <ul class="spe spe_folder">
-            <?php echo JCckDev::renderForm( 'core_folder_folder', $this->item->parent_id, $config ); ?>
+            <?php echo JCckDev::renderFormFromHelper( array( 'component'=>'com_cck', 'function'=>'getFolderParent', 'name'=>'core_folder_folder' ), $this->item->parent_id, $config, array( 'storage_field'=>'parent_id' ) ); ?>
         </ul>
         <ul class="spe spe_state spe_third">
             <?php echo JCckDev::renderForm( 'core_state', $this->item->published, $config, array( 'label'=>'clear', 'defaultvalue'=>1 ) ); ?>
@@ -79,12 +79,12 @@ Helper_Display::quickCopyright();
         submit: function(task) {
             Joomla.submitbutton(task);
         }
-    }
+    };
     Joomla.submitbutton = function(task) {
         if (task == "folder.cancel" || $("#adminForm").validationEngine("validate",task) === true) {
             JCck.submitForm(task, document.getElementById('adminForm'));
         }
-    }
+    };
     $(document).ready(function() {
         $("#toggle_acl").click(function(){
             $("#acl").slideToggle();

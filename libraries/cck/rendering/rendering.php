@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -164,7 +164,7 @@ class CCK_Rendering
 		$this->name			=	$me->template;
 		$this->template		=	$me->template;
 		$this->type			=	$me->cck_type;
-		$this->type_infos	=	NULL;
+		$this->type_infos	=	null;
 		$this->location		=	( $app->isClient( 'administrator' ) ) ? 'admin' : 'site';
 		$this->theme		=	$me->theme;
 		
@@ -538,7 +538,7 @@ class CCK_Rendering
 	}
 	
 	// renderField
-	public function renderField( $fieldname, $options = NULL )
+	public function renderField( $fieldname, $options = null )
 	{
 		$field		=	$this->get( $fieldname );
 		$html		=	'';
@@ -619,7 +619,7 @@ class CCK_Rendering
 	{
 		$field	=	$this->get( $fieldname );
 		
-		if ( !$field->display ) {
+		if ( !$field->state ) {
 			return '';
 		}
 		
@@ -678,12 +678,14 @@ class CCK_Rendering
 	// setConditionalStates
 	public function setConditionalStates( &$field )
 	{	
+		$name	=	isset( $field->name2 ) ? $field->name2 : $field->name;
+
 		if ( $field->markup == 'none' ) {
 			$field->conditional_options	=	str_replace( array( ' #form#', '#form#' ), '', $field->conditional_options );
-			$selector					=	$field->name;
+			$selector					=	$name;
 		} else {
-			$field->conditional_options	=	str_replace( '#form#', '#'.$field->name, $field->conditional_options );
-			$selector					=	$this->id.'_'.$field->name;
+			$field->conditional_options	=	str_replace( '#form#', '#'.$name, $field->conditional_options );
+			$selector					=	$this->id.'_'.$name;
 		}
 		$this->addJS( '$("#'.$selector.'").conditionalStates('.$field->conditional_options.');' );
 	}
@@ -693,7 +695,7 @@ class CCK_Rendering
 	// getItem
 	public function getItem( $pk )
 	{
-		return ( isset( $this->list[$pk] ) ) ? $this->list[$pk] : NULL;
+		return ( isset( $this->list[$pk] ) ) ? $this->list[$pk] : null;
 	}	
 	
 	// getItems
@@ -799,7 +801,7 @@ class CCK_Rendering
 			$options	=	new JRegistry;
 			$options->loadString( $this->positions_m[$position]->variation_options );
 		} else {
-			$options	=	NULL;
+			$options	=	null;
 		}
 		
 		$legend		=	( isset( $this->positions_m[$position]->legend ) && $this->positions_m[$position]->legend ) ? trim( $this->positions_m[$position]->legend ) : (( $this->doDebug() ) ? $position : '' );
@@ -882,7 +884,7 @@ class CCK_Rendering
 					;
 		}
 		if ( $variation ) {
-			$legend		=	'';	//Todo
+			$legend		=	'';	/* TODO#SEBLOD: */
 			$options	=	new JRegistry;
 			$html		=	$this->renderVariation( $variation, $legend, $html, $options, $position.'_line', '', false );
 		}
@@ -1084,7 +1086,7 @@ class CCK_Rendering
 			$this->browser->name	=	$browser->getBrowser();
 			$this->browser->agent	=	$browser->getAgentString();
 			$this->browser->version	=	$browser->getVersion();
-			//todo: process to get the right info from agent...!
+			/* TODO#SEBLOD: process to get the right info from agent...! */
 		}
 		
 		return @$this->browser->$property;

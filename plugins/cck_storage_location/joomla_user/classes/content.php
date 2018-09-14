@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -13,30 +13,42 @@ defined( '_JEXEC' ) or die;
 // JCckContent
 class JCckContentJoomla_User extends JCckContent
 {
-	// getInstanceBase
-	protected function getInstanceBase()
+	// setInstanceBase
+	protected function setInstanceBase()
 	{
-		return JUser::getInstance();
+		$this->_instance_base	=	new JUser;
+
+		$fields					=	array_keys( $this->_instance_base->getTable()->getFields() );
+		unset( $fields['id'] );
+
+		self::$types[$this->_type]['data_map']				=	array_merge( self::$types[$this->_type]['data_map'], array_fill_keys( $fields, 'base' ) );
+		self::$types[$this->_type]['data_map']['groups']	=	'base';
+
+		return true;
 	}
 
 	// initialize
 	protected function initialize()
 	{
-		JPluginHelper::importPlugin( 'user', 'cck' );
+		JPluginHelper::importPlugin( 'user' );
 	}
 
 	// check
-	public function check( $instance_name )
+	public function check( $table_instance_name )
 	{
-		if ( $instance_name == 'base' ) {
+		if ( !$this->isSuccessful() ) {
+			return false;
+		}
+
+		if ( $table_instance_name == 'base' ) {
 			return true;
 		} else {
-			return $this->{'_instance_'.$instance_name}->check();
+			return $this->{'_instance_'.$table_instance_name}->check();
 		}
 	}
 
 	// remove
-	public function remove()
+	protected function remove()
 	{
 		return $this->_instance_base->delete();
 	}
@@ -44,30 +56,28 @@ class JCckContentJoomla_User extends JCckContent
 	// saveBase
 	protected function saveBase()
 	{
+		if ( !$this->getId() ) {
+			if ( empty( $this->_instance_base->groups ) ) {
+				$this->_instance_base->groups	=	array( 2 );
+			}
+		}
+
 		return $this->_instance_base->save();
 	}
 
-	// store
-	public function store( $instance_name )
+	// storeBase
+	protected function storeBase()
 	{
-		if ( !$this->can( 'save' ) ) {
-			return false;
-		}
-
-		if ( $instance_name == 'base' ) {
-			return $this->_instance_base->save();
-		} else {
-			return $this->{'_instance_'.$instance_name}->store();
-		}
+		return $this->_instance_base->save();
 	}
 
 	// triggerDelete
 	public function triggerDelete( $event )
 	{
 		if ( $event == 'beforeDelete' ) {
-			return $this->_dispatcher->trigger( $this->_columns['events'][$event], array( $this->_instance_base->getProperties() ) );
+			return $this->_dispatcher->trigger( self::$objects[$this->_object]['properties']['events'][$event], array( $this->_instance_base->getProperties() ) );
 		} elseif ( $event == 'afterDelete' ) {
-			return $this->_dispatcher->trigger( $this->_columns['events'][$event], array( $this->_instance_base->getProperties(), true, $this->_instance_base->getError() ) );
+			return $this->_dispatcher->trigger( self::$objects[$this->_object]['properties']['events'][$event], array( $this->_instance_base->getProperties(), true, $this->_instance_base->getError() ) );
 		}
 
 		return true;
@@ -75,9 +85,15 @@ class JCckContentJoomla_User extends JCckContent
 
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Misc
 
+	// _addToGroup
 	protected function _addToGroup( $group_id )
 	{
 		if ( !$this->_pk ) {
+			return false;
+		}
+		if ( !$this->can( 'save' ) ) {
+			$this->log( 'error', 'Permissions denied.' );
+
 			return false;
 		}
 
@@ -88,14 +104,20 @@ class JCckContentJoomla_User extends JCckContent
 		}
 	}
 
+	// _removeFromGroup
 	protected function _removeFromGroup( $group_id )
 	{
 		if ( !$this->_pk ) {
 			return false;
 		}
+		if ( !$this->can( 'save' ) ) {
+			$this->log( 'error', 'Permissions denied.' );
+
+			return false;
+		}
 
 		if ( JCck::getUser()->id == $this->_pk ) {
-			return JUserHelper::removeFromGroup( $this->_pk, $group_id );
+			return JUserHelper::removeUserFromGroup( $this->_pk, $group_id );
 		} else {
 			return JCckDatabase::execute( 'DELETE FROM #__user_usergroup_map WHERE user_id = '.(int)$this->_pk.' AND group_id = '. (int)$group_id );
 		}

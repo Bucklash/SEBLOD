@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -17,7 +17,7 @@ class CCKViewBox extends JViewLegacy
 	protected $state;
 	
 	// display
-	function display( $tpl = NULL )
+	public function display( $tpl = null )
 	{
 		$app				=	JFactory::getApplication();
 		$this->item			=	new stdClass;
@@ -50,7 +50,7 @@ class CCKViewBox extends JViewLegacy
 	}
 	
 	// onceFile
-	function onceFile( $method, &$config = array(), $file = '' )
+	public function onceFile( $method, &$config = array(), $file = '' )
 	{
 		if ( ! $file ) {
 			$file	=	$this->file;

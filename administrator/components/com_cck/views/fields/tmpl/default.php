@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -25,8 +25,8 @@ $saveOrder		=	0;
 $top			=	'content';
 
 $config			=	JCckDev::init( array( '42', 'button_submit', 'select_simple', 'text' ), true, array( 'vName'=>$this->vName ) );
-$cck			=	JCckDev::preload( array( 'core_filter_input', 'core_filter_go', 'core_filter_search', 'core_filter_clear', 'core_location_filter',
-										 'core_type_filter', 'core_folder_filter', 'core_state_filter', 'core_folder' ) );
+$cck			=	JCckDev::preload( array( 'core_filter_input', 'core_filter_go', 'core_filter_search', 'core_filter_clear',
+											 'core_state_filter' ) );
 JText::script( 'COM_CCK_CONFIRM_DELETE' );
 JPluginHelper::importPlugin( 'cck_storage_location' );
 Helper_Include::addDependencies( $this->getName(), $this->getLayout() );
@@ -184,8 +184,10 @@ Helper_Display::quickCopyright();
 
 $js	=	'
 		(function ($){
-			Joomla.orderTable = function()
-			{
+			JCck.Dev = {
+				count:'.count( $this->items ).'
+			};
+			Joomla.orderTable = function() {
 				table = document.getElementById("sortTable");
 				direction = document.getElementById("directionTable");
 				order = table.options[table.selectedIndex].value;
@@ -195,7 +197,7 @@ $js	=	'
 					dirn = direction.options[direction.selectedIndex].value;
 				}
 				Joomla.tableOrdering(order, dirn, "");
-			}
+			};
 			Joomla.submitbutton = function(task, cid) {
 				if (task == "'.$this->vName.'s.delete") {
 					if (confirm(Joomla.JText._("COM_CCK_CONFIRM_DELETE"))) {
@@ -205,20 +207,33 @@ $js	=	'
 					}
 				}
 				Joomla.submitform(task);
-			}
+			};
 			$(document).ready(function() {
 				$(document).keypress(function(e) {
 					if (!$(":input:focus").length) {
 						e.preventDefault();
+						var k = e.which;
 
-						if (e.which == 64) {
+						if (k == 64) {
 							if ( $("#filter_search").val() != "" ) {
 								$("#filter_search").select();
 							} else {
 								$("#filter_search").focus();
 							}
-						} else if (e.which == 110) {
+						} else if (k == 110) {
 							$("#toolbar-new > button").click();
+						} else if (k == 13 && document.adminForm.boxchecked.value==1) {
+							$("#toolbar-edit > button").click();
+						} else if (JCck.Dev.count > 0 && k >= 48 && k <= 57) {
+							if (k == 48) {
+								k = 58;
+							}
+							var tk = k - 49;
+
+							if ($("#cb"+tk).length) {
+								$("[name=\'toggle\']").click().click();
+								$("#cb"+tk).click();
+							}
 						}
 					}
 				});

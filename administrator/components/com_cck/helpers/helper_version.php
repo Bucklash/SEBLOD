@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -87,11 +87,9 @@ class Helper_Version
 				$style			=	json_decode( $style );
 			}
 
-			$data				=	array( 'fields'=>$fields, 'positions'=>$positions, 'template_style'=>$style );
-			$e_more[$i]			=	(string)( count( $fields ) );
-			$name				=	'e_more'.$i;
-			
-			$version->{$name}	=	JCckDev::toJSON( $data );
+			$data					=	array( 'fields'=>$fields, 'positions'=>$positions, 'template_style'=>$style );
+			$e_more[$i]				=	(string)( count( $fields ) );
+			$version->{'e_more'.$i}	=	JCckDev::toJSON( $data );
 		}
 		$version->e_more	=	JCckDev::toJSON( array( 'fields'=>$e_more ) );
 		// --

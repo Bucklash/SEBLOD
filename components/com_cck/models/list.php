@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -16,7 +16,7 @@ class CCKModelList extends JModelLegacy
 	var	$_pagination	=	null;
 		
 	// __construct
-	function __construct()
+	public function __construct()
 	{
 		parent::__construct();
 		
@@ -28,7 +28,7 @@ class CCKModelList extends JModelLegacy
 	}
 	
 	// _getPagination
-	function _getPagination( $total = 0 )
+	public function _getPagination( $total = 0 )
 	{
 		if ( empty( $this->_pagination ) )
 		{
@@ -40,7 +40,7 @@ class CCKModelList extends JModelLegacy
 	}
 	
 	// delete
-	function delete( $pks = array() )
+	public function delete( $pks = array() )
 	{
 		JPluginHelper::importPlugin( 'content' );
 		JPluginHelper::importPlugin( 'cck_storage_location' );
@@ -82,7 +82,7 @@ class CCKModelList extends JModelLegacy
 
 		$db 	= 	JFactory::getDbo();
 		$query	= 	$db->getQuery( true );
-		$query->select( 'a.id, a.pk, a.storage_location, b.id AS type_id' )
+		$query->select( 'a.id, a.pk, a.storage_location, author_id, b.id AS type_id' )
 			  ->from( '#__cck_core AS a' )
 			  ->join( 'LEFT', '#__cck_core_types AS b ON b.name = a.cck' )
 			  ->where( 'a.id IN (' . implode( ',', $pks ) . ')' );
@@ -93,6 +93,7 @@ class CCKModelList extends JModelLegacy
 		if ( !empty( $results ) ) {
 			$ids 		= 	array();
 			$location 	= 	null;
+			$orders		=	array();
 			$user 		=	JCck::getUser();
 
 			foreach ( $pks as $i=>$pk ) {
@@ -103,19 +104,18 @@ class CCKModelList extends JModelLegacy
 				if ( !( $canEdit && $canEditOwn
 					|| ( $canEdit && !$canEditOwn && ( $results[$pk]['author_id'] != $user->id ) )
 					|| ( $canEditOwn && ( $results[$pk]['author_id'] == $user->id ) ) ) ) {
-					unset( $lft[$i] );
 					continue;
 				}
 
 				$ids[] 		= 	$results[$pk]['pk'];
+				$orders[]	=	$lft[$i];
 
 				if ( null === $location ) {
 					$location 	= 	$results[$pk]['storage_location'];
 				}
-
 			}
 			if ( $location && count( $ids ) ) {
-				return JCck::callFunc_Array( 'plgCCK_Storage_Location'.$location, 'onCCK_Storage_LocationSaveOrder', array( $ids, $lft ) );
+				return JCck::callFunc_Array( 'plgCCK_Storage_Location'.$location, 'onCCK_Storage_LocationSaveOrder', array( $ids, $orders ) );
 			}
 		}
 

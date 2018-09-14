@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -20,7 +20,6 @@ class plgSystemCCK extends JPlugin
 	protected $multisite		=	null;
 	protected $restapi			=	null;
 	protected $site				=	null;
-	protected $site_cfg			=	null;
 	protected $site_context		=	null;
 	protected $site_exclusion	=	false;
 
@@ -30,19 +29,6 @@ class plgSystemCCK extends JPlugin
 		parent::__construct( $subject, $config );
 
 		$app	=	JFactory::getApplication();
-		$root	=	JUri::root( true );
-
-		// Deprecated :: start
-		if ( ! defined( 'JROOT_CCK' ) ) {
-			define( 'JROOT_CCK', $root );
-		}
-		if ( ! defined( 'JROOT_MEDIA_CCK' ) ) {
-			define( 'JROOT_MEDIA_CCK', $root.'/media/cck' );
-		}
-		if ( ! defined( 'JPATH_LIBRARIES_CCK' ) ) {
-			define( 'JPATH_LIBRARIES_CCK', JPATH_SITE.'/libraries/cck' );
-		}
-		// Deprecated :: end
 
 		if ( $app->isClient( 'administrator' ) ) {
 			JFactory::getLanguage()->load( 'lib_cck', JPATH_SITE );
@@ -53,31 +39,25 @@ class plgSystemCCK extends JPlugin
 		}
 		jimport( 'joomla.filesystem.file' );
 
-		// Content
-		jimport( 'cck.content.article' );
-		// jimport( 'cck.content.category' );
-		jimport( 'cck.content.content' );
-		jimport( 'cck.content.user' );
+		$this->_setLegacyMode();
 
-		$this->multisite	=	JCck::_setMultisite(); // todo: _isMultiSite()
+		$this->multisite	=	JCck::_setMultisite(); /* TODO#SEBLOD: _isMultiSite() */
 		$this->restapi		=	$this->_isRestApi();
 
 		JPluginHelper::importPlugin( 'cck_storage_location' );
 		
 		if ( $this->multisite === true ) {
 			$this->site		=	null;
-			$this->site_cfg	=	new JRegistry;
 
 			if ( JCck::isSite() ) {
 				$this->default_lang =	JComponentHelper::getParams( 'com_languages' )->get( 'site', 'en-GB' );
 				$this->filter_lang	=	JPluginHelper::isEnabled( 'system', 'languagefilter' );
 				$this->site			=	JCck::getSite();
-				$this->site_cfg->loadString( $this->site->configuration );
 				$this->site_context	=	(int)JCck::getConfig_Param( 'multisite_context', '1' );
 
 				if ( $app->isClient( 'site' ) && $this->site ) {
 					// --- Redirect to Homepage
-					$homepage	=	$this->site_cfg->get( 'homepage', 0 );
+					$homepage	=	$this->site->configuration->get( 'homepage', 0 );
 
 					if ( $homepage > 0 ) {
 						$current	=	JUri::current( true );
@@ -132,7 +112,7 @@ class plgSystemCCK extends JPlugin
 					if ( $forced == true ) {
 						$tag	=	JFactory::getLanguage()->getDefault();
 					} else {
-						$tag	=	$this->site_cfg->get( 'language' );
+						$tag	=	$this->site->configuration->get( 'language' );
 					}
 
 					if ( $tag ) {
@@ -217,6 +197,12 @@ class plgSystemCCK extends JPlugin
 	public function onAfterInitialise()
 	{
 		$app	=	JFactory::getApplication();
+		$view	=	$app->input->get( 'view' );
+		$task	=	$app->input->get( 'task' );
+
+		if ( $view || ( $task && $task != 'download' ) ) {
+			JFactory::getSession()->set( 'cck_task', '' );
+		}
 
 		if ( $this->restapi ) {
 			$format		=	JCckWebservice::getConfig_Param( 'resources_format', 'json' );
@@ -236,7 +222,7 @@ class plgSystemCCK extends JPlugin
 			$app->input->set( 'format', $format );
 		}
 
-		$router	=	JCck::on( '3.3' ) ? $app::getRouter() : $app->getRouter();
+		$router	=	$app::getRouter();
 
 		$router->attachBuildRule( array( $this, 'buildRule' ), JRouter::PROCESS_DURING );
 		$router->attachParseRule( array( $this, 'parseRule' ), JRouter::PROCESS_DURING );
@@ -284,12 +270,12 @@ class plgSystemCCK extends JPlugin
 		}
 		if ( $user->id > 0 && is_object( $this->site ) && $isUser ) {
 			if ( $app->isClient( 'site' ) ) {
-				$this->_setHomepage( $this->site_cfg->get( 'homepage', 0 ) );
+				$this->_setHomepage( $this->site->configuration->get( 'homepage', 0 ) );
 
-				$style	=	$this->site_cfg->get( 'template_style', '' );
+				$style	=	$this->site->configuration->get( 'template_style', '' );
 
 				if ( $style != '' ) {
-					$this->site_cfg->set( 'set_template_style', true );
+					$this->site->configuration->set( 'set_template_style', true );
 					$this->_setTemplateStyle( $style );
 				}
 			}
@@ -413,12 +399,12 @@ class plgSystemCCK extends JPlugin
 				$menuShadow		=	new CCKMenu( array( 'user_id'=>$this->site->guest ) );
 				$menuShadow->makeHimLive();
 			}
-			$this->_setHomepage( $this->site_cfg->get( 'homepage', 0 ) );
+			$this->_setHomepage( $this->site->configuration->get( 'homepage', 0 ) );
 
-			$style	=	$this->site_cfg->get( 'template_style', '' );
+			$style	=	$this->site->configuration->get( 'template_style', '' );
 
 			if ( $style != '' ) {
-				$this->site_cfg->set( 'set_template_style', true );
+				$this->site->configuration->set( 'set_template_style', true );
 				$this->_setTemplateStyle( $style );
 			}
 		}
@@ -437,9 +423,9 @@ class plgSystemCCK extends JPlugin
 		$app		=	JFactory::getApplication();
 		$doc		=	JFactory::getDocument();
 		$id			=	$app->input->getInt( 'id', 0 );
+		$layout		=	$app->input->get( 'layout', '' );
 		$option		=	$app->input->get( 'option', '' );
 		$view		=	$app->input->get( 'view', '' );
-		$layout		=	$app->input->get( 'layout', '' );
 
 		if ( $app->isClient( 'administrator' ) ) {
 			switch ( $option ) {
@@ -565,48 +551,49 @@ class plgSystemCCK extends JPlugin
 			}
 
 			if ( $this->multisite === true ) {
-				$config		=	JFactory::getConfig();
-				$site_title	=	$this->site_cfg->get( 'sitename', '' );
-				$site_pages	=	$this->site_cfg->get( 'sitename_pagetitles', 0 );
-				$site_desc	=	$this->site_cfg->get( 'metadesc', '' );
-				$site_keys	=	$this->site_cfg->get( 'metakeys', '' );
+				if ( $this->site ) {
+					$config		=	JFactory::getConfig();
+					$site_title	=	$this->site->configuration->get( 'sitename', '' );
+					$site_pages	=	$this->site->configuration->get( 'sitename_pagetitles', 0 );
+					$site_desc	=	$this->site->configuration->get( 'metadesc', '' );
+					$site_keys	=	$this->site->configuration->get( 'metakeys', '' );
 
-				$meta_desc	=	$doc->getMetaData( 'description' );
-				$meta_keys	=	$doc->getMetaData( 'keywords' );
+					$meta_desc	=	$doc->getMetaData( 'description' );
+					$meta_keys	=	$doc->getMetaData( 'keywords' );
 
-				if ( $site_pages ) {
-					$title	=	( $site_pages ) == 2 ? $doc->getTitle().' - '.$site_title : $site_title .' - '.$doc->getTitle();
-					$doc->setTitle( $title );
-				}
-				if ( $site_desc && ( !$meta_desc || $meta_desc == $config->get( 'MetaDesc' ) ) ) {
-					$doc->setMetaData( 'description', $site_desc );
-				}
-				if ( $site_keys && ( !$meta_keys || $meta_keys == $config->get( 'MetaKeys' ) ) ) {
-					$doc->setMetaData( 'keywords', $site_keys );
-				}
-				if ( $this->site_cfg->get( 'offline' ) && !$user->authorise( 'core.login.offline' ) ) {
-					$template	=	JCckDatabase::loadObject( 'SELECT template, params FROM #__template_styles WHERE template = "'.$app->getTemplate().'"' );
-					$params		=	array( 'directory'=>JPATH_THEMES,
-										   'file'=>'offline.php',
-										   'params'=>$template->params,
-										   'template'=>$template->template
-									);
-					if ( JCck::on( '3.6') ) {
-						$params['params']	=	new JRegistry( $params['params'] );
+					if ( $site_pages ) {
+						$title	=	( $site_pages ) == 2 ? $doc->getTitle().' - '.$site_title : $site_title .' - '.$doc->getTitle();
+						$doc->setTitle( $title );
 					}
-					$doc->parse( $params );
-					$this->offline_buffer	=	$doc->render( false, $params );
-				} elseif ( $this->site_cfg->get( 'set_template_style', false ) ) {
-					$menu	=	$app->getMenu();
+					if ( $site_desc && ( !$meta_desc || $meta_desc == $config->get( 'MetaDesc' ) ) ) {
+						$doc->setMetaData( 'description', $site_desc );
+					}
+					if ( $site_keys && ( !$meta_keys || $meta_keys == $config->get( 'MetaKeys' ) ) ) {
+						$doc->setMetaData( 'keywords', $site_keys );
+					}
+					if ( $this->site->configuration->get( 'offline' ) && !$user->authorise( 'core.login.offline' ) ) {
+						$template	=	JCckDatabase::loadObject( 'SELECT template, params FROM #__template_styles WHERE template = "'.$app->getTemplate().'"' );
+						$params		=	array( 'directory'=>JPATH_THEMES,
+											   'file'=>'offline.php',
+											   'params'=>$template->params,
+											   'template'=>$template->template
+										);
+						$params['params']	=	new JRegistry( $params['params'] );
+						
+						$doc->parse( $params );
+						$this->offline_buffer	=	$doc->render( false, $params );
+					} elseif ( $this->site->configuration->get( 'set_template_style', false ) ) {
+						$menu	=	$app->getMenu();
 
-					if ( is_object( $menu ) ) {
-						$active	=	$menu->getActive();
+						if ( is_object( $menu ) ) {
+							$active	=	$menu->getActive();
 
-						if ( is_object( $active ) ) {
-							$style	=	$active->template_style_id;
+							if ( is_object( $active ) ) {
+								$style	=	$active->template_style_id;
 
-							if ( $style ) {
-								$this->_setTemplateStyle( $style );
+								if ( $style ) {
+									$this->_setTemplateStyle( $style );
+								}
 							}
 						}
 					}
@@ -753,6 +740,11 @@ class plgSystemCCK extends JPlugin
 
 			JCckToolbox::setHead( $head );
 		}
+		if ( $app->isClient( 'site' ) && $doc->getType() == 'html' ) {
+			if ( isset( $app->cck_page_title ) ) {
+				$doc->setTitle( $app->cck_page_title );
+			}
+		}
 		if ( $app->isClient( 'site' ) && isset( $app->cck_app['Header'] ) ) {
 			if ( count( $app->cck_app['Header'] ) ) {
 				foreach ( $app->cck_app['Header'] as $k=>$v ) {
@@ -800,15 +792,15 @@ class plgSystemCCK extends JPlugin
 							$app->setBody( $buffer );
 						}
 					}
-				}
-				if ( $this->site_cfg->get( 'offline' ) && isset( $this->offline_buffer ) ) {
-					$uri		=	JUri::getInstance();
-					$app->setUserState( 'users.login.form.data', array( 'return'=>(string)$uri ) );
+					if ( $this->site->configuration->get( 'offline' ) && isset( $this->offline_buffer ) ) {
+						$uri		=	JUri::getInstance();
+						$app->setUserState( 'users.login.form.data', array( 'return'=>(string)$uri ) );
 
-					if ( !isset( $app->cck_app['Header']['Status'] ) ) {
-						$app->setHeader( 'Status', '503 Service Temporarily Unavailable', true );
+						if ( !isset( $app->cck_app['Header']['Status'] ) ) {
+							$app->setHeader( 'Status', '503 Service Temporarily Unavailable', true );
+						}
+						$app->setBody( $this->offline_buffer );
 					}
-					$app->setBody( $this->offline_buffer );
 				}
 			}
 			return;
@@ -1024,7 +1016,7 @@ class plgSystemCCK extends JPlugin
 		$my		=	$menu->getItem( $id );
 		$path	=	substr( JUri::getInstance()->getPath(), 1 );
 
-		// todo: need to be improved!
+		/* TODO#SEBLOD: need to be improved! */
 		if ( !( !$path || $path == 'index.php/'.@$my->alias || $path == @$my->alias.'.html' ) ) {
 			$home->title		=	@$my->title;
 		} else {
@@ -1037,6 +1029,44 @@ class plgSystemCCK extends JPlugin
 			$home->link			=	@$my->link;
 			$home->params		=	@$my->params;
 			$home->query  		=	@$my->query;
+		}
+	}
+
+	// _setLegacyMode
+	protected function _setLegacyMode()
+	{
+		$legacy	=	(int)JCck::getConfig_Param( 'core_legacy', '2012' );
+
+		if ( !$legacy ) {
+			return;
+		}
+
+		if ( $legacy == 2012 ) {
+			JLoader::registerAlias( 'plgCCK_FieldGeneric', 'JCckPluginField' );
+			JLoader::registerAlias( 'plgCCK_Field_LinkGeneric', 'JCckPluginLink' );
+			JLoader::registerAlias( 'plgCCK_Field_LiveGeneric', 'JCckPluginLive' );
+			JLoader::registerAlias( 'plgCCK_Field_TypoGeneric', 'JCckPluginTypo' );
+			JLoader::registerAlias( 'plgCCK_Field_ValidationGeneric', 'JCckPluginValidation' );
+			JLoader::registerAlias( 'plgCCK_StorageGeneric', 'JCckPluginStorage' );
+			JLoader::registerAlias( 'plgCCK_Storage_LocationGeneric', 'JCckPluginLocation' );
+			JLoader::registerAlias( 'CCK_TableGeneric', 'JCckTable' );
+		}
+
+		if ( $legacy <= 2017 ) {
+			if ( ! defined( 'JROOT_CCK' ) ) {
+				define( 'JROOT_CCK', JUri::root( true ) );
+			}
+			if ( ! defined( 'JROOT_MEDIA_CCK' ) ) {
+				define( 'JROOT_MEDIA_CCK', JUri::root( true ).'/media/cck' );
+			}
+			if ( ! defined( 'JPATH_LIBRARIES_CCK' ) ) {
+				define( 'JPATH_LIBRARIES_CCK', JPATH_SITE.'/libraries/cck' );
+			}
+
+			jimport( 'cck.content.article' );
+			jimport( 'cck.content.category' );
+			jimport( 'cck.content.content' );
+			jimport( 'cck.content.user' );
 		}
 	}
 

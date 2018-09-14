@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -54,7 +54,7 @@ class CCK_Form
 			}
 		}
 		if ( $stage > -1 ) {
-			$where 	.=	' AND c.stage = '.(int)$stage;
+			$where 	.=	' AND (c.stage = '.(int)$stage.' OR c.stage = -1)';
 		}
 		
 		if ( $excluded != '' ) {
@@ -88,6 +88,76 @@ class CCK_Form
 		
 		return $fields;
 	}
+
+	// getNoAccessParams
+	public static function getNoAccessParams( $options )
+	{
+		$params	=	array(
+						'action'=>$options->get( 'action_no_access', '' ),
+						'message'=>$options->get( 'message_no_access', '' ),
+						'redirect'=>$options->get( 'redirection_url_no_access', 'index.php?option=com_users&view=login' ),
+						'style'=>$options->get( 'message_style_no_access', 'error' )
+					);
+
+		return $params;
+	}
+
+	// getPermissions
+	public static function getPermissions( $type, $config )
+	{
+		$app	=	JFactory::getApplication();
+		$can	=	array(
+						'do'=>false,
+						'edit.own'=>false,
+						'edit.own.content'=>false,
+						'guest.edit'=>false
+					);
+		$user	=	JFactory::getUser();
+
+		if ( !$config['isNew'] ) {
+			$can['do']	=	$user->authorise( 'core.edit', 'com_cck.form.'.$type->id );
+
+			if ( $user->id && !$user->guest ) {	
+				$can['edit.own']	=	$user->authorise( 'core.edit.own', 'com_cck.form.'.$type->id );
+			} else {
+				$can['edit.own']	=	false;
+
+				if ( $config['author_session']
+				  && $config['author_session'] == JFactory::getSession()->getId() ) {
+					$can['edit.own']	=	$user->authorise( 'core.edit.own', 'com_cck.form.'.$type->id );
+					$can['guest.edit']	=	true;
+				}
+			}
+			
+			// canEditOwnContent
+			jimport( 'cck.joomla.access.access' );
+			$can['edit.own.content']	=	CCKAccess::check( $user->id, 'core.edit.own.content', 'com_cck.form.'.$type->id );
+
+			if ( $can['edit.own.content'] ) {
+				$parts						=	explode( '@', $can['edit.own.content'] );
+				$remote_field				=	JCckDatabase::loadObject( 'SELECT storage, storage_table, storage_field FROM #__cck_core_fields WHERE name = "'.$parts[0].'"' );
+				$can['edit.own.content']	=	false;
+
+				if ( is_object( $remote_field ) && $remote_field->storage == 'standard' ) {
+					$related_content_id		=	JCckDatabase::loadResult( 'SELECT '.$remote_field->storage_field.' FROM '.$remote_field->storage_table.' WHERE id = '.(int)$config['pk'] );
+					$related_content		=	JCckDatabase::loadObject( 'SELECT author_id, pk FROM #__cck_core WHERE storage_location = "'.( isset( $parts[1] ) && $parts[1] != '' ? $parts[1] : 'joomla_article' ).'" AND pk = '.(int)$related_content_id );
+
+					if ( $related_content->author_id == $user->id ) {
+						$can['edit.own.content']	=	true;
+					}
+				}
+			}
+		} else {
+			if ( $type->location && $type->location != 'hidden' && ( ( $app->isClient( 'administrator' ) && $type->location != 'admin' ) || ( $app->isClient( 'site' ) && $type->location != 'site' ) ) ) {
+				return false;
+			}
+			$can['do']					=	$user->authorise( 'core.create', 'com_cck.form.'.$type->id );
+			$can['edit.own']			=	false;
+			$can['edit.own.content']	=	false;
+		}
+
+		return $can;
+	}
 		
 	// getTemplate
 	public static function getTemplateStyle( $id, $params = array() )
@@ -117,9 +187,10 @@ class CCK_Form
 	public static function getType( $name, $location = '' )
 	{		
 		if ( $location != '' && $location == 'store' ) {
-			$select	=	'a.id, a.name, a.admin_form, a.storage_location';
+			$select	=	'a.id, a.name, a.admin_form, a.storage_location, a.location,'
+					.	' a.options_admin, a.options_site, a.options_content, a.options_intro';
 		} else {
-			$select	=	'a.id, a.title, a.name, a.description, a.admin_form, a.location, a.parent, a.storage_location, b.app as folder_app,'
+			$select	=	'a.id, a.title, a.name, a.description, a.admin_form, a.location, a.parent, a.parent_inherit, a.storage_location, b.app as folder_app,'
 					.	' a.options_admin, a.options_site, a.options_content, a.options_intro, a.template_admin, a.template_site, a.template_content, a.template_intro, a.stylesheets';
 		}
 		$query	=	'SELECT '.$select

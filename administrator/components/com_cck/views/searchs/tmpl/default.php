@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -24,8 +24,8 @@ $top			=	'content';
 $templates		=	JCckDatabase::loadObjectList( 'SELECT name, title FROM #__cck_core_templates WHERE mode = 2 AND published = 1 ORDER BY name', 'name' );
 $scroll			=	( count( $templates ) >= 3 ) ? 1 : 0;
 $config			=	JCckDev::init( array( '42', 'button_submit', 'select_simple', 'text' ), true, array( 'vName'=>$this->vName ) );
-$cck			=	JCckDev::preload( array( 'core_filter_input', 'core_filter_go', 'core_filter_search', 'core_filter_clear', 'core_location_filter',
-										 'core_folder_filter', 'core_state_filter', 'core_folder', 'core_dev_text', 'core_storage_location2', 'core_client_filter' ) );
+$cck			=	JCckDev::preload( array( 'core_filter_input', 'core_filter_go', 'core_filter_search', 'core_filter_clear',
+										 	 'core_state_filter', 'core_dev_text' ) );
 JText::script( 'COM_CCK_CONFIRM_DELETE' );
 Helper_Include::addDependencies( $this->getName(), $this->getLayout() );
 ?>
@@ -81,7 +81,7 @@ Helper_Include::addDependencies( $this->getName(), $this->getLayout() );
 			<td class="center hidden-phone"><?php Helper_Display::quickSlideTo( 'pagination-bottom', $i + 1 ); ?></td>
 			<td class="center hidden-phone"><?php echo JHtml::_( 'grid.id', $i, $item->id ); ?></td>
 			<td width="30px" class="center hidden-phone">
-            	<a target="_blank" href="<?php echo $link2; ?>"<?php echo $action_attr; ?>>
+            	<a target="_blank" rel="noopener noreferrer" href="<?php echo $link2; ?>"<?php echo $action_attr; ?>>
             		 <?php echo $action; ?>
             	</a>
 			</td>
@@ -210,9 +210,8 @@ $js	=	'
 						clickBar: 1,
 					}).init();
 				}
-			}
-			Joomla.orderTable = function()
-			{
+			};
+			Joomla.orderTable = function() {
 				table = document.getElementById("sortTable");
 				direction = document.getElementById("directionTable");
 				order = table.options[table.selectedIndex].value;
@@ -222,7 +221,7 @@ $js	=	'
 					dirn = direction.options[direction.selectedIndex].value;
 				}
 				Joomla.tableOrdering(order, dirn, "");
-			}
+			};
 			Joomla.submitbutton = function(task, cid) {
 				if (task == "'.$this->vName.'s.delete") {
 					if (confirm(Joomla.JText._("COM_CCK_CONFIRM_DELETE"))) {
@@ -232,7 +231,7 @@ $js	=	'
 					}
 				}
 				Joomla.submitform(task);
-			}
+			};
 			$(document).ready(function() {
 				$(".sly ul li").on("click", function () {
 					$(".sly ul li").removeClass("active"); $(this).addClass("active");
@@ -246,19 +245,38 @@ $js	=	'
 				$(document).keypress(function(e) {
 					if (!$(":input:focus").length) {
 						e.preventDefault();
+						var k = e.which;
 						
-						if (e.which == 64) {
+						if (k == 64) {
 							if ( $("#filter_search").val() != "" ) {
 								$("#filter_search").select();
+								if ( $("#filter_location").val() == "id" ) {
+									$("#filter_location").val("title").trigger("liszt:updated");
+								}
 							} else {
 								$("#filter_search").focus();
 							}
-						} else if (e.which == 110) {
+						} else if (k == 110) {
 							$("#toolbar-new > button").click();
-						} else if (JCck.Dev.count == 1 && e.which >= 49 && e.which <= 52) {
+						} else if (k == 13 && document.adminForm.boxchecked.value==1) {
+							var v = $("[name=\'cid[]\']:checked").val();
+							$("#filter_location").val("id");
+							$("#filter_search").val(v);
+							$("#core_filter_go").click();
+						} else if (JCck.Dev.count == 1 && k >= 49 && k <= 52) {
 							var n = e.which - 48;
 							if ($(\'[data-edit-trigger="\'+n+\'"]\').length) {
 								document.location.href=$(\'[data-edit-trigger="\'+n+\'"]\').attr("href");
+							}
+						} else if (JCck.Dev.count > 1 && k >= 48 && k <= 57) {
+							if (k == 48) {
+								k = 58;
+							}
+							var tk = k - 49;
+
+							if ($("#cb"+tk).length) {
+								$("[name=\'toggle\']").click().click();
+								$("#cb"+tk).click();
 							}
 						}
 					}

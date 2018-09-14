@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -19,7 +19,7 @@ class JCckInstallerScriptPlugin
 	protected $core;
 	
 	// install
-	function install( $parent )
+	public function install( $parent )
 	{
 		if ( isset( $this->cck ) && is_object( $this->cck ) ) {
 			self::_setIntegration();
@@ -44,7 +44,7 @@ class JCckInstallerScriptPlugin
 	}
 	
 	// uninstall
-	function uninstall( $parent )
+	public function uninstall( $parent )
 	{	
 		$app	=	JFactory::getApplication();
 		$db		=	JFactory::getDbo();
@@ -68,7 +68,7 @@ class JCckInstallerScriptPlugin
 	}
 	
 	// update
-	function update( $parent )
+	public function update( $parent )
 	{
 		if ( $this->core === true ) {
 			return;
@@ -82,7 +82,7 @@ class JCckInstallerScriptPlugin
 	}
 	
 	// preflight
-	function preflight( $type, $parent )
+	public function preflight( $type, $parent )
 	{
 		$app		=	JFactory::getApplication();
 		$this->core	=	( isset( $app->cck_core ) ) ? $app->cck_core : false;
@@ -111,7 +111,7 @@ class JCckInstallerScriptPlugin
 	}
 	
 	// postflight
-	function postflight( $type, $parent )
+	public function postflight( $type, $parent )
 	{
 		if ( $this->core === true ) {
 			return;
@@ -120,7 +120,7 @@ class JCckInstallerScriptPlugin
 	}
 
 	// postInstallMessage
-	function postInstallMessage( $event, $pk = 0 )
+	protected function postInstallMessage( $event, $pk = 0 )
 	{
 		if ( !version_compare( JVERSION, '3.2', 'ge' ) ) {
 			return;
@@ -145,7 +145,7 @@ class JCckInstallerScriptPlugin
 			$title	=	str_replace( ' for SEBLOD', '', $title ).' '.(string)$this->cck->xml->version;
 		}
 		$user		=	JFactory::getUser();
-		$user_name	=	'<a href="index.php?option=com_cck&view=form&return_o=users&return_v=users&type=user&id='.$user->id.'" target="_blank">'.$user->name.'</a>';
+		$user_name	=	'<a href="index.php?option=com_cck&view=form&return_o=users&return_v=users&type=user&id='.$user->id.'" target="_blank" rel="noopener noreferrer">'.$user->name.'</a>';
 		$version	=	'3.2.0';
 		jimport( 'joomla.filesystem.file' );
 		if ( JFile::exists( JPATH_ADMINISTRATOR.'/components/com_cck/_VERSION.php' ) ) {
@@ -174,7 +174,7 @@ class JCckInstallerScriptPlugin
 	}
 
 	// _setIntegration
-	function _setIntegration()
+	protected function _setIntegration()
 	{
 		if ( $this->cck->group == 'cck_storage_location' ) {
 			if ( isset( $this->cck->xml->cck_integration ) ) {

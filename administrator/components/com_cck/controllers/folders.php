@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -25,14 +25,8 @@ class CCKControllerFolders extends JControllerAdmin
 		parent::__construct( $config );
 	}
 	
-	// getModel
-	public function getModel( $name = 'Folder', $prefix = CCK_MODEL, $config = array( 'ignore_request' => true ) )
-	{
-		return parent::getModel( $name, $prefix, $config );
-	}
-	
 	// clear
-	function clear()
+	public function clear()
 	{
 		JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
 		
@@ -59,8 +53,14 @@ class CCKControllerFolders extends JControllerAdmin
 		$this->setRedirect( _C0_LINK, $msg, $type );
 	}
 
+	// getModel
+	public function getModel( $name = 'Folder', $prefix = CCK_MODEL, $config = array( 'ignore_request' => true ) )
+	{
+		return parent::getModel( $name, $prefix, $config );
+	}
+
 	// rebuild
-	function rebuild()
+	public function rebuild()
 	{
 		JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
 		

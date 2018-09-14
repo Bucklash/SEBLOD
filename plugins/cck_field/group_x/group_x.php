@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -57,7 +57,7 @@ class plgCCK_FieldGroup_X extends JCckPluginField
 		$dispatcher	=	JEventDispatcher::getInstance();
 		$fields		=	self::_getChildren( $field, $config, false );
 
-		// TODO: call storage plugin.
+		/* TODO#SEBLOD: call storage plugin. */
 		$xn			=	( $field->storage == 'xml' ) ? ( is_object( $value ) ? count( $value->children() ) : count( $value ) ) : $value;
 		$content	=	array();
 		for ( $xi = 0; $xi < $xn; $xi++ ) {
@@ -101,7 +101,7 @@ class plgCCK_FieldGroup_X extends JCckPluginField
 		$name		=	$field->name;
 		$dispatcher	=	JEventDispatcher::getInstance();
 		$fields		=	self::_getChildren( $field, $config );
-		// TODO: call storage plugin.
+		/* TODO#SEBLOD: call storage plugin. */
 		$xn			=	( $field->storage == 'xml' ) ? ( is_object( $value ) ? count( $value->children() ) : count( $value ) ) : $value;
 		$content	=	array();
 		for ( $xi = 0; $xi < $xn; $xi++ ) {
@@ -133,7 +133,7 @@ class plgCCK_FieldGroup_X extends JCckPluginField
 							JCckPluginLink::g_setHtml( $content[$xi][$f_name], $target );
 						}
 					}
-					if ( @$content[$xi][$f_name]->typo && $content[$xi][$f_name]->$target != '' && $config['doTypo'] ) {
+					if ( @$content[$xi][$f_name]->typo && $content[$xi][$f_name]->$target != '' ) {
 						$dispatcher->trigger( 'onCCK_Field_TypoPrepareContent', array( &$content[$xi][$f_name], $content[$xi][$f_name]->typo_target, &$config ) );
 					} else {
 						$content[$xi][$f_name]->typo	=	'';
@@ -166,7 +166,7 @@ class plgCCK_FieldGroup_X extends JCckPluginField
 		$dispatcher	=	JEventDispatcher::getInstance();
 		$fields		=	self::_getChildren( $field, $config );
 		if ( $value ) {
-			// TODO: call storage plugin.
+			/* TODO#SEBLOD: call storage plugin. */
 			$xn		=	( $field->storage == 'xml' ) ? ( is_object( $value ) ? count( $value->children() ) : count( $value ) ) : $value;
 		} else {
 			$xn		=	$field->rows;
@@ -274,7 +274,7 @@ class plgCCK_FieldGroup_X extends JCckPluginField
 						$f->storage			=	$field->storage;
 						$f->storage_table	=	$field->storage_table;
 						$f->storage_field	=	$field->storage_field;
-						$f->state			=	'';	//todo;
+						$f->state			=	'';	/* TODO#SEBLOD: */
 						$f_label			=	$f->label;
 						$f_name				=	$f->name;
 						$f_value			=	@$val[$f_name];
@@ -283,7 +283,7 @@ class plgCCK_FieldGroup_X extends JCckPluginField
 						$v					=	@$results[0];
 						$store				.=	'<br />::'.$f_name.'|'.$xi.'|'.$name.'::'.$v.'::/'.$f_name.'|'.$xi.'|'.$name.'::';
 						$text				.=	'<li style="line-height:10px;">'.$f_label.' : '.$v.'</li>';
-						// todo: add childs (secondary) storages.. not primary!
+						/* TODO#SEBLOD: add childs (secondary) storages.. not primary! */
 					}
 				}
 				$store	.=	'<br />::cckend_'.$name.'::::/cckend_'.$name.'::';
@@ -456,10 +456,10 @@ class plgCCK_FieldGroup_X extends JCckPluginField
 
 		if ( $app->input->get( 'tmpl' ) == 'raw' ) {
 			echo '<script src="'.JUri::root( true ).'/media/cck/js/jquery.ui.min.js" type="text/javascript"></script>';
-			echo '<script src="'.self::$path.'assets/js/script3.js'.'" type="text/javascript"></script>';
+			echo '<script src="'.self::$path.'assets/js/script-3.17.0.min.js'.'" type="text/javascript"></script>';
 		} else {
 			JCck::loadjQueryUI();
-			$doc->addScript( self::$path.'assets/js/script3.js' );
+			$doc->addScript( self::$path.'assets/js/script-3.17.0.min.js' );
 		}
 	}
 	
@@ -477,10 +477,10 @@ class plgCCK_FieldGroup_X extends JCckPluginField
 		
 		$js		=	'jQuery(document).ready(function($) {';
 		if ( $params['del'] ) {
-			$js	.=	'JCck.GroupX.remove("'.$id.'",'.$params['min'].',"'.$rId.'");';
+			$js	.=	'JCck.More.GroupX.remove("'.$id.'",'.$params['min'].',"'.$rId.'");';
 		}
 		if ( $params['add'] ) {
-			$js	.=	'JCck.GroupX.add("'.$id.'",'.$params['max'].',"'.$params['empty_html'].'","'.$rId.'");';
+			$js	.=	'JCck.More.GroupX.add("'.$id.'",'.$params['max'].',"'.$params['empty_html'].'","'.$rId.'");';
 		}
 		if ($params['drag']) {
 			$js	.=	'$("#'.$rId.'_sortable_'.$id.'").sortable({'

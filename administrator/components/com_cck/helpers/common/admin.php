@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -91,7 +91,7 @@ class CommonHelper_Admin
 					JHtmlSidebar::addEntry( $item['name'], $item['link'], $item['active'] );
 				} else {
 					$active	=	( isset( $item['active'] ) ) ? $item['active'] : $vName == constant( '_C'.$item['val'].'_NAME' );
-					$s	=	( $option == 'cck_ecommerce' && $item['val'] == '3' ) ? '' : 'S'; // todo: I'll see this one later..
+					$s	=	( $option == 'cck_ecommerce' && $item['val'] == '3' ) ? '' : 'S'; /* TODO#SEBLOD: I'll see this one later.. */
 					JHtmlSidebar::addEntry( $item['pre'].JText::_( $item['key'].constant( '_C'.$item['val'].'_TEXT' ).$s ),
 											constant( '_C'.$item['val'].'_LINK' ),
 											$active );
@@ -306,7 +306,7 @@ class CommonHelper_Admin
 				$options[]	=	JHtml::_( 'select.option', '</OPTGROUP>', '' );
 			}
 		} elseif ( $option == 'com_cck_toolbox' ) {
-			if ( $view == 'processings' ) {
+			if ( $view == 'jobs' || $view == 'processings' ) {
 				$options[] 	=	JHtml::_( 'select.option', '<OPTGROUP>', JText::_( 'COM_CCK_APP_FOLDERS' ) );
 				$options[]	= 	JHtml::_( 'select.option', 'folder_id', JText::_( 'COM_CCK_APP_FOLDER_ID' ) );
 				$options[]	=	JHtml::_( 'select.option', '</OPTGROUP>', '' );

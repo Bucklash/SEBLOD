@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -91,6 +91,9 @@ class plgCCK_Storage_LocationJoomla_User_Exporter extends plgCCK_Storage_Locatio
 		}
 		if ( count( $items ) ) {
 			foreach ( $items as $item ) {
+				$config['n']	=	1;
+				$config['pk']	=	0;
+
 				// Check Permissions?
 				if ( $config['authorise'] == 0  ) {
 					continue;
@@ -135,7 +138,7 @@ class plgCCK_Storage_LocationJoomla_User_Exporter extends plgCCK_Storage_Locatio
 
 				// Core > Custom
 				if ( self::$custom && isset( $fields[self::$custom] ) ) {
-					preg_match_all( CCK_Content::getRegex(), $fields[self::$custom], $values );
+					preg_match_all( '#::(.*?)::(.*?)::/(.*?)::#s', $fields[self::$custom], $values );
 					$tables[self::$table][$item->pk]->{self::$custom}	=	array();
 					$fields[self::$custom]								=	'';
 					if ( count( $values[1] ) ) {
@@ -176,7 +179,7 @@ class plgCCK_Storage_LocationJoomla_User_Exporter extends plgCCK_Storage_Locatio
 						} elseif ( $field->storage != 'none' ) {
 							$name			=	$field->storage_field2 ? $field->storage_field2 : $name;
 							if ( !isset( $tables[$field->storage_table][$item->pk]->{$field->storage_field} ) ) {
-								$tables[$field->storage_table][$item->pk]->{$field->storage_field}	=	array();	// TODO
+								$tables[$field->storage_table][$item->pk]->{$field->storage_field}	=	array(); /* TODO#SEBLOD: */
 							}
 							// DISPATCH --> EXPORT
 							if ( $config['prepare_output'] ) {
@@ -193,11 +196,15 @@ class plgCCK_Storage_LocationJoomla_User_Exporter extends plgCCK_Storage_Locatio
 					}
 				}
 				
-				// --- 
-				$fields['groups']	=	implode( ',', $fields['groups'] );
+				// ---
+				if ( isset( $fields['groups'] ) ) {
+					$fields['groups']	=	implode( ',', $fields['groups'] );
+				}
 				// ---
 				
-				// BeforeImport
+				$config['pk']	=	$item->pk;
+
+				// BeforeExport
 				$event	=	'onCckPreBeforeExport';
 				if ( isset( $config['processing'][$event] ) ) {
 					foreach ( $config['processing'][$event] as $p ) {
@@ -209,9 +216,7 @@ class plgCCK_Storage_LocationJoomla_User_Exporter extends plgCCK_Storage_Locatio
 					}
 				}
 
-				/*
-				TODO: beforeExport
-				*/
+				/* TODO#SEBLOD: beforeExport */
 
 				$event	=	'onCckPostBeforeExport';
 				if ( isset( $config['processing'][$event] ) ) {
@@ -226,9 +231,17 @@ class plgCCK_Storage_LocationJoomla_User_Exporter extends plgCCK_Storage_Locatio
 
 				// Export
 				if ( $config['ftp'] == '1' ) {
-					$config['buffer']	.=	str_putcsv( $fields, $config['separator'] )."\n";
+					for ( $i = 0; $i < $config['n']; $i++ ) {
+						$config['buffer']	.=	str_putcsv( $fields, $config['separator'] )."\n";
+					}
 				} else {
-					fputcsv( $config['handle'], $fields, $config['separator'] );
+					if ( $config['n'] > 1 ) {
+						for ( $i = 0; $i < $config['n']; $i++ ) {
+							fputcsv( $config['handle'], $fields, $config['separator'] );
+						}
+					} else {
+						fputcsv( $config['handle'], $fields, $config['separator'] );
+					}
 				}
 				$config['count']++;
 			}

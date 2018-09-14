@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -16,6 +16,7 @@ JLoader::register( 'JUser', JPATH_PLATFORM.'/joomla/user/user.php' );
 class plgCCK_Storage_LocationJoomla_User extends JCckPluginLocation
 {
 	protected static $type			=	'joomla_user';
+	protected static $type_alias	=	'User';
 	protected static $table			=	'#__users';
 	protected static $table_object	=	array( 'User', 'JTable' );
 	protected static $key			=	'id';
@@ -104,7 +105,7 @@ class plgCCK_Storage_LocationJoomla_User extends JCckPluginLocation
 		$table	=	$field->storage_table;
 		if ( !isset( $config['primary'] ) ) {
 			$config['primary']	=	self::$type;
-			$config['pkb']		=	JCckDatabase::loadResult( 'SELECT pkb FROM #__cck_core WHERE storage_location="'.self::$type.'" AND pk='.(int)$config['pk'] ); // todo: move+improve
+			$config['pkb']		=	JCckDatabase::loadResult( 'SELECT pkb FROM #__cck_core WHERE storage_location="'.self::$type.'" AND pk='.(int)$config['pk'] ); /* TODO#SEBLOD: move+improve */
 		}
 		
 		// Set
@@ -112,7 +113,6 @@ class plgCCK_Storage_LocationJoomla_User extends JCckPluginLocation
 			$storage			=	self::_getTable( $pk );
 			$storage->password	=	'';
 			$storage->password2	=	'';
-			$storage->groups	=	( count( $storage->groups ) == 1 ) ? key( $storage->groups ) : $storage->groups;
 			$config['asset']	=	'';
 			$config['asset_id']	=	0;
 			$config['author']	=	parent::g_getBridgeAuthor( 'joomla_article', $pk, self::$type );
@@ -138,7 +138,7 @@ class plgCCK_Storage_LocationJoomla_User extends JCckPluginLocation
 				foreach ( $storages[self::$table] as $s ) {
 					$query			=	'SELECT a.id FROM #__usergroups AS a INNER JOIN #__user_usergroup_map AS b ON b.group_id = a.id WHERE b.user_id = '.$s->id;
 					$s->groups		=	JCckDatabase::loadAssocList( $query, 'id', 'id' );
-					$s->guest		=	NULL;
+					$s->guest		=	null;
 					$s->password	=	'';
 					$s->password2	=	'';
 				}
@@ -150,7 +150,7 @@ class plgCCK_Storage_LocationJoomla_User extends JCckPluginLocation
 					foreach ( $storages[self::$table] as $s ) {
 						$query			=	'SELECT a.id FROM #__usergroups AS a INNER JOIN #__user_usergroup_map AS b ON b.group_id = a.id WHERE b.user_id = '.$s->id;
 						$s->groups		=	JCckDatabase::loadAssocList( $query, 'id', 'id' );
-						$s->guest		=	NULL;
+						$s->guest		=	null;
 						$s->password	=	'';
 						$s->password2	=	'';
 					}
@@ -552,6 +552,7 @@ class plgCCK_Storage_LocationJoomla_User extends JCckPluginLocation
 						$body	=	JText::sprintf(	'COM_CCK_EMAIL_REGISTERED_BODY',
 													$data['name'],
 													$data['sitename'],
+													$data['siteurl'],
 													$data['username'],
 													$data['password_clear']
 									);
@@ -570,8 +571,8 @@ class plgCCK_Storage_LocationJoomla_User extends JCckPluginLocation
 		if ( ( $activation < 2 ) && ( $admin_emails == 1 ) ) {
 			$subject	=	JText::sprintf( 'COM_CCK_EMAIL_ACCOUNT_DETAILS', $data['name'], $data['sitename'] );
 			$body 		=	JText::sprintf( 'COM_CCK_EMAIL_REGISTERED_NOTIFICATION_TO_ADMIN_BODY', $data['name'], $data['username'], $data['siteurl'] );
-			
 			$rows		=	JCckDatabase::loadObjectList( 'SELECT name, email, sendEmail FROM #__users WHERE sendEmail = 1' );
+			
 			if ( count( $rows ) ) {
 				foreach ( $rows as $row ) {
 					$return	=	JFactory::getMailer()->sendMail( $data['mailfrom'], $data['fromname'], $row->email, $subject, $body );
@@ -588,25 +589,31 @@ class plgCCK_Storage_LocationJoomla_User extends JCckPluginLocation
 	// -------- -------- -------- -------- -------- -------- -------- -------- // SEF
 
 	// buildRoute
-	public static function buildRoute( &$query, &$segments, $config, $menuItem = NULL )
+	public static function buildRoute( &$query, &$segments, $config, $menuItem = null )
 	{
 		require_once JPATH_SITE.'/plugins/cck_storage_location/joomla_article/joomla_article.php';
 		plgCCK_Storage_LocationJoomla_Article::buildRoute( $query, $segments, $config, $menuItem );
 	}
 	
-	// getRoute	//todo: make a parent::getBridgeRoute..
+	// getRoute	/* TODO#SEBLOD: make a parent::getBridgeRoute.. */
 	public static function getRoute( $item, $sef, $itemId, $config = array() )
 	{
 		if ( is_numeric( $item ) ) {
 			$core	=	JCckDatabase::loadObject( 'SELECT cck, pkb FROM #__cck_core WHERE storage_location = "'.self::$type.'" AND pk = '.(int)$item );
+			
 			if ( !is_object( $core ) ) {
 				return '';
 			}
 			$pk				=	$core->pkb;
 			$config['type']	=	$core->cck;
 		} else {
+			if ( !is_object( $item ) ) {
+				return '';
+			}
+
 			$pk		=	( isset( $item->pk ) ) ? $item->pk : $item->id;
 			$pk		=	JCckDatabase::loadResult( 'SELECT pkb FROM #__cck_core WHERE storage_location = "'.self::$type.'" AND pk = '.(int)$pk );
+			
 			if ( !$pk ) {
 				return '';
 			}
@@ -616,7 +623,7 @@ class plgCCK_Storage_LocationJoomla_User extends JCckPluginLocation
 		return plgCCK_Storage_LocationJoomla_Article::getRoute( $pk, $sef, $itemId, $config );
 	}
 	
-	// getRouteByStorage //todo: make a parent::getBridgeRoute.. + optimize ($storage->)
+	// getRouteByStorage /* TODO#SEBLOD: make a parent::getBridgeRoute.. + optimize ($storage->) */
 	public static function getRouteByStorage( &$storage, $sef, $itemId, $config = array() )
 	{
 		if ( isset( $storage[self::$table]->_route ) ) {
@@ -675,12 +682,6 @@ class plgCCK_Storage_LocationJoomla_User extends JCckPluginLocation
 	public static function checkIn( $pk = 0 )
 	{
 		return true;
-	}
-	
-	// getId
-	public static function getId( $config )
-	{
-		return JCckDatabase::loadResult( 'SELECT id FROM #__cck_core WHERE storage_location="'.self::$type.'" AND pk='.(int)$config['pk'] );
 	}
 }
 ?>

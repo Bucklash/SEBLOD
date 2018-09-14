@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -17,24 +17,44 @@ $js		=	'
 			(function ($){
 				MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
 				var observer = new MutationObserver(function(mutations) {
-				  mutations.forEach(function(mutation) {
-				    if (mutation.attributeName == "value") {
-				    	if ($("[data-cck-boxchecked]").length) {
-				    		$("[data-cck-boxchecked]").each(function() {
-				    			if ($("#boxchecked").val()==1) {
-									$(this).text($("#boxchecked").val()+($(this).attr("data-cck-boxchecked-single") !== undefined ? $(this).attr("data-cck-boxchecked-single") : "")).addClass("selection");
-								} else if ($("#boxchecked").val()>0) {
-									$(this).text($("#boxchecked").val()+($(this).attr("data-cck-boxchecked-multiple") !== undefined ? $(this).attr("data-cck-boxchecked-multiple") : "")).addClass("selection");
-								} else {
-									$(this).text($(this).attr("data-cck-boxchecked")).removeClass("selection");
-								}
-							});
-				    	}
-				    }
-				  });
+					mutations.forEach(function(mutation) {
+						if (mutation.attributeName == "value") {
+							if ($("[data-cck-boxchecked]").length) {
+								$("[data-cck-boxchecked]").each(function() {
+									if ($("#boxchecked").val()==1) {
+										$(this).text($("#boxchecked").val()+($(this).attr("data-cck-boxchecked-single") !== undefined ? $(this).attr("data-cck-boxchecked-single") : "")).addClass("selection");
+									} else if ($("#boxchecked").val()>0) {
+										$(this).text($("#boxchecked").val()+($(this).attr("data-cck-boxchecked-multiple") !== undefined ? $(this).attr("data-cck-boxchecked-multiple") : "")).addClass("selection");
+									} else {
+										$(this).text($(this).attr("data-cck-boxchecked")).removeClass("selection");
+									}
+								});
+							}
+							if ($("#boxchecked").val() == 1) {
+								$("[data-cck-has-boxchecked]").hide();
+								$("[data-cck-has-boxchecked=\"single\"],[data-cck-has-boxchecked=\"\"]").show();
+							} else if ($("#boxchecked").val() > 0) {
+								$("[data-cck-has-boxchecked]").hide();
+								$("[data-cck-has-boxchecked=\"multiple\"],[data-cck-has-boxchecked=\"\"]").show();
+							} else {
+								$("[data-cck-has-boxchecked]").hide();
+								$("[data-cck-has-boxchecked=\"none\"]").show();
+							}
+						}
+					});
 				});
 				$(document).ready(function() {
 					if ($("#boxchecked").length) {
+						if ($("#boxchecked").val() == 1) {
+							$("[data-cck-has-boxchecked]").hide();
+							$("[data-cck-has-boxchecked=\"single\"],[data-cck-has-boxchecked=\"\"]").show();
+						} else if ($("#boxchecked").val() > 0) {
+							$("[data-cck-has-boxchecked]").hide();
+							$("[data-cck-has-boxchecked=\"multiple\"],[data-cck-has-boxchecked=\"\"]").show();
+						} else {
+							$("[data-cck-has-boxchecked]").hide();
+							$("[data-cck-has-boxchecked=\"none\"]").show();
+						}
 						observer.observe(document.querySelector("#boxchecked"), {attributes:true});
 					}
 				});

@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -14,13 +14,32 @@ defined( '_JEXEC' ) or die;
 class JCckPluginLocation extends JPlugin
 {
 	protected static $construction	=	'cck_storage_location';
+	protected static $sef_aliases	=	0;
 
 	// __construct
 	public function __construct( &$subject, $config = array() )
 	{
 		parent::__construct( $subject, $config );
+
+		if ( version_compare( PHP_VERSION, '5.5.16', '<' ) ) {
+			$parts	=	explode( '_', static::$type );
+			
+			foreach ( $parts as $k=>$part ) {
+				$parts[$k]	=	ucfirst( $parts[$k] );
+			}
+			$object	=	implode( '_', $parts );
+		} else {
+			$object	=	ucwords( static::$type, '_' );
+		}
 		
-		JLoader::register( 'JCckContent'.static::$type, JPATH_SITE.'/plugins/cck_storage_location/'.static::$type.'/classes/content.php' );
+		$properties	=	array( 'type_alias' );
+		$properties	=	JCck::callFunc( 'plgCCK_Storage_Location'.$object, 'getStaticProperties', $properties );
+
+		JLoader::register( 'JCckContent'.$object, JPATH_SITE.'/plugins/cck_storage_location/'.static::$type.'/classes/content.php' );
+
+		if ( isset( $properties['type_alias'] ) && $properties['type_alias'] ) {
+			JLoader::registerAlias( 'JCckContent'.$properties['type_alias'], 'JCckContent'.$object );
+		}
 	}
 	
 	// access
@@ -33,6 +52,40 @@ class JCckPluginLocation extends JPlugin
 	public static function authorise( $rule, $pk )
 	{
 		return true;
+	}
+
+	// checkIn
+	public static function checkIn( $pk = 0 )
+	{
+		if ( !$pk ) {
+			return false;
+		}
+
+		$app	=	JFactory::getApplication();
+		$table	=	static::_getTable( $pk );
+		$user	=	JFactory::getUser();
+		
+		if ( $table->checked_out > 0 ) {
+			if ( $table->checked_out != $user->id && !$user->authorise( 'core.admin', 'com_checkin' ) ) {
+				$app->enqueueMessage( JText::_( 'JLIB_APPLICATION_ERROR_CHECKIN_USER_MISMATCH' ), 'error' );
+				return false;
+			}
+			
+			if ( !$table->checkin() ) {
+				$app->enqueueMessage( $table->getError(), 'error' );
+				return false;
+			}
+		}
+		
+		/* TODO#SEBLOD: releaseEditId */
+		
+		return true;
+	}
+
+	// getId
+	public static function getId( $config )
+	{
+		return JCckDatabase::loadResult( 'SELECT id FROM #__cck_core WHERE storage_location="'.static::$type.'" AND pk='.(int)$config['pk'] );
 	}
 
 	// getStaticParams
@@ -59,6 +112,7 @@ class JCckPluginLocation extends JPlugin
 									'child_object'=>'',
 									'created_at'=>'',
 									'context'=>'',
+									'context2'=>'',
 									'contexts'=>'',
 									'custom'=>'',
 									'events'=>'',
@@ -71,13 +125,20 @@ class JCckPluginLocation extends JPlugin
 									'status'=>'',
 									'table'=>'',
 									'table_object'=>'',
-									'to_route'=>''
+									'to_route'=>'',
+									'type_alias'=>''
 								);
 		
 		if ( count( $properties ) ) {
 			foreach ( $properties as $i=>$p ) {
 				if ( isset( $autorized[$p] ) ) {
-					$properties[$p]	=	static::${$p};
+					if ( $p == 'type_alias' ) {
+						if ( property_exists( get_called_class(), $p ) ) { /* TODO#SEBLOD: replace with static::class !! PHP 5.4+ */
+							$properties[$p]	=	static::${$p};
+						}
+					} else {
+						$properties[$p]	=	static::${$p};
+					}
 				}
 				unset( $properties[$i] );
 			}
@@ -273,6 +334,14 @@ class JCckPluginLocation extends JPlugin
 				$core->pk				=	$pk;
 				$core->storage_location	=	( isset( $location['_']->location ) ) ? $location['_']->location : JCckDatabase::loadResult( 'SELECT storage_location FROM #__cck_core_types WHERE name = "'.$config['type'].'"' );
 				$core->author_id		=	$config['author'];
+				$user					=	JFactory::getUser();
+
+				if ( !( $user->id && !$user->guest ) ) {
+					if ( $user->authorise( 'core.edit.own', 'com_cck.form.'.$config['type_id'] ) ) {
+						$core->author_session	=	JFactory::getSession()->getId();
+					}
+				}
+
 				$core->parent_id		=	$config['parent'];
 				if ( isset( $config['storages']['#__cck_core']['store_id'] ) ) {
 					$core->store_id		=	$config['storages']['#__cck_core']['store_id'];
@@ -288,7 +357,7 @@ class JCckPluginLocation extends JPlugin
 		if ( $table && $table != $default && $table != 'none' ) {
 			$more	=	JCckTable::getInstance( $table, 'id' );
 			$more->load( $pk, true );
-			if ( isset( $more->cck ) ) {
+			if ( isset( $more->cck ) ) { /* TODO#SEBLOD: remove "cck" column */
 				$more->cck	=	$config['type'];
 			}
 			$more->bind( $config['storages'][$table] );
@@ -302,7 +371,7 @@ class JCckPluginLocation extends JPlugin
 	}
 	
 	// g_onCCK_Storage_LocationUpdate
-	public function g_onCCK_Storage_LocationUpdate( $pk, $table, $field, $search, $replace, &$config = array() )
+	public static function g_onCCK_Storage_LocationUpdate( $pk, $table, $field, $search, $replace, &$config = array() )
 	{
 		if ( ! $pk ) {
 			return;
@@ -314,7 +383,7 @@ class JCckPluginLocation extends JPlugin
 	
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Stuff
 	
-	// g_checkIn
+	// g_checkIn (deprecated)
 	public static function g_checkIn( $table )
 	{
 		$app	=	JFactory::getApplication();
@@ -332,7 +401,7 @@ class JCckPluginLocation extends JPlugin
 			}
 		}
 		
-		// releaseEditId
+		/* TODO#SEBLOD: releaseEditId */
 		
 		return true;
 	}
@@ -383,7 +452,7 @@ class JCckPluginLocation extends JPlugin
 	// g_doBridge
 	public function g_doBridge( $type, $pk, $location, &$config, $params )
 	{
-		// Todo: move to plug-in
+		/* TODO#SEBLOD: move to plug-in */
 		if ( $type == 'joomla_category' ) {
 			$core	=	JCckTable::getInstance( '#__cck_core', 'id' );
 			$core->load( $config['id'] );
@@ -447,7 +516,7 @@ class JCckPluginLocation extends JPlugin
 			$bridge->description	=	'::cck::'.$config['id'].'::/cck::'.$bridge->description;
 			
 			if ( !$core->pkb ) {
-				// setLocation, etc..				
+				/* TODO#SEBLOD: setLocation, etc... */
 			}
 			$bridge->check();
 			$bridge->extension		=	'com_content';
@@ -483,6 +552,7 @@ class JCckPluginLocation extends JPlugin
 			
 			$core->pkb	=	( $bridge->id > 0 ) ? $bridge->id : 0;
 			$core->cck	=	$config['type'];
+			
 			if ( ! $core->pk ) {
 				$core->author_id	=	$config['author'];
 				$core->date_time	=	JFactory::getDate()->toSql();
@@ -492,6 +562,8 @@ class JCckPluginLocation extends JPlugin
 			$core->author_id		=	$config['author'];
 			$core->parent_id		=	$config['parent'];
 			$core->storeIt();
+
+			/* TODO#SEBLOD: author_session @bridge */
 			
 			$dispatcher->trigger( 'onContentAfterSave', array( 'com_categories.category', &$bridge, $isNew ) );
 		} else {
@@ -613,14 +685,14 @@ class JCckPluginLocation extends JPlugin
 	// g_getBridgeAuthor
 	public function g_getBridgeAuthor( $type, $pk, $location )
 	{
-		// Todo: move to plug-in
+		/* TODO#SEBLOD: move to plug-in */
 		if ( $type == 'joomla_category' ) {
 			$author_id	=	JCckDatabase::loadResult( 'SELECT b.created_user_id FROM #__cck_core AS a LEFT JOIN #__categories AS b ON b.id = a.pkb WHERE a.storage_location = "'.$location.'" AND a.pk = '.$pk );
 		} else {
 			$author_id	=	JCckDatabase::loadResult( 'SELECT b.created_by FROM #__cck_core AS a LEFT JOIN #__content AS b ON b.id = a.pkb WHERE a.storage_location = "'.$location.'" AND a.pk = '.$pk );
 		}
 		if ( !$author_id ) {
-			$author_id	=	JCckDatabase::loadResult( 'SELECT a.author_id FROM #__cck_core AS a WHERE a.storage_location = "'.$location.'" AND a.pk = '.$pk ); // todo: a recuperer
+			$author_id	=	JCckDatabase::loadResult( 'SELECT a.author_id FROM #__cck_core AS a WHERE a.storage_location = "'.$location.'" AND a.pk = '.$pk ); /* TODO#SEBLOD: a recuperer */
 		}
 
 		return $author_id;

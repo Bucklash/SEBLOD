@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -35,9 +35,9 @@ class plgCCK_FieldFreeText extends JCckPluginField
 	// onCCK_FieldConstruct_SearchSearch
 	public static function onCCK_FieldConstruct_SearchSearch( &$field, $style, $data = array(), &$config = array() )
 	{
-		$data['live']		=	NULL;
-		$data['match_mode']	=	NULL;
-		$data['validation']	=	NULL;
+		$data['live']		=	null;
+		$data['match_mode']	=	null;
+		$data['validation']	=	null;
 
 		parent::onCCK_FieldConstruct_SearchSearch( $field, $style, $data, $config );
 	}
@@ -56,6 +56,8 @@ class plgCCK_FieldFreeText extends JCckPluginField
 		$value	=	$field->defaultvalue;
 		
 		// Prepare
+		$value	=	JCckDevHelper::replaceLive( $value );
+
 		if ( $field->bool8 ) {
 			$field->bool8	=	$config['doTranslation'];
 		}

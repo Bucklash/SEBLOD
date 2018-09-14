@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -160,15 +160,22 @@ class plgCCK_FieldRadio extends JCckPluginField
 		if ( strpos( $field->css, 'btn-group' ) !== false ) {
 			$class		=	'radios radio'.$orientation . ( $field->css ? ' '.$field->css : '' );
 			$attr		=	'class="'.$class.'"' . ( $field->attributes ? ' '.$field->attributes : '' );
-			$form		=	'<fieldset id="'.$id.'" '.$attr.'>';
+			$form_open	=	'<fieldset id="'.$id.'" '.$attr.'>';
 			$attr		=	'class="'.$validate.'" size="1"';
 		} else {
 			$class		=	'radios'.$orientation . ( $field->css ? ' '.$field->css : '' );
 			$attr		=	'class="'.$class.'"' . ( $field->attributes ? ' '.$field->attributes : '' );
-			$form		=	'<fieldset id="'.$id.'" '.$attr.'>';
+			$form_open	=	'<fieldset id="'.$id.'" '.$attr.'>';
 			$attr		=	'class="radio'.$validate.'" size="1"';
 		}
-		$attr_key	=	'data-cck';
+		$attr_key		=	'data-cck';
+		$form			=	'';
+
+		static $indexes	=	array();
+
+		if ( !isset( $indexes[$name] ) ) {
+			$indexes[$name]	=	0;
+		}
 
 		if ( $field->bool && $field->bool2 > 1 && $count > 1 ) {
 			$k	=	0;
@@ -184,19 +191,26 @@ class plgCCK_FieldRadio extends JCckPluginField
 				$k++;
 				$attr2		=	( isset( $o->$attr_key ) ) ? $o->$attr_key : '';
 				$checked	=	( $o->value == $value ) ? 'checked="checked" ' : '';
-				$form		.=	'<input type="radio" id="'.$id.$i.'" name="'.$name.'" value="'.$o->value.'" '.$checked.$attr.$attr2.' />';
-				$form		.=	'<label for="'.$id.$i.'">'.$o->text.'</label>';
+				$form		.=	'<input type="radio" id="'.$id.$indexes[$name].'" name="'.$name.'" value="'.$o->value.'" '.$checked.$attr.$attr2.' />';
+				$form		.=	'<label for="'.$id.$indexes[$name].'">'.$o->text.'</label>';
+
+				$indexes[$name]++;
 			}
 			$form		.=	'</div>';
 		} else {
 			foreach ( $opts as $i=>$o ) {
 				$attr2		=	( isset( $o->$attr_key ) ) ? $o->$attr_key : '';
 				$checked	=	( $o->value == $value ) ? 'checked="checked" ' : '';
-				$form		.=	'<input type="radio" id="'.$id.$i.'" name="'.$name.'" value="'.$o->value.'" '.$checked.$attr.$attr2.' />';
-				$form		.=	'<label for="'.$id.$i.'">'.$o->text.'</label>';
+				$form		.=	'<input type="radio" id="'.$id.$indexes[$name].'" name="'.$name.'" value="'.$o->value.'" '.$checked.$attr.$attr2.' />';
+				$form		.=	'<label for="'.$id.$indexes[$name].'">'.$o->text.'</label>';
+
+				$indexes[$name]++;
 			}
 		}
-		$form	.=	'</fieldset>';
+
+		if ( $form != '' ) {
+			$form	=	$form_open.$form.'</fieldset>';
+		}
 		
 		// Set
 		if ( ! $field->variation ) {

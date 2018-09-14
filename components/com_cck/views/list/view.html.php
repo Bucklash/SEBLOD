@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -14,7 +14,7 @@ defined( '_JEXEC' ) or die;
 class CCKViewList extends JViewLegacy
 {
 	// display
-	public function display( $tpl = NULL )
+	public function display( $tpl = null )
 	{
 		$app						=	JFactory::getApplication();
 		$layout						=	$app->input->get( 'tmpl' );
@@ -91,7 +91,7 @@ class CCKViewList extends JViewLegacy
 		} elseif ( $config->get( 'sitename_pagetitles', 0 ) == 2 ) {
 			$title	=	JText::sprintf( 'JPAGETITLE', $title, $config->get( 'sitename' ) );
 		}
-		$config		=	NULL;
+		$config		=	null;
 		$this->document->setTitle( $title );
 		
 		if ( $params->get( 'menu-meta_description' ) ) {
@@ -105,7 +105,7 @@ class CCKViewList extends JViewLegacy
 		}
 		$this->pageclass_sfx	=	htmlspecialchars( $params->get( 'pageclass_sfx' ) );
 		$this->raw_rendering	=	$params->get( 'raw_rendering', 0 );
-		
+
 		// Pagination
 		$pagination	=	$params->get( 'show_pagination' );
 		
@@ -113,7 +113,7 @@ class CCKViewList extends JViewLegacy
 		jimport( 'cck.base.list.list' );
 		include JPATH_SITE.'/libraries/cck/base/list/list_inc.php';
 		$pagination	=	$this->getModel()->_getPagination( $total_items );
-		
+
 		// Set
 		if ( !is_object( @$options ) ) {
 			$options	=	new JRegistry;
@@ -134,10 +134,12 @@ class CCKViewList extends JViewLegacy
 			if ( is_object( $search ) ) {
 				$this->title			=	JText::_( 'APP_CCK_LIST_'.$search->name.'_TITLE' );
 			}
+		} elseif ( $params->get( 'display_list_title', '' ) == '3' ) {
+			$this->title				=	JText::_( 'COM_CCK_' . str_replace( ' ', '_', trim( $params->get( 'title_list_title', '' ) ) ) );
 		} elseif ( $params->get( 'display_list_title', '' ) == '1' ) {
 			$this->title				=	$params->get( 'title_list_title', '' );
 		} elseif ( $params->get( 'display_list_title', '' ) == '0' ) {
-			$this->title				=		$menu->title;
+			$this->title				=	$menu->title;
 		} else {
 			$this->title				=	( isset( $search->title ) ) ? $search->title : '';
 		}
@@ -173,7 +175,7 @@ class CCKViewList extends JViewLegacy
 						$fieldname			=	$matches[2][$k];
 						$target				=	strtolower( $v );
 						if ( count( @$doc->list ) ) {
-							$this->description	=	str_replace( $matches[0][$k], current( $doc->list )->fields[$fieldname]->{$target}, $this->description );
+							$this->description	=	str_replace( $matches[0][$k], current( $doc->list )->fields[$fieldname]->$target, $this->description );
 						} else {
 							$this->description	=	str_replace( $matches[0][$k], '', $this->description );
 						}
@@ -219,6 +221,37 @@ class CCKViewList extends JViewLegacy
 			$this->tmpl_resource		=	$options->get( 'tmpl_resource', '' );
 		}
 
+		// Canonical
+		if ( $sef_canonical = $options->get( 'sef_canonical', JCck::getConfig_Param( 'sef_canonical_list', 0 ) ) ) {
+			$current	=	JUri::getInstance()->current();
+
+			if ( ( $sef_canonical == 2 || $sef_canonical == 3 ) && $start ) {
+				$url	=	$current.'?start='.$start;	
+			} else {
+				$url	=	$current;
+			}
+
+			$this->document->addHeadLink( $url, 'canonical' );
+
+			if ( $sef_canonical == 3 ) {
+				$pages	=	$pagination->getPaginationPages();
+
+				if ( isset( $pages['previous']['active'] ) && $pages['previous']['active'] ) {
+					if ( !empty( $pages['previous']['data']->base ) ) {
+						$url	=	$current.'?start='.$pages['previous']['data']->base;
+					} else {
+						$url	=	$current;
+					}
+					$this->document->addHeadLink( $url, 'prev' );
+				}
+				if ( isset( $pages['next']['active'] ) && $pages['next']['active'] ) {
+					$this->document->addHeadLink( $current.'?start='.$pages['next']['data']->base, 'next' );
+				}
+			}
+
+			$app->cck_canonical	=	true;
+		}
+
 		// Force Titles to be hidden
 		if ( $app->input->get( 'tmpl' ) == 'raw' ) {
 			$params->set( 'show_page_heading', 0 );
@@ -232,8 +265,19 @@ class CCKViewList extends JViewLegacy
 		} else {
 			$this->pages_total	=	0;
 		}
-		
+
+		if ( !isset( $config['context'] ) ) {
+			$config['context']	=	array();
+		}
+		$config['context']['Itemid']	=	$app->input->getInt( 'Itemid', 0 );
+		$config['context']['view']		=	'list';
+
+		if ( !$this->show_form && $config['formWrapper'] ) {
+			JHtml::_( 'behavior.core' );
+		}
+
 		$this->config					=	&$config;
+		$this->context					=	$config['context'];
 		$this->data						=	&$data;
 		$this->filter_ajax				=	( isset( $hasAjax ) && $hasAjax ) ? true : false;
 		$this->form						=	&$form;

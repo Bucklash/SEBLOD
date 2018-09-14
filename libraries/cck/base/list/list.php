@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -190,35 +190,42 @@ class CCK_List
 	{
 		JPluginHelper::importPlugin( 'search', 'cck' );
 		$doCache	=	$options->get( 'cache' );
-		$doDebug	=	$options->get( 'debug' );
+		$doDebug	=	(int)$options->get( 'debug' );
 		$dispatcher	=	JEventDispatcher::getInstance();
-		
+
 		// Debug
 		if ( $doDebug ) {
 			$profiler	=	JProfiler::getInstance();
 		}
-		
+
 		if ( $doCache ) {
 			$group		=	( $doCache == '2' ) ? 'com_cck_'.$config['type_alias'] : 'com_cck';
 			$cache		=	JFactory::getCache( $group );
 			$cache->setCaching( 1 );
 			$isCached	=	' [Cache=ON]';
-			$user		=	( $options->get( 'cache_per_user' ) && $user->id > 0 ) ? $user : NULL;
-			$results	=	$cache->call( array( $dispatcher, 'trigger' ), 'onContentSearch',
-										  array( '', '', $ordering, $areas['active'], $fields, $fields_order, &$config, $current, $options, $user ) );
+			$user		=	( $options->get( 'cache_per_user' ) && $user->id > 0 ) ? $user : null;
+			$data		=	$cache->call( array( $dispatcher, 'trigger' ), 'onContentSearch', array( '', '', $ordering, $areas['active'], $fields, $fields_order, $config, $current, $options, $user ) );
 		} else {
 			$isCached	=	' [Cache=OFF]';
-			$results	=	$dispatcher->trigger( 'onContentSearch', array( '', '', $ordering, $areas['active'], $fields, $fields_order, &$config, $current, $options, $user ) );
+			$data		=	$dispatcher->trigger( 'onContentSearch', array( '', '', $ordering, $areas['active'], $fields, $fields_order, $config, $current, $options, $user ) );
 		}
-		$list			=	isset( $results[0] ) ? $results[0] : array();
-		
+
+		if ( isset( $data[0] ) ) {
+			$config		=	$data[0]['config'];
+			$list		=	$data[0]['results'];
+		} else {
+			$list		=	array();
+		}
+
 		// Debug
-		if ( $doDebug ) {
+		if ( $doDebug > 0 ) {
 			$count		=	( isset( $config['total'] ) && $config['total'] ) ? $config['total'] : count( $list );
 			echo $profiler->mark( 'afterSearch'.$isCached ).' = '.$count.' '.( $count > 1 ? 'results' : 'result' ).'.<br />';
 			if ( isset( $current['stage'] ) && (int)$current['stage'] > 0 ) {
 				echo '<br />';
 			}
+		} elseif ( $doDebug == -1 ) {
+			echo JText::_( 'COM_CCK_DEBUG_OUTPUT_NO_SEARCH' );
 		}
 		
 		return $list;
@@ -309,8 +316,8 @@ class CCK_List
 	// getSearch
 	public static function getSearch( $name, $id, $location = '' )
 	{
-		// todo: API (move)
-		$query	=	'SELECT a.id, a.title, a.name, a.alias, a.description, a.access, a.content, a.location, a.storage_location, a.stylesheets, b.app as folder_app,'
+		/* TODO#SEBLOD: API (move) */
+		$query	=	'SELECT a.id, a.title, a.name, a.alias, a.description, a.access, a.content, a.location, a.storage_location, a.stylesheets, a.sef_route_aliases, b.app as folder_app,'
 				.	' a.options, a.template_search, a.template_filter, a.template_list, a.template_item'
 				.	' FROM #__cck_core_searchs AS a'
 				.	' LEFT JOIN #__cck_core_folders AS b ON b.id = a.folder'
@@ -348,30 +355,33 @@ class CCK_List
 	}
 	
 	// render
-	public static function render( $items, $search, $path, $client, $itemId, $options, &$config_list )
+	public static function render( $items, $search, $path, $client, $itemId, $options, $config_list )
 	{
+		$access	=	implode( ',', JFactory::getUser()->getAuthorisedViewLevels() );
 		$app	=	JFactory::getApplication();
-		$user	=	JFactory::getUser();
-		$access	=	implode( ',', $user->getAuthorisedViewLevels() );
-		$data	=	'';
+		$data	=	array(
+						'buffer'=>'',
+						'config'=>array()
+					);
 		$list	=	array(
 						'doSEF'=>$config_list['doSEF'],
 						'formId'=>$config_list['formId'],
 						'isCore'=>$config_list['doQuery'],
 						'itemId'=>( ( $itemId == '' ) ? $app->input->getInt( 'Itemid', 0 ) : $itemId ),
 						'location'=>$config_list['location'],
+						'sef_aliases'=>$config_list['sef_aliases']
 					);
 		
 		include JPATH_SITE.'/libraries/cck/base/list/list_inc_list.php';
 
 		if ( isset( $config['formWrapper'] ) && $config['formWrapper'] ) {
-			$config_list['formWrapper']	=	$config['formWrapper'];
+			$data['config']['formWrapper']	=	$config['formWrapper'];
 		}
 		if ( $options->get( 'prepare_content', JCck::getConfig_Param( 'prepare_content', 1 ) ) ) {
 			JPluginHelper::importPlugin( 'content' );
-			$data	=	JHtml::_( 'content.prepare', $data );
+			$data['buffer']	=	JHtml::_( 'content.prepare', $data['buffer'] );
 		}
-		
+
 		return $data;
 	}
 

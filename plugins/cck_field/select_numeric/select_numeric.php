@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -209,29 +209,35 @@ class plgCCK_FieldSelect_Numeric extends JCckPluginField
 		$val	=	( $options2['start'] ? $options2['start'] : 0 );
 		$step	=	( $options2['step'] ? $options2['step'] : 0 );
 		$limit 	=	( $options2['end'] ? $options2['end'] : 0 );
-		$math	=	isset( $options2['math'] ) ? $options2['math'] : NULL;
-		$force	=	( isset( $options2['force_digits'] ) && $options2['force_digits'] ) ? $options2['force_digits'] : 0;
+		$math	=	isset( $options2['math'] ) ? $options2['math'] : null;
+		
+		$force_digits	=	( isset( $options2['force_digits'] ) && $options2['force_digits'] ) ? $options2['force_digits'] : 0;
+		$force_decimals	=	( isset( $options2['force_decimals'] ) && $options2['force_decimals'] ) ? $options2['force_decimals'] : 0;
 		
 		if ( $step && $val || $step && $limit || $step && $val && $limit ) {
 			while ( 69 ) {
-				if ( $force ) {
-					$val	=	str_pad( $val, $force, '0' , STR_PAD_LEFT );
+				if ( $force_digits ) {
+					$val	=	str_pad( $val, $force_digits, '0' , STR_PAD_LEFT );
 				}
 				if ( $math == 0 && $val <= $limit  ) {
-					$opts[]		=	JHtml::_('select.option', $val, $val, 'value', 'text' );
-					$options[]	=	$val.'='.$val;
+					$output		=	( $force_decimals ) ? number_format( $val, $force_decimals ) : $val;
+					$opts[]		=	JHtml::_('select.option', $output, $output, 'value', 'text' );
+					$options[]	=	$output.'='.$output;
 					$val		=	$val + $step;
 				} elseif ( $math == 1 && $val <= $limit  ) {
-					$opts[]		=	JHtml::_('select.option', $val, $val, 'value', 'text' );
-					$options[]	=	$val.'='.$val;
+					$output		=	( $force_decimals ) ? number_format( $val, $force_decimals ) : $val;
+					$opts[]		=	JHtml::_('select.option', $output, $output, 'value', 'text' );
+					$options[]	=	$output.'='.$output;
 					$val		=	$val * $step;
 				} elseif ( $math == 2 && $val >= $limit  ) {
-					$opts[]		=	JHtml::_('select.option', $val, $val, 'value', 'text' );
-					$options[]	=	$val.'='.$val;
+					$output		=	( $force_decimals ) ? number_format( $val, $force_decimals ) : $val;
+					$opts[]		=	JHtml::_('select.option', $output, $output, 'value', 'text' );
+					$options[]	=	$output.'='.$output;
 					$val		=	$val - $step;
 				} elseif ( $math == 3 && $val > $limit  ) {
-					$opts[]		=	JHtml::_('select.option', $val, $val, 'value', 'text' );
-					$options[]	=	$val.'='.$val;
+					$output		=	( $force_decimals ) ? number_format( $val, $force_decimals ) : $val;
+					$opts[]		=	JHtml::_('select.option', $output, $output, 'value', 'text' );
+					$options[]	=	$output.'='.$output;
 					$val		=	floor( $val / $step );
 				} else {
 					break;
@@ -258,6 +264,34 @@ class plgCCK_FieldSelect_Numeric extends JCckPluginField
 		$field->options	=	implode( '||', $options );
 
 		return $opts;
+	}
+
+	// _getOptionsListProperty
+	protected static function _getOptionsListProperty( $property, $field, $value, $config = array() )
+	{
+		$method		=	'get'.ucfirst( $property).'FromOptions';
+		$options2	=	JCckDev::fromJSON( $field->options2 );
+		
+		/* tmp */
+		$jtext						=	$config['doTranslation'];
+		$config['doTranslation']	=	0;
+		/* tmp */
+		
+		self::_getOptionsList( $options2, $field, $config );
+		
+		$result				=	parent::$method( $field, $value, $config );
+
+		/* tmp */
+		$config['doTranslation']	=	$jtext;
+		/* tmp */
+
+		return $result;
+	}
+
+	// getTextFromOptions
+	public static function getTextFromOptions( $field, $value, $config = array() )
+	{
+		return self::_getOptionsListProperty( 'text', $field, $value, $config );
 	}
 
 	// isConvertible

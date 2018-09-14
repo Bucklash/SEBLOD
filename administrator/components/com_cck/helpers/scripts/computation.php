@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -85,7 +85,7 @@ $js		=	'
 						this.close();
 						return;
 					}
-    			}
+    			};
 				$(document).ready(function() {
 					var elem = "ffp_'.$this->item->name.'_computation";
 					var computation = parent.jQuery("#"+elem).val();
@@ -187,7 +187,7 @@ if ( (int)$this->item->id > 0 ) {
 } else {
 	$fields	=	array();
 }
-$css		=	'div.collection-group-form{margin-right:0px;} ul.adminformlist-2cols li {width:31em!important; padding:0px 37px 0px 0px!important;} #custom{font-size:11px;}';
+$css		=	'div.collection-group-form{margin-right:0;} ul.adminformlist-2cols li {width:31em!important; padding:0 37px 0 0!important;} #custom{font-size:11px;}';
  
 if ( !$this->item->title ) {
 	$css	.=	'#collection-group-wrap-core_options__0{display:none;}';

@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -203,9 +203,9 @@ class JFormFieldCckIntegration extends JFormField
 					$name	=	'add_layout';
 					$value	=	isset( $values->$name ) ? $values->$name : '';
 					if ( $location == 'form' ) {
-						$html[] =	JCckDev::getForm( 'core_dev_select', $value, $config, array( 'defaultvalue'=>'', 'selectlabel'=>'Inherit', 'options'=>'CONFIG_OPTION_ICON=icon||CONFIG_OPTION_LIST=list', 'css'=>'cck-integration input-small pull-left'.$disabled, 'storage_field'=>'integration['.$group->name.']['.$name.']' ), array( 'id'=>'integration_'.$group->name.'-'.$name ) );
+						$html[] =	JCckDev::getForm( 'core_dev_select', $value, $config, array( 'defaultvalue'=>'', 'selectlabel'=>'Inherit', 'options'=>'CONFIG_OPTION_ICON=icon||CONFIG_OPTION_LIST=list', 'css'=>'cck-integration alt-group input-small pull-left'.$disabled, 'storage_field'=>'integration['.$group->name.']['.$name.']' ), array( 'id'=>'integration_'.$group->name.'-'.$name ) );
 					} else {
-						$html[] =	JCckDev::getForm( 'core_dev_select', $value, $config, array( 'defaultvalue'=>'icon', 'type'=>'radio', 'options'=>'CONFIG_OPTION_ICON=icon||CONFIG_OPTION_LIST=list', 'css'=>'cck-integration btn-group btn-group-yesno pull-left'.$disabled, 'storage_field'=>'integration['.$group->name.']['.$name.']' ), array( 'id'=>'integration_'.$group->name.'-'.$name ) );						
+						$html[] =	JCckDev::getForm( 'core_dev_select', $value, $config, array( 'defaultvalue'=>'icon', 'type'=>'radio', 'options'=>'CONFIG_OPTION_ICON=icon||CONFIG_OPTION_LIST=list', 'css'=>'cck-integration alt-group btn-group btn-group-yesno pull-left'.$disabled, 'storage_field'=>'integration['.$group->name.']['.$name.']' ), array( 'id'=>'integration_'.$group->name.'-'.$name ) );						
 					}
 				} else {
 					$html[] =	JCckDev::getForm( $action->dev_fieldname, $value, $config, $action->dev_override, $inherit );
@@ -222,7 +222,7 @@ class JFormFieldCckIntegration extends JFormField
 		$html[] =	'</div></div>';
 
 		// Stuff
-		JCck::loadjQuery( true, true, array( 'cck.dev-3.7.0.min.js', 'jquery.json.min.js', 'jquery.ui.effects.min.js' ) );
+		JCck::loadjQuery( true, true, array( 'cck.dev-3.17.0.min.js', 'jquery.json.min.js', 'jquery.ui.effects.min.js' ) );
 		$ajax	=	'../media/system/images/modal/spinner.gif';
 		$js		=	'
 					(function ($){
@@ -245,7 +245,7 @@ class JFormFieldCckIntegration extends JFormField
 										cache: false,
 										data: encoded,
 										type: "POST",
-										url: "index.php?option=com_cck&task=ajaxSaveIntegration",
+										url: "index.php?option=com_cck&task=saveIntegrationAjax&"+Joomla.getOptions("csrf.token")+"=1",
 										beforeSend:function(){ $("#toolbar-help").after(\'<div id="toolbar-spinner" class="btn-group">\'+loading+\'</div>\'); },
 										success: function(response){ $("#toolbar-spinner").remove(); Joomla.submitbutton("config.save.component."+task); },
 										error:function(){}
@@ -254,7 +254,7 @@ class JFormFieldCckIntegration extends JFormField
 									Joomla.submitbutton("config.save.component."+task);
 								}
 							}
-						}
+						};
 						$(document).ready(function() {
 							$("#toolbar-apply button").attr("onclick","JCck.Dev.submit(\'apply\')");
 							$("#toolbar-save button").attr("onclick","JCck.Dev.submit(\'save\')");

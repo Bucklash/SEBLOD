@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -14,6 +14,107 @@ defined( '_JEXEC' ) or die;
 abstract class JCckDev
 {
 	public static $_urls	=	array();
+
+	// _getField
+	protected static function _getField( $caller, $value, &$config = array( 'doValidation' => 2 ), $override = array(), $inherit = array() )
+	{
+		// Check & and Trigger fallback if needed
+		$class		=	'Helper_Form';
+		$fallback	=	false;
+		$method		=	$caller['function'];
+
+		if ( $caller['component'] == 'com_cck' ) {
+			$class	=	'CommonHelper_Form';
+			$path	=	JPATH_ADMINISTRATOR.'/components/'.$caller['component'].'/helpers/common/form.php';
+		} else {
+			$path	=	JPATH_ADMINISTRATOR.'/components/'.$caller['component'].'/helpers/helper_form.php';
+		}
+		if ( is_file( $path ) ) {
+			require_once $path;
+		} else {
+			$fallback	=	true;
+		}
+		if ( !$fallback ) {
+			if ( !method_exists( $class, $method ) ) {
+				$fallback	=	true;
+			}
+		}
+		if ( $fallback ) {
+			return JCckDev::getForm( $caller['name'], $value, $config, $override, $inherit );
+		}
+
+		// Continue
+		if ( !( isset( $override['storage_field'] ) && $override['storage_field'] ) ) {
+			$override['storage_field']	=	$caller['name'];
+		}
+
+		$field	=	JCckDevField::get( 'core_dev_text', $value, $config, $inherit, $override, 'initialize' );
+		if ( ! $field ) {
+			return '';
+		}
+
+		$name	=	$field->storage_field;
+		
+		if ( isset( $config['inherit'] ) ) {
+			if ( strpos( $name, '[' ) !== false ) {
+				$parts				=	explode( '[', $name );
+				$inherit['name']	=	$config['inherit'].'['.$parts[0].']['.$parts[1];
+			} else {
+				$inherit['name']	=	$config['inherit'].'['.$name.']';
+			}
+		} else {
+			if ( ! isset( $inherit['name'] ) ) {
+				$inherit['name']	=	$name;
+			}
+		}
+		if ( ! isset( $inherit['id'] ) ) {
+			$inherit['id']		=	str_replace( array('[', ']'), array('_', ''), $name );
+		}
+		
+		// --
+		JCckPluginField::g_onCCK_FieldPrepareForm( $field, $config );
+
+		// Init
+		if ( count( $inherit ) ) {
+			$id		=	( isset( $inherit['id'] ) && $inherit['id'] != '' ) ? $inherit['id'] : $field->name;
+			$name	=	( isset( $inherit['name'] ) && $inherit['name'] != '' ) ? $inherit['name'] : $field->name;
+		} else {
+			$id		=	$field->name;
+			$name	=	$field->name;
+		}
+		
+		// Validate
+		$validate	=	'';
+		if ( $config['doValidation'] > 1 ) {
+			plgCCK_Field_ValidationRequired::onCCK_Field_ValidationPrepareForm( $field, $id, $config );
+			$validate	=	( count( $field->validate ) ) ? ' validate['.implode( ',', $field->validate ).']' : '';
+		}
+		
+		// Prepare
+		if ( trim( $field->selectlabel ) ) {
+			if ( $config['doTranslation'] ) {
+				$field->selectlabel	=	JText::_( 'COM_CCK_' . str_replace( ' ', '_', trim( $field->selectlabel ) ) );
+			}
+		}
+
+		// Set
+		$field->form	=	$class::$method( $field, $value, $name, $id, $config );
+		$field->value	=	$value;
+
+		if ( $field->script ) {
+			JCckPluginField::g_addScriptDeclaration( $field->script );
+		}
+		
+		if ( $field->required ) {
+			if ( trim( $field->label ) == '' ) {
+				$field->required	=	'';
+			}
+		}
+
+		// --
+
+		return $field;
+	}
 	
 	// addField
 	public static function addField( $name, &$config = array( 'doValidation' => 2 ) )
@@ -96,7 +197,14 @@ abstract class JCckDev
 				}
 				$doc->addStyleDeclaration( $css );
 			}
-			$options	=	'{'.$scroll.',promptPosition:"'.$position.'"}';
+			$more		=	'';
+			if ( $options->def( 'prettySelect' ) ) {
+				$more	.=	',prettySelect:'.( $options->get( 'prettySelect' ) ? 'true' : 'false' );
+			}
+			if ( $options->def( 'useSuffix' ) ) {
+				$more	.=	',useSuffix:"'.$options->get( 'useSuffix' ).'"';
+			}
+			$options	=	'{'.$scroll.',promptPosition:"'.$position.'"'.$more.'}';
 		} else {
 			$options	=	'{}';
 		}
@@ -105,11 +213,11 @@ abstract class JCckDev
 		
 		if ( $app->input->get( 'tmpl' ) == 'raw' ) {
 			echo '<link rel="stylesheet" href="'.$root.'/media/cck/css/cck.validation-3.9.0.css" type="text/css" />';
-			echo '<script src="'.$root.'/media/cck/js/cck.validation-3.11.1.min.js" type="text/javascript"></script>';
+			echo '<script src="'.$root.'/media/cck/js/cck.validation-3.16.0.min.js" type="text/javascript"></script>';
 			echo '<script type="text/javascript">'.$js.'</script>';
 		} else {
 			$doc->addStyleSheet( $root.'/media/cck/css/cck.validation-3.9.0.css' );
-			$doc->addScript( $root.'/media/cck/js/cck.validation-3.11.1.min.js' );
+			$doc->addScript( $root.'/media/cck/js/cck.validation-3.16.0.min.js' );
 			$doc->addScriptDeclaration( $js );
 		}
 	}
@@ -200,7 +308,7 @@ abstract class JCckDev
 	{
 		if ( count( $plugins ) > 0 ) {
 			foreach ( $plugins as $plugin ) {
-				JPluginHelper::importPlugin( $type, $plugin );	// todo: improve
+				JPluginHelper::importPlugin( $type, $plugin );	/* TODO#SEBLOD: improve */
 			}
 		} else {
 			JPluginHelper::importPlugin( $type );
@@ -532,7 +640,7 @@ abstract class JCckDev
 					JCck.Dev = {
 						reset: function() {'.$options['js']['reset'].'},
 						submit: function() {'.$options['js']['submit'].'}
-					}
+					};
 					$(document).ready(function(){'.$options['js']['load'].'});
 				})(jQuery); 
 			';
@@ -606,6 +714,20 @@ abstract class JCckDev
 		
 		return $html;
 	}
+
+	// getFormFromHelper
+	public static function getFormFromHelper( $caller, $value, &$config = array( 'doValidation' => 2 ), $override = array(), $inherit = array() )
+	{
+		$field				=	self::_getField( $caller, $value, $config, $override, $inherit );
+		
+		$config['fields'][]	=	$field->storage_field;
+		$html				=	( isset( $field->form ) ) ? $field->form : '';
+		if ( isset( $inherit['after'] ) ) {
+			$html			.=	$inherit['after'];
+		}
+		
+		return $html;
+	}
 	
 	// renderForm
 	public static function renderForm( $field, $value, &$config = array( 'doValidation' => 2 ), $override = array(), $inherit = array(), $class = '' )
@@ -623,6 +745,30 @@ abstract class JCckDev
 			$html			.=	$inherit['after'];
 		}
 		$label				=	'';
+		if ( $field->label ) {
+			$label			=	'<label>'.$field->label.$tag.'</label>';
+		}
+		$html				=	'<li'.$class.'>'.$label.$html.'</li>';
+		
+		return $html;
+	}
+
+	// renderFormFromHelper
+	public static function renderFormFromHelper( $caller, $value, &$config = array( 'doValidation' => 2 ), $override = array(), $inherit = array(), $class = '' )
+	{
+		$field				=	self::_getField( $caller, $value, $config, $override, $inherit );
+		
+		$class				=	( $class ) ? ' class="'.$class.'"' : '';
+		$config['fields'][]	=	$field->storage_field;
+		$html				=	( isset( $field->form ) ) ? $field->form : '';
+
+		if ( isset( $inherit['after'] ) ) {
+			$html			.=	$inherit['after'];
+		}
+
+		$label				=	'';
+		$tag				=	( $field->required ) ? '<span class="star"> *</span>' : '';
+		
 		if ( $field->label ) {
 			$label			=	'<label>'.$field->label.$tag.'</label>';
 		}
@@ -679,7 +825,7 @@ abstract class JCckDev
 		$link	=	'https://www.seblod.com/resources/manuals/archives/'.$url.'?tmpl=component';
 		$opts	=	'toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=685,height=600';
 		$help	=	'<div class="clr"></div><div class="how-to-setup">'
-				.	'<a href="'.$link.'" onclick="window.open(this.href, \'targetWindow\', \''.$opts.'\'); return false;">' . JText::_( 'COM_CCK_HOW_TO_SETUP_THIS_'.$type ) . '</a>'
+				.	'<a href="'.$link.'" onclick="window.open(this.href, \'targetWindow\', \''.$opts.'\'); return false;" rel="noopener noreferrer">' . JText::_( 'COM_CCK_HOW_TO_SETUP_THIS_'.$type ) . '</a>'
 				.	'</div>';
 		
 		return ( $raw !== false ) ? $help : '</ul>'.$help.'</div>';
@@ -695,7 +841,8 @@ abstract class JCckDev
 		}
 
 		if ( $tooltip != '' ) {
-			$tag		=	'<span class="star"> &sup'.$tag.';</span>';
+			$tag		=	( $tag == '1' || $tag == '2' ) ? ' &sup'.$tag.';' : ' <sup style="font-size:10px;">'.$tag.'</sup>';
+			$tag		=	'<span class="star">'.$tag.'</span>';
 			$tooltip	=	' class="hasTooltip qtip_cck" title="'.$tooltip.'"';
 		} else {
 			$tag		=	'';
@@ -762,7 +909,7 @@ abstract class JCckDev
 	// fromSTRING
 	public static function fromSTRING( $data = '', $glue = '||', $format = 'array' )
 	{
-		// todo: object
+		/* TODO#SEBLOD: object */
 		if ( ! $data || ! is_string( $data )  ) {
 			return ( $format == 'array' ) ? array() : new stdClass;
 		}
@@ -773,7 +920,7 @@ abstract class JCckDev
 	// toSTRING
 	public static function toSTRING( $data = '', $glue = '||' )
 	{
-		// todo: object
+		/* TODO#SEBLOD: object */
 		if ( ! is_array( $data ) ) {
 			return '';
 		}
@@ -784,10 +931,23 @@ abstract class JCckDev
 	// toSafeID
 	public static function toSafeID( $string )
 	{
-		$str	=	str_replace( array( '&', '"', '<', '>' ), array( 'a', 'q', 'l', 'g' ), $string );
+		$string	=	str_replace( array( '&', '"', '<', '>', '-' ), array( 'a', 'q', 'l', 'g', '_' ), $string );
+		$str	=	JFactory::getLanguage()->transliterate( $string );
+		$length	=	strlen( $str );
+
+		if ( $length ) {
+			for ( $i = 0; $i < $length; $i++ ) {
+				$n	=	ord( $string[$i] );
+				
+				if ( $n >= 65 && $n <= 90 )	{
+					$str[$i]	=	$string[$i];
+				}
+			}
+		}
+
 		$str	=	trim( preg_replace( array( '/\s+/', '/[^A-Za-z0-9_]/' ), array( '_', '' ), $str ) );
 		
-		return $str;
+		return trim( $str, '_' );
 	}
 	
 	// toSafeSTRING

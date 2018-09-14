@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -14,6 +14,7 @@ defined( '_JEXEC' ) or die;
 class plgCCK_Storage_LocationFree extends JCckPluginLocation
 {
 	protected static $type			=	'free';
+	protected static $type_alias	=	'Free';
 	protected static $table			=	'';
 	protected static $table_object	=	array();
 	protected static $key			=	'id';
@@ -31,10 +32,16 @@ class plgCCK_Storage_LocationFree extends JCckPluginLocation
 	protected static $status		=	'';
 	protected static $to_route		=	'';
 	
-	protected static $context		=	'';
+	protected static $context		=	'com_cck.free';
 	protected static $context2		=	'';
 	protected static $contexts		=	array();
 	protected static $error			=	false;
+	protected static $events		=	array(
+											'afterDelete'=>'onContentAfterDelete',
+											'afterSave'=>'onContentAfterSave',
+											'beforeDelete'=>'onContentBeforeDelete',
+											'beforeSave'=>'onContentBeforeSave'
+										);
 	protected static $ordering		=	array();
 	protected static $ordering2		=	array();
 	protected static $pk			=	0;
@@ -91,7 +98,7 @@ class plgCCK_Storage_LocationFree extends JCckPluginLocation
 		// Init
 		$table	=	$field->storage_table;
 		if ( $table == '#__cck_core' ) {
-			// todo: use API
+			/* TODO#SEBLOD: use API */
 			$pk	=	JCckDatabase::loadResult( 'SELECT a.id FROM #__cck_core AS a'
 											. ' LEFT JOIN #__cck_core_types AS b ON b.name = a.cck'
 											. ' WHERE a.storage_location = b.storage_location AND a.pk = '.(int)$pk );
@@ -203,35 +210,14 @@ class plgCCK_Storage_LocationFree extends JCckPluginLocation
 		}
 		
 		// Process
-		// -- onContentBeforeDelete?
+		$result	=	$dispatcher->trigger( 'onContentBeforeDelete', array( self::$context, $table ) );
+		if ( in_array( false, $result, true ) ) {
+			return false;
+		}
 		if ( !$table->delete( $pk ) ) {
 			return false;
 		}
-
-		// Delete Core
-		if ( $item->id ) {
-			$table	=	JCckTable::getInstance( '#__cck_core', 'id', $item->id );
-			$table->delete();
-		}
-
-		// Delete More
-		$base		=	str_replace( '#__', '', $item->storage_table );
-		$tables		=	JCckDatabase::loadColumn( 'SHOW TABLES' );
-		$prefix		= 	JFactory::getConfig()->get( 'dbprefix' );
-
-		if ( in_array( $prefix.'cck_store_item_'.$base, $tables ) ) {
-			$table	=	JCckTable::getInstance( '#__cck_store_item_'.$base, 'id', $pk );
-			if ( $table->id ) {
-				$table->delete();
-			}
-		}
-		if ( in_array( $prefix.'cck_store_form_'.$item->type, $tables ) ) {
-			$table	=	JCckTable::getInstance( '#__cck_store_form_'.$item->type, 'id', $pk );
-			if ( $table->id ) {
-				$table->delete();
-			}
-		}
-		// -- onContentAfterDelete?
+		$dispatcher->trigger( 'onContentAfterDelete', array( self::$context, $table ) );
 		
 		return true;
 	}
@@ -295,6 +281,9 @@ class plgCCK_Storage_LocationFree extends JCckPluginLocation
 				self::_completeTable( $table, $data, $config );
 				
 				// Store
+				JPluginHelper::importPlugin( 'content' );
+				$dispatcher	=	JEventDispatcher::getInstance();
+				$dispatcher->trigger( 'onContentBeforeSave', array( self::$context, &$table, $isNew ) );
 				if ( $isNew === true && parent::g_isMax( JFactory::getUser()->id, 0, $config ) ) {
 					$config['error']	=	true;
 
@@ -315,6 +304,7 @@ class plgCCK_Storage_LocationFree extends JCckPluginLocation
 				if ( ! $config['pk'] ) {
 					$config['pk']	=	self::$pk;
 				}
+				$dispatcher->trigger( 'onContentAfterSave', array( self::$context, &$table, $isNew ) );
 				
 				if ( $config['join'] ) {
 					self::_core( $data, $config );
@@ -374,7 +364,7 @@ class plgCCK_Storage_LocationFree extends JCckPluginLocation
 	// -------- -------- -------- -------- -------- -------- -------- -------- // SEF
 
 	// buildRoute
-	public static function buildRoute( &$query, &$segments, $config, $menuItem = NULL )
+	public static function buildRoute( &$query, &$segments, $config, $menuItem = null )
 	{
 	}
 	

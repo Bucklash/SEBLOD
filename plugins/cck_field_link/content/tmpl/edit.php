@@ -4,13 +4,13 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
 defined( '_JEXEC' ) or die;
 
-require_once JPATH_ADMINISTRATOR.'/components/com_cck/helpers/helper_admin.php'; //todo: >> core_storage_location
+require_once JPATH_ADMINISTRATOR.'/components/com_cck/helpers/helper_admin.php'; /* TODO#SEBLOD: >> core_storage_location */
 
 $items		=	JCckDatabase::loadObjectList( 'SELECT id, title FROM #__cck_core_sites WHERE published = 1' );
 $options	=	array();
@@ -28,14 +28,15 @@ $options	=	implode( '||', $options );
     <ul class="adminformlist adminformlist-2cols">
         <?php
 		echo JCckDev::renderForm( 'core_sef', '', $config, array( 'selectlabel'=>'Inherited', 'storage_field'=>'sef' ) );
-		echo JCckDev::renderForm( 'core_menuitem', '', $config, array( 'selectlabel'=>'Inherited', 'options'=>'Use Mapping=optgroup||Fields=-3||Use Value=optgroup||Field=-2' ) );
+		echo JCckDev::renderForm( 'core_menuitem', '', $config, array( 'selectlabel'=>'Inherited', 'options'=>'Parent=-1||Use Mapping=optgroup||Fields=-3||Use Value=optgroup||Field=-2' ) );
 		echo JCckDev::renderBlank( '<input type="hidden" id="blank_li2" value="" />' );
 		echo JCckDev::renderForm( 'core_dev_text', '', $config, array( 'label'=>'Field Name', 'storage_field'=>'itemid_fieldname' ) );
-		echo JCckDev::renderForm( 'core_dev_select', '', $config, array( 'defaultvalue'=>'', 'label'=>'Content', 'selectlabel'=>'Current', 'options'=>'Use Value=optgroup||Field=2', 'storage_field'=>'content' ) );
+		echo JCckDev::renderForm( 'core_dev_select', '', $config, array( 'defaultvalue'=>'', 'label'=>'Content', 'selectlabel'=>'Current', 'options'=>'Use Value=optgroup||Field=2||Own=-2', 'storage_field'=>'content' ) );
 		// echo JCckDev::renderForm( 'core_dev_select', '', $config, array( 'defaultvalue'=>'', 'label'=>'Content', 'selectlabel'=>'Current', 'options'=>'Next=4||Previous=5||Use Value=optgroup||Field=2', 'storage_field'=>'content' ) );
 		echo JCckDev::renderForm( 'core_dev_text', '', $config, array( 'label'=>'Field Name', 'storage_field'=>'content_fieldname' ) );
 		echo JCckDev::renderBlank( '<input type="hidden" id="blank_li" value="" />' );
-		echo JCckDev::renderForm( 'core_storage_location', '', $config, array( 'label'=>'Content Object', 'storage_field'=>'content_location' ) );
+		echo JCckDev::renderFormFromHelper( array( 'component'=>'com_cck', 'function'=>'getStorageLocation', 'name'=>'core_storage_location' ), '', $config, array( 'label'=>'Content Object', 'storage_field'=>'content_location' ) );
+		echo JCckDev::renderBlank( '<input type="hidden" id="blank_li3" value="" />' );
 		echo JCckDev::renderForm( 'core_languages', '', $config, array( 'label'=>'Language', 'selectlabel'=>'Auto', 'storage_field'=>'language' ) );
 		
 		echo JCckDev::renderForm( 'core_dev_texts', '', $config, array( 'label'=>'Menu Item', 'storage_field'=>'itemid_mapping' ) );
@@ -68,7 +69,9 @@ jQuery(document).ready(function($) {
 	$('#itemid').isDisabledWhen('sef','0');
 	$('#itemid_fieldname,#blank_li2').isVisibleWhen('itemid','-2');
 	$('#sortable_core_dev_texts').isVisibleWhen('itemid','-3');
-	$('#content_fieldname,#content_location,#blank_li').isVisibleWhen('content','2');
+	$('#content_fieldname,#blank_li').isVisibleWhen('content','2');
+	$('#content_location').isVisibleWhen('content','2,-2');
+	$('#blank_li3').isVisibleWhen('content','-2');
 	$('#title_custom').isVisibleWhen('title','2,3',false);
 	$('#site').isVisibleWhen('path_type','1,2');
 	$('#target_params').isVisibleWhen('target','modal');

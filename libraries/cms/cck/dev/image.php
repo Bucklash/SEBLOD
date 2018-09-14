@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -18,16 +18,22 @@ class JCckDevImage
 	protected $_exif 		=	array();
 	protected $_extension 	=	'';
 	protected $_height 		=	0;
-	protected $_pathinfo 	=	NULL;
+	protected $_pathinfo 	=	null;
 	protected $_quality_jpg	=	90;
 	protected $_quality_png	=	3;
 	protected $_ratio 		=	0;
-	protected $_resource 	=	NULL;
+	protected $_resource 	=	null;
 	protected $_width 		=	0;
 
 	// __construct
-	function __construct( $path )
+	public function __construct( $path )
 	{
+		if ( strpos( $path, JPATH_SITE ) === false ) {
+			if ( $path[0] == '/' ) {
+				$path 	=	substr( $path, 1 ); 	
+			}
+			$path 	=	JPATH_SITE.'/'.$path;
+		}
 		$this->_quality_jpg	=	JCck::getConfig_Param( 'media_quality_jpeg', 90 );
 		$this->_quality_png	=	JCck::getConfig_Param( 'media_quality_png', 3 );
 		
@@ -62,6 +68,21 @@ class JCckDevImage
         		return $this->$target;
         	}
 		}
+	}
+
+	// isResource
+	public function isResource()
+	{
+		return is_resource( $this->_resource );
+	}
+
+	// getThumb
+	public function getThumb( $tnumber )
+	{
+		$path 	=	str_replace( JPATH_SITE.'/', '', $this->_pathinfo['dirname'] );
+		$path 	.=	'/_thumb'.$tnumber.'/'. $this->_pathinfo['basename'];
+
+		return ( is_file( JPATH_SITE.'/'.$path ) ) ? $path : '';
 	}
 
 	// createThumb
@@ -148,10 +169,10 @@ class JCckDevImage
 		if ( $ext == 'gif' ) {
 			imagegif( $resource );
 		} elseif ( $ext == 'jpg' || $ext == 'jpeg' ) {
-			imagejpeg( $resource, NULL, $this->_quality_jpg );
+			imagejpeg( $resource, null, $this->_quality_jpg );
 		} elseif ( $ext == 'png' ) {
 			imagesavealpha( $resource, true );
-			imagepng( $resource, NULL, $this->_quality_png );
+			imagepng( $resource, null, $this->_quality_png );
 		} else {
 			// Bad extension !
 		}

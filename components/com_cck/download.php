@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -62,7 +62,7 @@ $allowed_ext  = array(
   'mp4' => 'video/mp4',
   'flv' => 'video/x-flv'
 );
-if ( @$allowed_ext[$ext] == '' ) {
+if ( isset( $allowed_ext[$ext] ) && $allowed_ext[$ext] == '' ) {
 	$mtype	=	'';
 	if ( function_exists( 'mime_content_type' ) ) {
 		$mtype	=	mime_content_type( $path );
@@ -88,10 +88,16 @@ header( "Content-Disposition: attachment; filename=\"$name\"" );
 header( "Content-Transfer-Encoding: binary" );
 header( "Content-Length: " . filesize($path) );
 */
-if ( file_exists( $path ) ) {
+if ( is_file( $path ) ) {
   ob_clean();
 	flush();
 	readfile( $path );
+
+  if ( isset( $to_be_erased ) && $to_be_erased ) {
+      @chmod( $path, 0700 );
+      @unlink( $path );
+  }
+
 	exit();
 }
 ?>

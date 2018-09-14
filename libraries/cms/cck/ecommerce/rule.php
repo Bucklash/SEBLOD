@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -18,8 +18,8 @@ abstract class JCckEcommerceRule
 	{
 		$user		=	JCck::getUser();
 		$my_groups	=	$user->groups; /* $user->getAuthorisedGroups(); */
-		$my_zones	=	JCckEcommerce::getUserZones();
-		
+		$my_zones	=	JCckEcommerce::getUserZones( 'shipping' );
+
 		$currency	=	JCckEcommerce::getCurrency();
 		$res		=	0;
 		$results	=	array( 'items'=>array() );
@@ -79,7 +79,6 @@ abstract class JCckEcommerceRule
 						}
 					}
 				}
-
 				if ( $r->mode ) {
 					if ( !isset( $totals[$type][$r->target_type] ) ) {
 						continue;
@@ -99,7 +98,7 @@ abstract class JCckEcommerceRule
 					$min	=	(float)number_format( (float)$r->min, 2 );
 					$max	=	(float)number_format( (float)$r->max, 2 );
 					$value	=	(float)number_format( (float)$totals[$type]['_'], 2 );
-										
+
 					if ( $value < $min ) {
 						continue;
 					}

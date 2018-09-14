@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -94,10 +94,20 @@ if ( $description != '' ) {
 				$fieldname		=	$matches[2][$k];
 				$target			=	strtolower( $v );
 				if ( count( @$doc->list ) ) {
-					$description	=	str_replace( $matches[0][$k], current( $doc->list )->fields[$fieldname]->{$target}, $description );
+					$description	=	str_replace( $matches[0][$k], current( $doc->list )->fields[$fieldname]->$target, $description );
 				} else {
 					$description	=	str_replace( $matches[0][$k], '', $description );
 				}
+			}
+		}
+	}
+	if ( $description != '' && strpos( $description, 'J(' ) !== false ) {
+		$matches	=	'';
+		$regex		=	'#J\((.*)\)#U';
+		preg_match_all( $regex, $description, $matches );
+		if ( count( $matches[1] ) ) {
+			foreach ( $matches[1] as $text ) {
+				$description	=	str_replace( 'J('.$text.')', JText::_( 'COM_CCK_' . str_replace( ' ', '_', trim( $text ) ) ), $description );
 			}
 		}
 	}

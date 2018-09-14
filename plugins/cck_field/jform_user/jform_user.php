@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -39,7 +39,13 @@ class plgCCK_FieldJForm_User extends JCckPluginField
 		parent::g_onCCK_FieldPrepareContent( $field, $config );
 
 		$field->value		=	$value;
-		$field->text		=	JCckDatabase::loadResult( 'SELECT name FROM #__users WHERE id = '.(int)$value ); //@
+
+		if ( $config['client'] == 'list' || $config['client'] == 'item' ) {
+			$field->text	=	JCckDatabaseCache::loadResult( 'SELECT name FROM #__users WHERE id = '.(int)$value ); //@
+		} else {
+			$field->text	=	JCckDatabase::loadResult( 'SELECT name FROM #__users WHERE id = '.(int)$value ); //@
+		}
+		
 		$field->typo_target	=	'text';
 	}
 
@@ -74,13 +80,6 @@ class plgCCK_FieldJForm_User extends JCckPluginField
 		}
 
 		$value		=	( $value !== '' ) ? $value : $field->defaultvalue;
-		$userid		=	JFactory::getUser()->id;
-
-		if ( $config['client'] != 'search' ) {
-			if ( ( ! $value && $userid && !( $field->storage_field == 'modified_by' || $field->storage_field == 'modified_user_id' ) ) || ( $config['pk'] > 0 && ( $field->storage_field == 'modified_by' || $field->storage_field == 'modified_user_id' ) ) ) { // todo: this must be changed asap!
-				$value	=	$userid;
-			}
-		}
 
 		// Validate
 		$validate	=	'';

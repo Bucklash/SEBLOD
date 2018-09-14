@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -18,14 +18,14 @@ abstract class JCckEcommerceTax
 	{
 		$user		=	JCck::getUser();
 		$my_groups	=	$user->groups; /* $user->getAuthorisedGroups(); */
-		$my_zones	=	JCckEcommerce::getUserZones();
+		$my_zones	=	JCckEcommerce::getUserZones( 'billing' );
 
 		$currency	=	JCckEcommerce::getCurrency();
 		$res		=	0;
 		$results	=	array( 'items'=>array() );
 		$tax		=	'';
 		$taxes		=	JCckEcommerce::getTaxes( $type, $my_zones );
-		
+
 		if ( count( $taxes ) ) {
 			foreach ( $taxes as $t ) {
 				$content_types	=	array();
@@ -38,8 +38,9 @@ abstract class JCckEcommerceTax
 							$product_def	=	JCckEcommerce::getProductDefinition( $t->target_type );
 							$content_types	=	explode( '||', $product_def->content_type );
 						}
-						/* TODO */
-					} elseif ( $params['target'] == 'product' && $t->target == 1 ) {
+						/* TODO#SEBLOD: */
+					} elseif ( ( $params['target'] == 'product' && $t->target == 1 )
+							|| ( $params['target'] == 'product2' && $t->target == 2 ) ) {
 						// OK
 					} elseif ( $params['target'] == 'shipping' && $t->target == 3 ) {
 						if ( isset( $t->target_type ) && $t->target_type ) {
@@ -94,7 +95,7 @@ abstract class JCckEcommerceTax
 						case 'plus':
 							$tax						=	(float)number_format( $t->tax_amount, 2 );
 
-							if ( $params['target'] == 'product' ) {
+							if ( $params['target'] == 'product' || $params['target'] == 'product2' ) {
 								$tax					=	$tax * $quantity;
 							}
 							$res						+=	$tax;
@@ -109,7 +110,20 @@ abstract class JCckEcommerceTax
 															);
 							break;
 						case 'percentage':
-							$tax						=	(float)number_format( $total * $t->tax_amount / 100, 2 );
+							if ( $params['target'] == 'product2' ) {
+								if ( isset( $params['target_id'] ) && $params['target_id'] && $params['source'] == 'item' && count( $items ) && isset( $items[$params['target_id']] ) ) {
+									$tax	=	(float)number_format( $items[$params['target_id']]['_']->price * $t->tax_amount / 100, 2 );
+									
+									// if ( isset( $params['apply_quantity'] ) && $params['apply_quantity'] ) {
+									$tax	=	$tax * $quantity;
+									// }
+								} else {
+									$tax	=	(float)number_format( $total * $t->tax_amount / 100, 2 );
+								}
+							} else {
+								$tax		=	(float)number_format( $total * $t->tax_amount / 100, 2 );
+							}
+
 							$res						+=	$tax;
 							$total						+=	$tax;
 							$results['items'][$t->id]	=	array(
@@ -127,7 +141,7 @@ abstract class JCckEcommerceTax
 							
 							if ( $params['target'] == 'shipping' ) {
 								continue;
-							} elseif ( $params['target'] == 'product' ) {
+							} elseif ( $params['target'] == 'product' || $params['target'] == 'product2' ) {
 								if ( !isset( $items[$params['target_id']] ) ) {
 									continue;
 								}

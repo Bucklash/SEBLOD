@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -57,6 +57,14 @@ class JCckPluginField extends JPlugin
 		}
 
 		$field->data	=	$value;
+	}
+
+	// getTextFromOptions
+	public static function getTextFromOptions( $field, $value, $config )
+	{
+		$v	=	$value;
+
+		return self::g_getOptionText( $v, $field->options, $field->divider, $config );
 	}
 
 	// getValueFromOptions
@@ -166,6 +174,22 @@ class JCckPluginField extends JPlugin
 							}
 						}
 						$v['options']	=	$options;
+					} elseif ( isset( $v['string'] ) ) {
+						foreach ( $v['string'] as $k2=>$v2 ) {
+							if ( is_array( $v2 ) ) {
+								$string	=	'';
+								foreach ( $v2 as $s2 ) {
+									if ( $s2 != '' ) {
+										$string	.=	$s2.'||';
+									}
+								}
+								if ( $string ) {
+									$string	=	substr( $string, 0, -2 );
+								}
+								$v[$k2]	=	$string;
+							}
+						}
+						unset( $v['string'] );
 					}
 					$data[$k]	=	JCckDev::toJSON( $v );
 				}
@@ -235,10 +259,11 @@ class JCckPluginField extends JPlugin
 				$data['storage']			=	'none';
 			}
 			if ( $data['alterTable'] ) {
-				$data['storage_alter_type']	=	( isset( $data['storage_alter_type'] ) && $data['storage_alter_type'] ) ? $data['storage_alter_type'] : 'VARCHAR(255)';
-				$alter						=	isset( $data['storage_alter'] ) && $data['storage_alter'] && in_array( 1, $data['storage_alter'] );
-				$pos						=	strpos( $data['storage_table'], 'aka_table' );
-				
+				$data['storage_alter_type']		=	( isset( $data['storage_alter_type'] ) && $data['storage_alter_type'] ) ? $data['storage_alter_type'] : 'VARCHAR(255)';
+				$alter							=	isset( $data['storage_alter'] ) && $data['storage_alter'] && in_array( 1, $data['storage_alter'] );
+				$pos							=	strpos( $data['storage_table'], 'aka_table' );
+				$data['storage_alter_table']	=	(int)$data['storage_alter_table'];
+
 				if ( !( $pos !== false && $pos == 0 ) ) {
 					if ( isset( $data['storage_alter_table'] ) && $data['storage_alter_table'] && $alter ) {
 						if ( $data['storage_table'] && $data['storage_field'] ) {
@@ -308,7 +333,8 @@ class JCckPluginField extends JPlugin
 								.	'<input class="thin blue" type="hidden" name="ffp['.$name.'][label2]" value="'.$field->label.'" />';
 		}
 		if ( !$data['variation'] ) {
-			$column2			=	'';
+			$column2		=	'<input type="hidden" id="'.$name.'_variation_override" name="ffp['.$name.'][variation_override]" '
+							.	'value="'.( ( @$field->variation_override != '' ) ? htmlspecialchars( $field->variation_override ) : '' ).'" />';
 		} else {
 			$value			=	@$field->variation;
 			$text			=	( isset( $data['variation'][$value] ) ) ? $data['variation'][$value]->text : JText::_( 'COM_CCK_UNKNOWN_SETUP' );
@@ -1089,9 +1115,16 @@ class JCckPluginField extends JPlugin
 				self::g_addScriptDeclaration( $field->script );
 			}
 			if ( $variation == 'form_filter_ajax' ) {
-				$field->form	=	str_replace( 'class="', 'data-cck-ajax="" class="', $field->form );
+				static $keypress	=	0;
+				$field->form		=	str_replace( 'class="', 'data-cck-ajax="" class="', $field->form );
 
-				self::g_addScriptDeclaration( '$("form#'.$parent.'").on("change", "#'.$id.'.is-filter-ajax", function() { var q = ""; $("form#'.$parent.' [data-cck-ajax=\'\']").each(function(i) { q += "&"+$(this).attr("name")+"="+$(this).myVal(); }); JCck.Core.loadmore("&start=0"+q,0,1); });' );
+				self::g_addScriptDeclaration( '$("form#'.$parent.'").on("change", "#'.$id.'.is-filter-ajax", function() { JCck.Core.loadmore("&start=0",-1,1); });' );
+				
+				if ( !$keypress ) {
+					self::g_addScriptDeclaration( '$(".is-filter-ajax").keypress(function(e) { if (e.which == 13) {e.preventDefault(); $(this).change();} });' );
+
+					$keypress	=	1;
+				}
 			} else {
 				self::g_addScriptDeclaration( '$("form#'.$parent.'").on("change", "#'.$id.'.is-filter", function() { '.$submit.'(\'search\'); });' );
 			}
@@ -1117,13 +1150,13 @@ class JCckPluginField extends JPlugin
 					if ( $variation == 'list' || $variation == 'list_filter_ajax' ) {
 						if ( $variation == 'list_filter_ajax' ) {
 							$base	=	str_replace( 'class="', 'data-cck-ajax="" class="', $base );
-							$then	=	' var q = ""; $("form#'.$parent.' [data-cck-ajax=\'\']").each(function(i) { q += "&"+$(this).attr("name")+"="+$(this).myVal(); }); JCck.Core.loadmore("&start=0&"+$("#'.$id.'").attr("name")+"="+q,0,1);';
+							$then	=	'JCck.Core.loadmore("&start=0",-1,1);';
 						}
 						$then		.=	' $("#'.$id.'_ > li").removeClass("active"); $(this).parent().addClass("active")';
 					} else {
 						$then		=	' '.$submit.'("search");';
 					}
-					$js				=	'$("form#'.$parent.'").on("click", "#'.$id.'_ > li a", function() {var v = $(this).parent().attr("data-value"); $("#'.$id.'").val(v);'.$then.' });';
+					$js				=	'$("form#'.$parent.'").on("click", "#'.$id.'_ > li a", function() { var v = $(this).parent().attr("data-value"); $("#'.$id.'").val(v);'.$then.' });';
 					$js				=	'(function ($){ $(document).ready(function() { '.$js.' }); })(jQuery);';
 					self::g_addScriptDeclaration( $js );
 					$loaded[$id]	=	1;

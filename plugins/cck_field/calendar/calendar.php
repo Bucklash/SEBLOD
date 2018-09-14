@@ -4,7 +4,7 @@
  * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
  * @url				https://www.seblod.com
  * @editor			Octopoos - www.octopoos.com
- * @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+ * @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
  * @license 			GNU General Public License version 2 or later; see _LICENSE.php
  **/
 
@@ -106,7 +106,7 @@ class plgCCK_FieldCalendar extends JCckPluginField
 		}
 
 
-		if ( empty( $value ) || $value == '0000-00-00 00:00:00' ) {
+		if ( empty( $value ) || $value == '0000-00-00 00:00:00' || $value == '0000-00-00' ) {
 			$hiddenValue		=	'';
 			$displayValue		=	'';
 			$scriptDate         =	'';
@@ -158,8 +158,7 @@ class plgCCK_FieldCalendar extends JCckPluginField
 		$hiddenForm	=	'<input class="inputbox" type="hidden" id="'.$id.'_hidden" name="'.$nameH.'" value="'.$hiddenValue.'" />';
 		$hiddenForm	.=	'<input class="inputbox" type="hidden" id="'.$id.'_datasource" name="'.$nameS.'" value="computed" />';
 
-		if (  !in_array($field->variation,array('value', 'disabled')) ) {
-
+		if ( !in_array( $field->variation, array( 'value', 'disabled' ) ) ) {
 			if ( isset( $field->markup_class ) ) {
 				$field->markup_class	.=	' input-append';
 			} else {
@@ -172,7 +171,9 @@ class plgCCK_FieldCalendar extends JCckPluginField
 			                                                            'default_hour' => $default_hour, 'default_min' => $default_min, 'default_sec' => $default_sec, 'type' => 'form', 'input_text'=>$field->bool2 ) );
 		}
 
-		self::_addScripts( array( 'theme'=>@$options2['theme'] ) );
+		if ( !parent::g_isStaticVariation( $field, $field->variation ) ) {
+			self::_addScripts( array( 'theme'=>@$options2['theme'] ) );
+		}
 
 		// Set
 		if ( ! $field->variation ) {
@@ -180,7 +181,6 @@ class plgCCK_FieldCalendar extends JCckPluginField
 		} else {
 			parent::g_getDisplayVariation( $field, $field->variation, $value, $displayValue, $visibleForm, $id, $name, '<input', '', $hiddenForm, $config );
 		}
-
 
 		// Return
 		if ( $return === true ) {

@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -233,7 +233,7 @@ class CCK_Export
 				$xml->addChild( 'author', 'Octopoos' );
 				$xml->addChild( 'authorEmail', 'contact@seblod.com' );
 				$xml->addChild( 'authorUrl', 'https://www.seblod.com' );
-				$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.' );
+				$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.' );
 				$xml->addChild( 'license', 'GNU General Public License version 2 or later.' );
 				$xml->addChild( 'description', 'SEBLOD 3.x - www.seblod.com' );
 				
@@ -297,7 +297,7 @@ class CCK_Export
 		$xml->addChild( 'author', 'Octopoos' );
 		$xml->addChild( 'authorEmail', 'contact@seblod.com' );
 		$xml->addChild( 'authorUrl', 'https://www.seblod.com' );
-		$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.' );
+		$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.' );
 		$xml->addChild( 'license', 'GNU General Public License version 2 or later.' );
 		$xml->addChild( 'description', 'SEBLOD 3.x - www.seblod.com' );
 		
@@ -308,8 +308,8 @@ class CCK_Export
 		}
 		
 		// Force
-		if ( isset( $xml->{$elemtype}->id ) ) {
-			$xml->{$elemtype}->id	=	'';
+		if ( isset( $xml->$elemtype->id ) ) {
+			$xml->$elemtype->id	=	'';
 		}
 		
 		// Prepare2
@@ -351,7 +351,7 @@ class CCK_Export
 		$xml->addChild( 'author', 'Octopoos' );
 		$xml->addChild( 'authorEmail', 'contact@seblod.com' );
 		$xml->addChild( 'authorUrl', 'https://www.seblod.com' );
-		$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.' );
+		$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.' );
 		$xml->addChild( 'license', 'GNU General Public License version 2 or later.' );
 		$xml->addChild( 'description', 'SEBLOD 3.x - www.seblod.com' );
 		
@@ -369,12 +369,12 @@ class CCK_Export
 		}
 		
 		// Force
-		if ( isset( $xml->{$elemtype}->id ) ) {
-			$xml->{$elemtype}->id	=	'';
+		if ( isset( $xml->$elemtype->id ) ) {
+			$xml->$elemtype->id	=	'';
 		}
-		if ( isset( $xml->{$elemtype}->{$folder} ) ) {
-			$v								=	(string)$xml->{$elemtype}->{$folder};
-			$xml->{$elemtype}->{$folder}	=	( isset( $data['folders'][$v] ) ) ? $data['folders'][$v]->path : '';
+		if ( isset( $xml->$elemtype->$folder ) ) {
+			$v							=	(string)$xml->$elemtype->$folder;
+			$xml->$elemtype->$folder	=	( isset( $data['folders'][$v] ) ) ? $data['folders'][$v]->path : '';
 		}
 		
 		// Prepare2
@@ -419,8 +419,8 @@ class CCK_Export
 	{
 		$null	=	array( 'asset_id', 'depth', 'lft', 'rgt' );
 		foreach ( $null as $n ) {
-			if ( isset( $xml->{$elemtype}->{$n} ) ) {
-				$xml->{$elemtype}->{$n}	=	'';
+			if ( isset( $xml->$elemtype->$n ) ) {
+				$xml->$elemtype->$n	=	'';
 			}
 		}
 		
@@ -451,16 +451,16 @@ class CCK_Export
 	// exportTemplate_Style
 	public static function exportTemplate_Style( $elemtype, $elem, &$xml, &$data, &$extensions, &$file )
 	{
-		if ( isset( $xml->{$elemtype}->name ) ) {
-			unset( $xml->{$elemtype}->name );
+		if ( isset( $xml->$elemtype->name ) ) {
+			unset( $xml->$elemtype->name );
 		}
 	}
 	
 	// exportType
 	public static function exportType( $elemtype, $elem, &$xml, &$data, &$extensions, &$file, $copyright = '' )
 	{
-		if ( isset( $xml->{$elemtype}->asset_id ) ) {
-			$xml->{$elemtype}->asset_id	=	'';
+		if ( isset( $xml->$elemtype->asset_id ) ) {
+			$xml->$elemtype->asset_id	=	'';
 		}
 		
 		$acl	=	( $elem->asset_id ) ? JCckDatabase::loadResult( 'SELECT rules FROM #__assets WHERE id = '.(int)$elem->asset_id ) : '{}';
@@ -492,8 +492,8 @@ class CCK_Export
 				}
 				$tpl[$v]	=	$t;
 			}
-			if ( isset( $xml->{$elemtype}->{$e} ) ) {
-				$xml->{$elemtype}->{$e}	=	$t;
+			if ( isset( $xml->$elemtype->$e ) ) {
+				$xml->$elemtype->$e	=	$t;
 			}
 		}
 		
@@ -520,6 +520,11 @@ class CCK_Export
 			}
 			if ( $el->restriction != '' ) {
 				self::exportPlugin( 'cck_field_restriction', $el->restriction, $data, $extensions );
+
+				if ( file_exists( JPATH_SITE.'/plugins/cck_field_restriction/'.$el->restriction.'/classes/app.php' ) ) {
+					require_once JPATH_SITE.'/plugins/cck_field_restriction/'.$el->restriction.'/classes/app.php';
+					JCck::callFunc_Array( 'plgCCK_Field_Restriction'.$el->restriction.'_App', 'onCCK_Field_RestrictionExportType_Field', array( $fields[$el->fieldid], &$el, &$data, &$extensions ) );
+				}
 			}
 			if ( $el->typo != '' ) {
 				self::exportPlugin( 'cck_field_typo', $el->typo, $data, $extensions );
@@ -600,8 +605,8 @@ class CCK_Export
 				}
 				$tpl[$v]	=	$t;
 			}
-			if ( isset( $xml->{$elemtype}->{$e} ) ) {
-				$xml->{$elemtype}->{$e}	=	$t;
+			if ( isset( $xml->$elemtype->$e ) ) {
+				$xml->$elemtype->$e	=	$t;
 			}
 		}
 		
@@ -771,19 +776,19 @@ class CCK_Export
 	}
 
 	// exportCategory
-	public static function exportCategory( $elemtype, $elem, &$xml, &$data, &$extensions, &$file = NULL )
+	public static function exportCategory( $elemtype, $elem, &$xml, &$data, &$extensions, &$file = null )
 	{
 		$null	=	array( 'asset_id', 'parent_id', 'level', 'lft', 'rgt', 'created_time', 'modified_time', 'modified_user_id' );
 		foreach ( $null as $n ) {
-			if ( isset( $xml->{$elemtype}->{$n} ) ) {
-				$xml->{$elemtype}->{$n}	=	'';
+			if ( isset( $xml->$elemtype->$n ) ) {
+				$xml->$elemtype->$n	=	'';
 			}
 		}
-		if ( isset( $xml->{$elemtype}->path ) && isset( $xml->{$elemtype}->alias ) ) {	//todo: remove
-			$xml->{$elemtype}->path	=	(string)$xml->{$elemtype}->alias;
+		if ( isset( $xml->$elemtype->path ) && isset( $xml->$elemtype->alias ) ) {	/* TODO#SEBLOD: remove */
+			$xml->$elemtype->path	=	(string)$xml->$elemtype->alias;
 		}
-		if ( isset( $xml->{$elemtype}->hits ) ) {
-			$xml->{$elemtype}->hits	=	0;
+		if ( isset( $xml->$elemtype->hits ) ) {
+			$xml->$elemtype->hits	=	0;
 		}
 		
 		$acl	=	( $elem->asset_id ) ? JCckDatabase::loadResult( 'SELECT rules FROM #__assets WHERE id = '.(int)$elem->asset_id ) : '{}';
@@ -792,8 +797,8 @@ class CCK_Export
 		$app	=	$elem->name;
 		$xml->addChild( 'app', (string)$app );
 		
-		if ( isset( $xml->{$elemtype}->name ) ) {
-			unset( $xml->{$elemtype}->name );
+		if ( isset( $xml->$elemtype->name ) ) {
+			unset( $xml->$elemtype->name );
 		}
 	}
 
@@ -820,19 +825,19 @@ class CCK_Export
 	}
 
 	// exportJoomla_Category
-	public static function exportJoomla_Category( $elemtype, $elem, &$xml, &$data, &$extensions, &$file = NULL )
+	public static function exportJoomla_Category( $elemtype, $elem, &$xml, &$data, &$extensions, &$file = null )
 	{
 		$null	=	array( 'asset_id', 'parent_id', 'level', 'lft', 'rgt', 'created_time', 'created_user_id', 'modified_time', 'modified_user_id' );
 		foreach ( $null as $n ) {
-			if ( isset( $xml->{$elemtype}->{$n} ) ) {
-				$xml->{$elemtype}->{$n}	=	'';
+			if ( isset( $xml->$elemtype->$n ) ) {
+				$xml->$elemtype->$n	=	'';
 			}
 		}
-		if ( isset( $xml->{$elemtype}->path ) && isset( $xml->{$elemtype}->alias ) ) {	//todo: remove
-			$xml->{$elemtype}->path	=	(string)$xml->{$elemtype}->alias;
+		if ( isset( $xml->$elemtype->path ) && isset( $xml->$elemtype->alias ) ) {	/* TODO#SEBLOD: remove */
+			$xml->$elemtype->path	=	(string)$xml->$elemtype->alias;
 		}
-		if ( isset( $xml->{$elemtype}->hits ) ) {
-			$xml->{$elemtype}->hits	=	0;
+		if ( isset( $xml->$elemtype->hits ) ) {
+			$xml->$elemtype->hits	=	0;
 		}
 		
 		$acl	=	( $elem->asset_id ) ? JCckDatabase::loadResult( 'SELECT rules FROM #__assets WHERE id = '.(int)$elem->asset_id ) : '{}';
@@ -841,16 +846,16 @@ class CCK_Export
 		$app	=	$elem->name;
 		$xml->addChild( 'app', (string)$app );
 		
-		if ( isset( $xml->{$elemtype}->name ) ) {
-			unset( $xml->{$elemtype}->name );
+		if ( isset( $xml->$elemtype->name ) ) {
+			unset( $xml->$elemtype->name );
 		}
 	}
 
 	// exportJoomla_Menu
-	public static function exportJoomla_Menu( $elemtype, $elem, &$xml, &$data, &$extensions, &$file = NULL )
+	public static function exportJoomla_Menu( $elemtype, $elem, &$xml, &$data, &$extensions, &$file = null )
 	{
-		if ( isset( $xml->{$elemtype}->asset_id ) ) {
-			$xml->{$elemtype}->asset_id	=	'';
+		if ( isset( $xml->$elemtype->asset_id ) ) {
+			$xml->$elemtype->asset_id	=	'';
 		}
 		
 		$acl	=	( $elem->asset_id ) ? JCckDatabase::loadResult( 'SELECT rules FROM #__assets WHERE id = '.(int)$elem->asset_id ) : '{}';
@@ -858,27 +863,27 @@ class CCK_Export
 	}
 
 	// exportJoomla_MenuItem
-	public static function exportJoomla_MenuItem( $elemtype, $elem, &$xml, &$data, &$extensions, &$file = NULL )
+	public static function exportJoomla_MenuItem( $elemtype, $elem, &$xml, &$data, &$extensions, &$file = null )
 	{
 		$null	=	array( 'lft', 'rgt' );
 		foreach ( $null as $n ) {
-			if ( isset( $xml->{$elemtype}->{$n} ) ) {
-				$xml->{$elemtype}->{$n}	=	'';
+			if ( isset( $xml->$elemtype->$n ) ) {
+				$xml->$elemtype->$n	=	'';
 			}
 		}
 
-		if ( isset( $xml->{$elemtype}->type ) && $xml->{$elemtype}->type == 'component' &&
-			 isset( $xml->{$elemtype}->component_id ) && $xml->{$elemtype}->component_id ) {
-			$xml->{$elemtype}->component_id	=	JCckDatabase::loadResult( 'SELECT element FROM #__extensions WHERE extension_id = '.$xml->{$elemtype}->component_id );
+		if ( isset( $xml->$elemtype->type ) && $xml->$elemtype->type == 'component' &&
+			 isset( $xml->$elemtype->component_id ) && $xml->$elemtype->component_id ) {
+			$xml->$elemtype->component_id	=	JCckDatabase::loadResult( 'SELECT element FROM #__extensions WHERE extension_id = '.$xml->$elemtype->component_id );
 		}
-		if ( isset( $xml->{$elemtype}->level ) && (int)$xml->{$elemtype}->level > 1 &&
-			 isset( $xml->{$elemtype}->parent_id ) && (int)$xml->{$elemtype}->parent_id ) {
-			$xml->{$elemtype}->parent_id	=	JCckDatabase::loadResult( 'SELECT alias FROM #__menu WHERE id = '.(int)$xml->{$elemtype}->parent_id );
+		if ( isset( $xml->$elemtype->level ) && (int)$xml->$elemtype->level > 1 &&
+			 isset( $xml->$elemtype->parent_id ) && (int)$xml->$elemtype->parent_id ) {
+			$xml->$elemtype->parent_id	=	JCckDatabase::loadResult( 'SELECT alias FROM #__menu WHERE id = '.(int)$xml->$elemtype->parent_id );
 		}
 	}
 
 	// exportJoomla_Module
-	public static function exportJoomla_Module( $elemtype, $elem, &$xml, &$data, &$extensions, &$file = NULL )
+	public static function exportJoomla_Module( $elemtype, $elem, &$xml, &$data, &$extensions, &$file = null )
 	{
 	}
 
@@ -891,9 +896,14 @@ class CCK_Export
 		
 		foreach ( $data['processings'] as $k=>$v ) {
 			$folder_id	=	$data['processings'][$k]->folder;
+			
 			if ( !isset( $data['elements']['processings'][$folder_id] ) ) {
 				continue;
 			}
+			if ( !( isset( $data['elements']['folder'][$folder_id] ) && $data['elements']['folder'][$folder_id] === true ) ) {
+				continue;
+			}
+
 			$name		=	$data['processings'][$k]->name;
 			$name2		=	$data['processings'][$k]->scriptfile;
 
@@ -931,7 +941,7 @@ class CCK_Export
 				$xml->addChild( 'author', 'Octopoos' );
 				$xml->addChild( 'authorEmail', 'contact@seblod.com' );
 				$xml->addChild( 'authorUrl', 'https://www.seblod.com' );
-				$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.' );
+				$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.' );
 				$xml->addChild( 'license', 'GNU General Public License version 2 or later.' );
 				$xml->addChild( 'description', 'SEBLOD 3.x - www.seblod.com' );
 
@@ -1038,7 +1048,7 @@ class CCK_Export
 					$xml->addChild( 'author', 'Octopoos' );
 					$xml->addChild( 'authorEmail', 'contact@seblod.com' );
 					$xml->addChild( 'authorUrl', 'https://www.seblod.com' );
-					$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.' );
+					$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.' );
 					$xml->addChild( 'license', 'GNU General Public License version 2 or later.' );
 					$xml->addChild( 'description', 'SEBLOD 3.x - www.seblod.com' );
 					
@@ -1153,7 +1163,7 @@ class CCK_Export
 		$xml->addChild( 'author', 'Octopoos' );
 		$xml->addChild( 'authorEmail', 'contact@seblod.com' );
 		$xml->addChild( 'authorUrl', 'https://www.seblod.com' );
-		$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.' );
+		$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.' );
 		$xml->addChild( 'license', 'GNU General Public License version 2 or later.' );
 		$xml->addChild( 'creationDate', date( 'F Y' ) );
 		$xml->addChild( 'description', ( @$file->description ) ? htmlspecialchars( $file->description ) : 'SEBLOD 3.x Position Variation - www.seblod.com' );
@@ -1173,7 +1183,7 @@ class CCK_Export
 		$xml->addChild( 'author', 'Octopoos' );
 		$xml->addChild( 'authorEmail', 'contact@seblod.com' );
 		$xml->addChild( 'authorUrl', 'https://www.seblod.com' );
-		$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.' );
+		$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.' );
 		$xml->addChild( 'license', 'GNU General Public License version 2 or later.' );
 		$xml->addChild( 'creationDate', date( 'F Y' ) );
 		$xml->addChild( 'description', ( @$package->description ) ? htmlspecialchars( $package->description ) : 'SEBLOD 3.x Language Pack - www.seblod.com' );
@@ -1193,7 +1203,7 @@ class CCK_Export
 		$xml->addChild( 'packagename', htmlspecialchars( $package->name ) );
 		$xml->addChild( 'packager', 'Octopoos' );
 		$xml->addChild( 'packagerurl', 'https://www.seblod.com' );
-		$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.' );
+		$xml->addChild( 'copyright', 'Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.' );
 		$xml->addChild( 'license', 'GNU General Public License version 2 or later.' );
 		$xml->addChild( 'creationDate', date( 'F Y' ) );
 		$xml->addChild( 'description', ( @$package->description ) ? htmlspecialchars( $package->description ) : 'SEBLOD 3.x App - www.seblod.com' );

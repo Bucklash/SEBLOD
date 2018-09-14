@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -30,7 +30,7 @@ class plgSearchCCK extends JPlugin
 	}
 	
 	// onContentSearch
-	public function onContentSearch( $text = '', $phrase = '', $ordering = '', $areas = NULL, $fields = array(), $fields_order = array(), &$config = array(), $current = array(), $options = NULL, $user = NULL )
+	public function onContentSearch( $text = '', $phrase = '', $ordering = '', $areas = null, $fields = array(), $fields_order = array(), $config = array(), $current = array(), $options = null, $user = null )
 	{
 		if ( is_array( $areas ) ) {
 			if ( ! array_intersect( $areas, array_keys( $this->onContentSearchAreas() ) ) ) {
@@ -54,13 +54,14 @@ class plgSearchCCK extends JPlugin
 		$dispatcher		=	JEventDispatcher::getInstance();
 		$doClean		=	false;
 		$doCount		=	(int)$options->get( 'count' );
+		$doDebug		=	$options->get( 'debug' );
 		$doLimit		=	false;
 		$limit			=	(int)$options->get( 'limit' );
 		$doLimit		=	( $limit > 0 ) ? false : true;
 		$hasGroup		=	false;
 		$isLoadingMore	=	( $app->input->get( 'format' ) == 'raw' && $app->input->getInt( 'infinite' ) > 0 ) ? 1 : 0;
 		if ( $isLoadingMore ) {
-			$isLoadingMore	=	0; /* todo: only when it was triggered by the component itself */
+			$isLoadingMore	=	0; /* TODO#SEBLOD: only when it was triggered by the component itself */
 		}
 		$glues			=	1;
 		$order			=	'';
@@ -304,15 +305,13 @@ class plgSearchCCK extends JPlugin
 		
 		// Finalize
 		$where		=	implode( ' ', $where2 );
+
 		if ( $doClean !== false ) {
 			$where	=	preg_replace( '/\s+/', ' ', $where );
-			$where	=	str_replace( 'AND (  )', '', $where );
-			$where	=	str_replace( 'AND ( )', '', $where );
-			$where	=	str_replace( 'OR OR', 'OR', $where );
-			$where	=	str_replace( '( OR', '(', $where );
-			$where	=	str_replace( 'OR ) )', ')', $where );
-			$where	=	str_replace( 'OR )', ')', $where );
+			$where	=	str_replace( array( 'AND (  )', 'AND ( )', '(  ) AND', '( ) AND' ), '', $where );
+			$where	=	str_replace( array( 'OR OR', '( OR', 'OR ) )', 'OR )' ), array( 'OR', '(', ')', ')' ), $where );
 		}
+
 		$where		=	str_replace( 'AND ()', '', $where );
 		$pos		=	strpos( $where, '() AND' );
 		
@@ -332,7 +331,7 @@ class plgSearchCCK extends JPlugin
 		}
 		
 		$inherit	=	array( 'bridge'=>'', 'query'=>'' );
-		$query		=	NULL;
+		$query		=	null;
 		$query2		=	'';
 		$results	=	array();
 		self::_setStorage( $tables, $config, $inherit );
@@ -352,7 +351,7 @@ class plgSearchCCK extends JPlugin
 					}
 				}
 				$query	=	$db->getQuery( true );
-				$query->select( 't0.id AS pid,t0.pk AS pk,t0.pkb AS pkb,t0.parent_id AS parent,t0.author_id AS author' );
+				$query->select( 't0.id AS pid,t0.pk AS pk,t0.pkb AS pkb,t0.parent_id AS parent,t0.author_id AS author,t0.author_session AS author_session' );
 				$query->from( '`#__cck_core` AS t0' );
 				self::_buildQuery( $dispatcher, $query, $tables, $t, $config, $inherit, $user, $config['doSelect'] );
 				$query->select( 't0.cck AS cck,t0.storage_location AS loc' );
@@ -365,7 +364,7 @@ class plgSearchCCK extends JPlugin
 				if ( isset( $config['query_parts']['select'] ) ) {
 					if ( ( is_string( $config['query_parts']['select'] ) && $config['query_parts']['select'] != '' )
 						|| count( $config['query_parts']['select'] ) ) {
-						$query->select( $config['query_parts']['select'] );
+						$query->select( self::_prepareParts( $config['query_parts']['select'], $tables ) );
 					}
 				}
 				if ( $where != '' ) {
@@ -374,18 +373,18 @@ class plgSearchCCK extends JPlugin
 				if ( isset( $config['query_parts']['where'] ) ) {
 					if ( ( is_string( $config['query_parts']['where'] ) && $config['query_parts']['where'] != '' )
 						|| count( $config['query_parts']['where'] ) ) {
-						$query->where( $config['query_parts']['where'] );	
+						$query->where( self::_prepareParts( $config['query_parts']['where'], $tables ) );
 					}
 				}
 				if ( isset( $config['query_parts']['having'] ) ) {
 					if ( ( is_string( $config['query_parts']['having'] ) && $config['query_parts']['having'] != '' )
 						|| count( $config['query_parts']['having'] ) ) {
-						$query->having( $config['query_parts']['having'] );	
+						$query->having( self::_prepareParts( $config['query_parts']['having'], $tables ) );	
 					}
 				}
 				if ( isset( $config['query_parts']['group'] ) && count( $config['query_parts']['group'] ) ) {
 					$hasGroup	=	true;
-					$query->group( $config['query_parts']['group'] );
+					$query->group( self::_prepareParts( $config['query_parts']['group'], $tables ) );
 				}
 				self::_buildQueryOrdering( $order, $ordering, $fields_order, $dispatcher, $query, $tables, $t, $config, $current, $inherit, $user );
 				
@@ -394,7 +393,9 @@ class plgSearchCCK extends JPlugin
 				} else {
 					$db->setQuery( $query, 0, $limit );
 				}
-				$results	=	$db->loadObjectList();
+				if ( $doDebug != -1 ) {
+					$results	=	$db->loadObjectList();
+				}
 
 				if ( $doLimit ) {
 					$count	=	count( $results );
@@ -418,7 +419,7 @@ class plgSearchCCK extends JPlugin
 
 							if ( strpos( $query1, 'HAVING' ) !== false ) {
 								if ( isset( $config['doQuery2'] ) && $config['doQuery2'] ) {
-									// todo
+									/* TODO#SEBLOD: */
 								}
 								$query->clear( 'order' )->clear( 'limit' );
 
@@ -471,12 +472,24 @@ class plgSearchCCK extends JPlugin
 					$query->where( $where );
 				}
 				$db->setQuery( $query );
-				$results	=	$db->loadColumn();
+
+				if ( $doDebug != -1 ) {
+					$results	=	$db->loadColumn();
+				}
 			}
+		} else {
+			$config['ids2']		=	array();
+
+			foreach ( $results as $k=>$v ) {
+				if ( isset( $results[$k]->id ) ) {
+					$config['ids2'][]	=	$results[$k]->id;
+				}
+			}
+			$config['ids2']		=	'"'.implode( '","', $config['ids2'] ).'"';
 		}
 		
 		// Debug
-		if ( $options->get( 'debug' ) ) {
+		if ( $doDebug > 0 && $doDebug < 10 ) {
 			if ( !isset( $query1 ) ) {
 				$query1	=	(string)$query;
 			}
@@ -498,8 +511,13 @@ class plgSearchCCK extends JPlugin
 		if ( isset( $config['total'] ) ) {
 			$config['doPagination']	=	false;
 		}
-		
-		return $results;
+
+		$data	=	array(
+						'config'=>$config,
+						'results'=>$results
+					);
+
+		return $data;
 	}
 	
 	// _buildQuery
@@ -566,7 +584,7 @@ class plgSearchCCK extends JPlugin
 	{
 		if ( $ordering != '' ) {
 			if ( $ordering == '-1' ) {
-				// Todo: alias. + join table if doesn't exist..
+				/* TODO#SEBLOD: alias. + join table if doesn't exist.. */
 				if ( $current['order_by'] ) {
 					$query->order( $current['order_by'] );
 				}
@@ -580,7 +598,8 @@ class plgSearchCCK extends JPlugin
 			}
 		} else {
 			$ordered	=	false;
-			if ( count( $fields_order ) ) {
+
+			if ( is_array( $fields_order ) && count( $fields_order ) ) {
 				$str		=	(string)$query;
 				$str		=	explode( 'FROM', $str );
 				$str		=	$str[0];
@@ -654,9 +673,35 @@ class plgSearchCCK extends JPlugin
 		if ( isset( $config['query_parts']['order_by'] ) ) {
 			if ( ( is_string( $config['query_parts']['order_by'] ) && $config['query_parts']['order_by'] != '' )
 				|| count( $config['query_parts']['order_by'] ) ) {
-				$query->order( $config['query_parts']['order_by'] );
+				$query->order( self::_prepareParts( $config['query_parts']['order_by'], $tables ) );
 			}
 		}
+	}
+
+	// _preparePart
+	protected static function _preparePart( $part, $tables )
+	{
+		foreach ( $tables as $k=>$v ) {
+			if ( strpos( $part, $k.'.' ) !== false ) {
+				$part	=	str_replace( $k.'.', $v['_'].'.', $part );
+			}
+		}
+
+		return $part;
+	}
+
+	// _prepareParts
+	protected static function _prepareParts( $parts, $tables )
+	{
+		if ( is_array( $parts ) ) {
+			foreach ( $parts as $k=>$part ) {
+				$parts[$k]	=	self::_preparePart( $part, $tables );
+			}
+		} else {
+			$parts	=	self::_preparePart( $parts, $tables );
+		}
+
+		return $parts;
 	}
 
 	// _setStorage

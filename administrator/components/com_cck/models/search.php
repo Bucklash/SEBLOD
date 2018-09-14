@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -27,10 +27,10 @@ class CCKModelSearch extends JCckBaseLegacyModelAdmin
 		if ( ! empty( $record->folder ) ) {
 			// Folder Permissions
 			return $user->authorise( 'core.delete', CCK_COM.'.folder.'.(int)$record->folder );
-		} else {
-			// Component Permissions
-			return parent::canDelete( $record );
 		}
+
+		// Component Permissions
+		return parent::canDelete( $record );
 	}
 
 	// canEditState
@@ -41,10 +41,10 @@ class CCKModelSearch extends JCckBaseLegacyModelAdmin
 		if ( ! empty( $record->folder ) ) {
 			// Folder Permissions
 			return $user->authorise( 'core.edit.state', CCK_COM.'.folder.'.(int)$record->folder );
-		} else {
-			// Component Permissions
-			return parent::canEditState( $record );
 		}
+
+		// Component Permissions
+		return parent::canEditState( $record );
 	}
 	
 	// populateState

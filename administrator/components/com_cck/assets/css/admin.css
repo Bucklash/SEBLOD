@@ -3,7 +3,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 **/
 
 /* Cpanel */
@@ -19,7 +19,7 @@ div.seblod-less.cpanel_news.full{width:600px;}
 div.cpanel_news.compact{width:350px;}
 div.seblod-less.cpanel_news.compact{width:380px;}
 div.seblod-less.cpanel_news.compact div.cpanel.compact{width:270px;}
-div.seblod.beta{background-image: url("../images/beta.png"); background-position:0px 0px; background-repeat:no-repeat; background-size: 42px;}
+div.seblod.beta{background-image: url("../images/beta.png"); background-position:0 0; background-repeat:no-repeat; background-size: 42px;}
 div.seblod.first.cpanel_news{margin-top:0 !important;}
 div.seblod.first.cpanel_news .legend,
 div.seblod.first.cpanel_news ul.adminformlist{margin:0;}
@@ -54,11 +54,22 @@ input[type="checkbox"] {-webkit-border-radius: 3px; -moz-border-radius: 3px; bor
 .pagination-toolbar .pagination-list li span[class*=" icon-"]{position:relative; top:2px;}
 th.caret-fix > a:first-child > span{float:left; position:relative; left:3px;}
 .btn-primary .icon-edit:before{color:#fff;}
+.input-group{width: 222px; float:left; position: relative;}
+.input-group .insidebox{position: absolute; left:initial; right:5px; z-index: 99; top:11px!important;}
+.input-group input{width:97px; position: relative;}
+.input-group.left [data-pos="left"]{width:147px; z-index: 98; -webkit-transition: width 0.5s; transition: width 0.5s;}
+.input-group.left [data-pos="right"]{width:46px; z-index: 97; -webkit-transition: width 0.5s; transition: width 0.5s; border-left:0; border-bottom-left-radius: 0!important; border-top-left-radius: 0!important;}
+.input-group.right input{left:-2px;}
+.input-group.right [data-pos="left"]{width:46px; z-index: 97; -webkit-transition: width 0.5s; transition: width 0.5s; border-right:0; border-bottom-right-radius: 0!important; border-top-right-radius: 0!important;}
+.input-group.right [data-pos="right"]{width:147px; z-index: 98; -webkit-transition: width 0.5s; transition: width 0.5s;}
+.input-group > input.right{left:-2px;}
 
 /* switch linkage */
 .switch span.linkage {display:inline-block; height:24px; width:24px; position:relative; left:-2px;}
 /*.switch span.linked {background-image: url("../images/24/icon-24-lock.png");}*/
 .switch span.notice {background-position:left; background-repeat:no-repeat;}
+span.switch.notice{padding-top:4px; display: inline-block;}
+.switch.notice span.linkage{top:2px;}
 /*.switch span.unlinked {background-image: url("../images/24/icon-24-unlock.png");}*/
 
 .switch span.linkage.icon-lock{left: -2px; margin: 5px 0 0 6px; font-size: 18px; color:#3b99fc; background-image:none;}
@@ -82,12 +93,13 @@ div.preview fieldset.checkboxes input.inputbox, div.preview fieldset.radios inpu
 div.preview fieldset.checkboxes label, div.preview fieldset.radios label{clear:none;display:block;float:left;line-height:190%;margin:0;padding-right:20px;}
 div.preview > div > div.cck_admin.cck_jform_usergroups{text-align: left;}
 
-input#storage_field{padding-right: 15px; margin-right:0px;}
+input#storage_field{padding-right: 15px; margin-right:0;}
 span#storage_field_pick{color: #3b99fc; cursor: pointer; font-weight: bold; font-size: 15px; position: relative; top: 8px; left:-18px; float:left; padding:0; margin:0;}
 span#storage_field_pick > .icon-menu-2,
 span.value-picker > .icon-menu-2{font-size:14px; font-weight: normal; margin-right:0;}
 span.value-picker{color: #3b99fc; cursor: pointer; font-weight: bold; font-size: 15px; position: relative; top: 8px; left:-18px; float:left; padding:0; margin:0;}
 body.contentpane.component span.value-picker{left:-22px; top:10px;}
+span#storage_field_type{position:relative; right:96px; top:30px; font-weight:bold; font-size: 10px; color:#444444;}
 
 table.adminlist td div.title-left{padding-left: 9px;}
 table.adminlist .folder-parent{font-size:0.95em!important;}
@@ -127,6 +139,10 @@ div.toggle-selection a{color:#eb8207;font-size:10px;font-weight:bold;}
 .toggle_more{position:absolute;float:right;right:10px;cursor:pointer; width:10px; height:10px; background-image: url("../images/10/toggle3.png"); background-repeat:no-repeat; background-size: cover;}
 .toggle_more.closed{background-position:0 0;}
 .toggle_more.open{background-position:0 -10px;}
+#toggle_adv{float:left; position:relative; top:14px; left:-4px;}
+#storage_advanced{float:left; clear:both;}
+#storage_alter > input{margin-top:13px;}
+#storage_alter > label{line-height: 30px;}
 
 #featured_session{position:relative; top:10px; cursor:pointer;}
 body.com_cck #cboxLoadedContent,
@@ -165,6 +181,8 @@ th span.large{font-size:16px; position:relative; top:2px;}
 
 pre.cck-xml{font-family: "Arial", "Helvetica", sans-serif; font-size:12px; padding-left: 26px;}
 
+.overflowfix{display:table!important; float:left!important; overflow:visible!important;}
+
 /* Joomla 3.x */
 .img-action{max-width: inherit;}
 body #j-main-container{padding-left:0;}
@@ -177,8 +195,8 @@ div.seblod-manager .table .dropdown-submenu .dropdown-menu{right: -1px;}
 div.filter-select select, div.filter-search select, div.filter-search input, div.filter-search button{margin:0;}
 #core_filter_go i.icon-checkmark:before{color: #333333;}
 div.filter-search.pull-left select, div.filter-search.pull-left input, div.filter-search.pull-left div.chzn-container{float:left;}
-div.filter-search.pull-left div.chzn-container{padding-right:0px; margin-right:6px;}
-div.btn-toolbar div.chzn-container{padding-right:0px; margin-right:6px;}
+div.filter-search.pull-left div.chzn-container{padding-right:0; margin-right:6px;}
+div.btn-toolbar div.chzn-container{padding-right:0; margin-right:6px;}
 div.btn-toolbar div#limit_chzn{padding-right:0;}
 body.contentpane.component div.seblod span.publish.icon-flag,
 body.com_cck div.seblod span.publish.icon-flag {color:#51a351;}
@@ -190,8 +208,8 @@ body.contentpane.component div.seblod #bool8.btn.btn-micro.jgrid{display:inline-
 body.com_cck div.preview{width:100%;}
 body.com_cck ul.adminformlist, body.com_cck_ecommerce ul.adminformlist{margin: 0;}
 #adminForm .chzn-container-single .chzn-single {-webkit-border-radius:3px; -moz-border-radius:3px; border-radius:3px;}
-#adminForm .chzn-container-active .chzn-single-with-drop {-webkit-border-radius:3px 3px 0px 0px; -moz-border-radius:3px 3px 0px 0px; border-radius:3px 3px 0px 0px;}
-#adminForm .chzn-container-single .chzn-drop{-webkit-border-radius:0px 0px 3px 3px; -moz-border-radius:0px 0px 3px 3px; border-radius:0px 0px 3px 3px;}
+#adminForm .chzn-container-active .chzn-single-with-drop {-webkit-border-radius:3px 3px 0 0; -moz-border-radius:3px 3px 0 0; border-radius:3px 3px 0 0;}
+#adminForm .chzn-container-single .chzn-drop{-webkit-border-radius:0 0 3px 3px; -moz-border-radius:0 0 3px 3px; border-radius:0 0 3px 3px;}
 #sidebar .chzn-container-active > .chzn-single{border-bottom-left-radius: 0; border-bottom-right-radius: 0;}
 body.com_cck div.how-to-setup a,
 body.com_cck_exporter div.how-to-setup a,
@@ -210,6 +228,8 @@ body.contentpane.component div.toggle-selection a{color:#3b99fc;}
 	-moz-border-radius: 0;
 	border-radius: 0;
 }
+div.seblod .input-append input.inputbox{-webkit-border-radius: 3px 0 0 3px; -moz-border-radius: 3px 0 0 3px; border-radius: 3px 0 0 3px;}
+div.seblod .input-append input+button{position: relative; left:-1px;}
 
 .sly-wrapper .sly { height: 145px; }
 .sly-wrapper .sly ul { height: 100%; }
@@ -240,7 +260,7 @@ body.com_cck fieldset.checkboxes input,body.com_cck fieldset.radios input{float:
 body.com_cck fieldset.checkboxes label,body.com_cck fieldset.radios label{float:left; box-sizing: border-box;}
 body.com_cck fieldset.checkboxes.vertical input,body.com_cck fieldset.radios.vertical input{float:left; margin-top:0; margin-right:5px; clear:left;}
 .modal-footer .btn + .btn-group {margin-bottom:0; margin-left: 5px;}
-.modal-footer .btn-group .btn + .btn, .btn-group.dropup .btn.dropdown-toggle {padding-top:3px; font-size:0px;}
+.modal-footer .btn-group .btn + .btn, .btn-group.dropup .btn.dropdown-toggle {padding-top:3px; font-size:0;}
 
 .modal.modal-small{max-width: 580px; left:50%; margin-left: -280px;}
 .modal.modal-small .modal-body{padding: 15px; width: auto;}
@@ -251,7 +271,7 @@ div.modal.modal-small.fade.in{top:10%;}
 #toolbar #toolbar-cck-template,
 #toolbar #toolbar-cck-variation,
 #toolbar #toolbar-cck-session,
-#toolbar #toolbar-cck-extension,
+#toolbar #toolbar-cck-addon,
 #toolbar #toolbar-folder,
 #toolbar #toolbar-archive:nth-last-child(2){float:right;}
 h1.page-title small{color: #fff; font-size:smaller;}
@@ -280,8 +300,8 @@ body.admin.view-list table.table tbody td .btn-group.btn-group-micro{height:18px
 
 body.admin.com_cck .chzn-container-single .chzn-drop{margin-top: -2px;}
 
-body.contentpane.component .span{margin-left:0px;}
-body.contentpane.component .span12{margin-left:0px; width:100%;}
+body.contentpane.component .span{margin-left:0;}
+body.contentpane.component .span12{margin-left:0; width:100%;}
 
 body.com_cck:not(.view-list) div.seblod a.btn.btn-micro.jgrid{padding:2px 4px; position:relative; top:6px;}
 

@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -23,7 +23,7 @@ if ( !class_exists( 'modCckMenuHelper' ) ) {
 }
 
 if ( JCck::on( '3.8' ) ) {
-	require JPATH_ADMINISTRATOR . '/modules/mod_cck_menu/cck_menu_legacy.php';
+	require_once JPATH_ADMINISTRATOR . '/modules/mod_cck_menu/cck_menu_legacy.php';
 
 	$menu		=	new JAdminCssCckLegacyMenu;
 } else {

@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -23,9 +23,10 @@ class Helper_Workshop
 		if ( $hasMb < 0 ) {
 			$hasMb	=	( function_exists( 'mb_convert_case' ) ) ? 1 : 0;
 		}
-		$name	=	( $hasMb ) ? mb_convert_case( substr( $field->title, 0, 1 ), MB_CASE_LOWER, 'UTF-8' ) : strtolower( $field->title );
+		$name	=	( $hasMb ) ? mb_convert_case( substr( $field->title, 0, 1 ), MB_CASE_LOWER, 'UTF-8' ) : strtolower( substr( $field->title, 0, 1 ) );
 		$link	=	'index.php?option=com_cck&task=field.edit&id='.$field->id.'&tmpl=component';
-		?><li class="field <?php echo 't-'.$field->type.' f-'.$field->folder.' a-'.$name.$type_field; ?>" id="<?php echo $field->id; ?>"><a class="cbox<?php echo $attr['class']; ?>" href="<?php echo $link; ?>"><?php echo $attr['span']; ?></a><span class="title" onDblClick="JCck.DevHelper.move('<?php echo $field->id; ?>');"><?php echo $field->title; ?><span class="subtitle">(<?php echo JText::_( 'PLG_CCK_FIELD_'.$field->type.'_LABEL2' ); ?>)</span></span><input type="hidden" id="k<?php echo $field->id; ?>" name="ff[<?php echo $field->name; ?>]" value="<?php echo $field->id; ?>" /><?php echo '<div class="move" onClick="JCck.DevHelper.move('.$field->id.');"></div>'; ?><div class="drag"></div><?php echo @$field->params; ?></li><?php
+		$class	=	$field->checked_out ? ' zz' : '';
+		?><li class="field <?php echo 't-'.$field->type.' f-'.$field->folder.' a-'.$name.$type_field; ?>" id="<?php echo $field->id; ?>"><a class="cbox<?php echo $attr['class'].$class; ?>" href="<?php echo $link; ?>"><?php echo $attr['span']; ?></a><span class="title" onDblClick="JCck.DevHelper.move('<?php echo $field->id; ?>');"><?php echo $field->title; ?><span class="subtitle">(<?php echo JText::_( 'PLG_CCK_FIELD_'.$field->type.'_LABEL2' ); ?>)</span></span><input type="hidden" id="k<?php echo $field->id; ?>" name="ff[<?php echo $field->name; ?>]" value="<?php echo $field->id; ?>" /><?php echo '<div class="move" onClick="JCck.DevHelper.move('.$field->id.');"></div>'; ?><div class="drag"></div><?php echo @$field->params; ?></li><?php
 	}
 	
 	// displayHeader
@@ -231,7 +232,7 @@ class Helper_Workshop
 			$fields	=	array();
 			if ( $featured != '' ) {
 				$where	=	'WHERE '.$featured.' AND a.type != "" AND a.storage != "dev" AND ( a.storage_table NOT LIKE "#__cck_store_form_%" )';
-				$fields	=	JCckDatabase::loadObjectList( 'SELECT DISTINCT a.id, a.title, a.name, a.folder, a.type, a.label FROM #__cck_core_fields AS a '.$where.' ORDER BY a.ordering ASC' );
+				$fields	=	JCckDatabase::loadObjectList( 'SELECT DISTINCT a.id, a.title, a.name, a.folder, a.type, a.label, a.checked_out FROM #__cck_core_fields AS a '.$where.' ORDER BY a.ordering ASC' );
 				if ( count( $fields ) ) {
 					$list	=	array();
 					foreach ( $fields as $f ) {
@@ -253,7 +254,7 @@ class Helper_Workshop
 			$fields	=	implode( ',', $fields );
 		} else {
 			$and	=	( $force === true ) ? ' '.$featured : '';
-			$query	=	' SELECT DISTINCT a.id, a.title, a.name, a.folder, a.type, a.label, c.client, '.plgCCK_FieldGeneric_More::gm_getConstruction_Columns( $table, '_get' )
+			$query	=	' SELECT DISTINCT a.id, a.title, a.name, a.folder, a.type, a.label, a.checked_out, c.client, '.plgCCK_FieldGeneric_More::gm_getConstruction_Columns( $table, '_get' )
 					.	' FROM #__cck_core_fields AS a '
 					. 	' LEFT JOIN #__cck_core_'.$table.' AS c ON c.fieldid = a.id'
 					.	' WHERE c.'.$element.'id = '.(int)$item->id.' AND c.client = "'.$item->client.'"'
@@ -296,7 +297,7 @@ class Helper_Workshop
 		if ( $folder != '' ) {
 			$where	.=	' AND '.$folder;
 		}
-		$query	=	' SELECT DISTINCT a.id, a.title, a.name, a.folder, a.type, a.label'
+		$query	=	' SELECT DISTINCT a.id, a.title, a.name, a.folder, a.type, a.label, a.checked_out'
 				.	$select
 				.	' FROM #__cck_core_fields AS a '
 				.	' LEFT JOIN #__cck_core_folders AS b ON b.id = a.folder '
@@ -360,6 +361,7 @@ class Helper_Workshop
 											Helper_Admin::getPluginOptions( 'field_live', 'cck_', false, false, true )
 										);
 				$data['stage']		=	array(
+											'-1'=>JHtml::_( 'select.option', '-1', JText::_( 'COM_CCK_STAGE_ALL' ) ),
 											'0'=>JHtml::_( 'select.option', '0', JText::_( 'COM_CCK_STAGE_FINAL' ) ),
 											'100'=>JHtml::_( 'select.option', '<OPTGROUP>', JText::_( 'COM_CCK_STAGE_TEMP' ) ),
 											'1'=>JHtml::_( 'select.option', '1', JText::_( 'COM_CCK_STAGE_1ST' ) ),
@@ -667,7 +669,9 @@ class Helper_Workshop
 		if ( !$template ) {
 			return 0;
 		}
+
 		$default	=	self::getDefaultStyle( $template );
+
 		if ( is_array( $params ) ) {
 			$params		=	JCckDev::toJSON( $params );
 		}
@@ -675,23 +679,27 @@ class Helper_Workshop
 		
 		if ( $template != $template2 ) {
 			$id		=	$default->id;
-			$update	=	1;	//or ajax reload of template params..
+			$update	=	1; /* TODO#SEBLOD: or ajax reload of template params... */
 		}
 		if ( $id == $default->id ) {
+			/* TODO#SEBLOD: explode json and diff each parameter */
 			if ( $params != '{}' && $params != $default->params && $update != 1 ) {
 				$ck		=	JCckTable::getInstance( '#__template_styles' );
 				$ck->load( $id );
+
 				if ( $ck->id > 0 ) {
 					$ck->id		=	0;
 					$ck->title	=	$ck->template . ' - ' .$tag;
 					$ck->params	=	$params;
 					$ck->store();
+					
 					$id			=	( $ck->id ) ? $ck->id : $id;
 				}
 			}
 		} else {
 			$ck		=	JCckTable::getInstance( '#__template_styles' );
 			$ck->load( $id );
+
 			if ( $ck->id > 0 ) {
 				if ( $force != false ) {
 					$ck->id		=	0;
@@ -699,6 +707,7 @@ class Helper_Workshop
 				}
 				$ck->params	=	$params;
 				$ck->store();
+
 				$id			=	( $ck->id ) ? $ck->id : $id;
 			}
 		}

@@ -4,20 +4,19 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
 defined( '_JEXEC' ) or die;
 
-if ( !JCck::on( '3.4' ) ) {
-	JHtml::_( 'behavior.framework' );
-}
+JHtml::_( 'behavior.core' );
 
 $app			=	JFactory::getApplication();
 $data			=	'';
 $form			=	'';
 $id				=	0;	// $app->input->getInt( 'id', 0 ); Not even sure why it was there.. any regression?
+$isCached		=	'';
 $itemId			=	( $preconfig['itemId'] == '' ) ? $app->input->getInt( 'Itemid', 0 ) : $preconfig['itemId'];
 $items			=	array();
 $lang   		=	JFactory::getLanguage();
@@ -25,7 +24,7 @@ $path			=	JPATH_SITE.'/templates';
 $total			=	0;
 $total_items	=	0;
 $user 			=	JCck::getUser();
-$user->gid		=	25; // Todo:: ACL
+$user->gid		=	25; /* TODO#SEBLOD: ACL */
 
 // Search
 $search			=	CCK_List::getSearch( $preconfig['search'], $id );
@@ -52,8 +51,20 @@ $preconfig['show_list']		=	( isset( $preconfig['show_list'] ) ) ? (int)$preconfi
 $preconfig['auto_redirect']	=	( $preconfig['auto_redirect'] != '' ) ? $preconfig['auto_redirect'] : $options->get( 'auto_redirect', 0 );
 
 $doDebug					=	(int)$options->get( 'debug', JCck::getConfig_Param( 'debug', 0 ) );
-$doDebug					=	( $doDebug == 1 || ( $doDebug == 2 && $user->authorise( 'core.admin' ) ) ) ? 1 : 0;
+
+if ( $doDebug == 1 || ( $doDebug == 2 && $user->authorise( 'core.admin' ) ) ) {
+	$doDebug				=	 1;
+} elseif ( $doDebug == 11 || ( $doDebug == 12 && $user->authorise( 'core.admin' ) ) ) {
+	$doDebug				=	 10;
+} elseif ( $doDebug == -1 || ( $doDebug == -2 && $user->authorise( 'core.admin' ) ) ) {
+	$doDebug				=	 -1;
+} else {
+	$doDebug				=	 0;
+}
+
 $options->set( 'debug', $doDebug );
+
+
 
 // ACL
 if ( !in_array( $search->access, $user->getAuthorisedViewLevels() ) ) {
@@ -81,9 +92,7 @@ $fields						=	CCK_List::getFields( $search->name, array( $preconfig['client'], 
 
 $count						=	count( $fields['search'] );
 $excluded_stages			=	explode( ',', $options->get( 'stages_optional', '' ) );
-if ( $doDebug ) {
-	jimport( 'joomla.error.profiler' );
-}
+
 if ( ! $count ) {
 	$config		=	array( 'action'=>$preconfig['action'],
 						   'core'=>true,
@@ -111,6 +120,7 @@ $limitend	=	( isset( $preconfig['limitend'] ) && $preconfig['limitend'] != '' ) 
 $pagination	=	( isset( $pagination ) && $pagination != '' ) ? $pagination : $options->get( 'show_pagination', 0 );
 $isAltered	=	false;
 $isInfinite	=	( $pagination == 2 || $pagination == 8 ) ? true : false;
+$isSearch	=	(int)JUri::getInstance()->hasVar( 'task' ); /* TODO#SEBLOD: add "data-cck-remove-before-search" behavior on empty fields/values + test with persistent search + fix checkboxes on persistent search vs isset($post[...]) */
 
 if ( (int)$app->input->getInt( 'infinite', '0' ) ) {
 	if ( $app->input->get( 'end', '' ) != '' ) {
@@ -118,7 +128,10 @@ if ( (int)$app->input->getInt( 'infinite', '0' ) ) {
 	}
 }
 if ( $limitstart != -1 ) {
-	if ( $limitstart > 0 && !(int)$app->input->getInt( 'start' ) ) {
+	$start_var	=	( $app->isClient( 'administrator' ) || !JFactory::getConfig()->get( 'sef' ) ) ? 'limitstart' : 'start';
+	$start		=	(int)$app->input->getInt( $start_var );
+
+	if ( $limitstart > 0 && !$start ) {
 		$isAltered	=	true;
 	}
 	if ( isset( $this ) && isset( $this->state ) && is_object( $this->state ) ) {
@@ -139,14 +152,14 @@ if ( !isset( $lives ) ) {
 		}
 	}
 } elseif ( count( $lives ) && $isInfinite ) {
-	// todo: force lives
+	/* TODO#SEBLOD: force lives */
 }
 $variation	=	explode( '||', $variation );
 $variations	=	array();
 foreach ( $variation as $var ) {
 	if ( $var != '' ) {
 		$v					=	explode( '=', $var );
-		if ( $v[1] == 'none' ) { $v[1] = 'hidden'; } // TODO: FIX TO REMOVE AFTER GA
+		if ( $v[1] == 'none' ) { $v[1] = 'hidden'; } /* TODO#SEBLOD: FIX TO REMOVE AFTER GA */
 		$variations[$v[0]]	=	$v[1];
 	}
 }
@@ -163,18 +176,20 @@ if ( $preconfig['task'] == 'search' || $preconfig['task'] == 'search2' ) {
 }
 $config			=	array( 'action'=>$preconfig['action'],
 						   'client'=>$preconfig['client'],
+						   'context'=>array(),
 						   'core'=>true,
 						   'doPagination'=>true,
 						   'doQuery'=>true,
 						   'doSEF'=>$options->get( 'sef', JCck::getConfig_Param( 'sef', '2' ) ),
 						   'doTranslation'=>JCck::getConfig_Param( 'language_jtext', 0 ),
-						   'doValidation'=>JCck::getConfig_Param( 'validation', '2' ),
+						   'doValidation'=>(int)JCck::getConfig_Param( 'validation', '3' ),
 						   'formId'=>$preconfig['formId'],
 						   'formWrapper'=>false,
 						   'Itemid'=>$itemId,
 						   'limitend'=>0,
 						   'location'=>'',
 						   'pk'=>$id,
+						   'sef_aliases'=>$search->sef_route_aliases,
 						   'submit'=>$preconfig['submit'],
 						   'type'=>$search->name,
 						   'type_id'=>$search->id,
@@ -193,10 +208,7 @@ $dispatcher	=	JEventDispatcher::getInstance();
 // -------- -------- -------- -------- -------- -------- -------- -------- // Show Form
 
 if ( $preconfig['show_form'] ) {
-	
-	if ( JCck::on( '3.4' ) ) {
-		JHtml::_( 'behavior.core' );
-	}
+	JHtml::_( 'behavior.core' );
 
 	// Template
 	$P				=	'template_'.$preconfig['client'];
@@ -225,31 +237,47 @@ if ( $preconfig['show_form'] ) {
 // -------- -------- -------- -------- -------- -------- -------- -------- // Prepare Context
 
 $context	=	$app->input->getString( 'context' );
+$isRaw		=	false;
 
 if ( $context != '' ) {
-	$context	=	str_replace( "'", '"', $context );
-	$context	=	json_decode( $context );
-	$vars		=	array(
-						'Itemid'=>'',
-						'view'=>array( 'form', 'list', 'article', 'category' )
+	$context	=	json_decode( $context, true );
+	$excluded	=	array(
+						'cid'=>'',
+						'copyfrom_id'=>'',
+						/* 'id'=>'', OK, we can keep it */
+						'limit'=>'',
+						'option'=>'',
+						'pk'=>'',
+						'return'=>'',
+						'search'=>'',
+						'skip'=>'',
+						'stage'=>'',
+						'task'=>'',
+						'tid'=>'',
+						'tmpl'=>'', /* Let's keep it when format!=raw for now */
+						'type'=>''
 					);
-	foreach ( $vars as $key=>$val ) {
-
-		if ( isset( $context->$key ) ) {
-			$v	=	$context->$key;
-
-			if ( is_array( $val ) ) {
-				if ( !in_array( $v, $val ) ) {
+	foreach ( $context as $k=>$v ) {
+		if ( isset( $excluded[$k] ) ) {
+			if ( $k == 'tmpl' ) {
+				if ( $v == 'raw' ) {
+					$isRaw	=	true;
+				}
+				if ( $app->input->get( 'format' ) == 'raw' ) {
 					continue;
 				}
-			} elseif ( $val != '' ) {
-				if ( $v != $val ) {
-					continue;
-				}
+			} else {
+				continue;
 			}
-			$app->input->set( $key, $v );
 		}
+		$app->input->set( $k, $v );
 	}
+}
+
+// We need to override form stuff based on the tmpl found within the context
+if ( $isRaw ) {
+	$config['formId']	.=	'_raw';
+	$config['submit']	.=	'_raw';
 }
 
 if ( $isInfinite && $app->input->get( 'view' ) == 'list' && !isset( $menu )  ) {
@@ -277,7 +305,7 @@ if ( isset( $this ) && ( $isPersistent == 1 || ( $isPersistent == 2 && $user->id
 // -------- -------- -------- -------- -------- -------- -------- -------- // Prepare Search
 
 // Validation
-if ( JCck::getConfig_Param( 'validation', 2 ) > 1 ) {
+if ( (int)JCck::getConfig_Param( 'validation', '3' ) > 1 ) {
 	$lang->load( 'plg_cck_field_validation_required', JPATH_ADMINISTRATOR, null, false, true );
 	require_once JPATH_PLUGINS.'/cck_field_validation/required/required.php';
 }
@@ -301,7 +329,7 @@ foreach ( $fields['search'] as $field ) {
 				$field->$k	=	$v;
 			}
 		}
-		$field->variation_override	=	NULL;
+		$field->variation_override	=	null;
 	}
 	$field->variation	=	( isset( $variations[$name] ) ) ? ( $variations[$name] == 'form' ? '' : $variations[$name] ) : $field->variation;
 
@@ -364,7 +392,10 @@ $config['limitend']		=	$limitend;
 $config['doSelect']		=	$search->content ? false : true;
 
 if ( $doDebug ) {
+	jimport( 'joomla.error.profiler' );
+	
 	$profiler	=	JProfiler::getInstance();
+	echo $profiler->mark( 'beforeSearch'.$isCached ).'<br />';
 }
 
 if ( $search->storage_location ) {
@@ -474,7 +505,7 @@ if ( $preconfig['task'] == 'search' ) {
 					$items	=	array_splice( $items, 0, $total );
 				}
 			} else {
-				$total	=	count( $items ); // todo: change above??
+				$total	=	count( $items ); /* TODO#SEBLOD: change above?? */
 			}
 			// Suffle
 			if ( $preconfig['ordering2'] == 'shuffle' || $preconfig['ordering2'] == 'random_shuffle' ) {
@@ -524,7 +555,7 @@ if ( $preconfig['task'] == 'search' ) {
 					return;
 				}
 			}
-			
+
 			// Render
 			$doCache2		=	$options->get( 'cache2' );
 			if ( $doCache2 ) {
@@ -539,8 +570,15 @@ if ( $preconfig['task'] == 'search' ) {
 				}
 				$isCached	=	' [Cache=OFF]';
 			}
+			if ( is_array( $data ) ) {
+				if ( count( $data['config'] ) ) {
+					foreach ( $data['config'] as $k=>$v ) {
+						$config[$k]	=	$v;
+					}
+				}
+				$data	=	$data['buffer'];
+			}
 		} else {
-			$isCached	=	'';
 			$no_action	=	$options->get( 'action', '' );
 			$no_message	=	$options->get( 'message', '' );
 			$no_style	=	$options->get( 'message_style', 'message' );
@@ -595,8 +633,8 @@ if ( $no_action ) {
 		}
 		$search->content		=	$search2->content;
 	}
-
 	if ( $no_action == 'auto_redirect' ) {
+		/* TODO#SEBLOD: is this even possible? */
 		if ( isset( $fields['search']['cck'] ) && !$fields['search']['cck']->live && $fields['search']['cck']->live_value ) {
 			$return			=	base64_encode( $_SERVER["HTTP_REFERER"] );
 			$redirect_url	=	JRoute::_( 'index.php?option=com_cck&view=form&layout=edit&type='.$fields['search']['cck']->live_value.'&Itemid='.$config['Itemid'].'&return='.$return );
@@ -622,10 +660,26 @@ if ( $no_action ) {
 		}
 	} else {
 		$data		=	CCK_List::render( $items, ${$target}, $path, $preconfig['client'], $config['Itemid'], $options, $config );
+
+		if ( count( $data['config'] ) ) {
+			foreach ( $data['config'] as $k=>$v ) {
+				$config[$k]	=	$v;
+			}
+		}
+		$data	=	$data['buffer'];
 	}
 }
-if ( $doDebug ) {
+if ( $doDebug > 0 && ( $preconfig['task'] == 'search' || $no_action ) ) {
 	echo $profiler->mark( 'afterRender'.$isCached ).'<br /><br />';
+}
+
+// Ajax Wrapper
+if ( $isInfinite && $app->input->get( 'wrapper' ) ) {
+	$data	=	json_encode( array(
+								'count'=>(int)$total,
+								'html'=>$data,
+								'total'=>(int)$config['total']
+							 ), JSON_HEX_QUOT | JSON_HEX_TAG );
 }
 
 if ( $preconfig['show_form'] > 0 ) {

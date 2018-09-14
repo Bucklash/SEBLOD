@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -27,10 +27,10 @@ class CCKModelType extends JCckBaseLegacyModelAdmin
 		if ( ! empty( $record->folder ) ) {
 			// Folder Permissions
 			return $user->authorise( 'core.delete', CCK_COM.'.folder.'.(int)$record->folder );
-		} else {
-			// Component Permissions
-			return parent::canDelete( $record );
 		}
+
+		// Component Permissions
+		return parent::canDelete( $record );
 	}
 
 	// canEditState
@@ -41,10 +41,10 @@ class CCKModelType extends JCckBaseLegacyModelAdmin
 		if ( ! empty( $record->folder ) ) {
 			// Folder Permissions
 			return $user->authorise( 'core.edit.state', CCK_COM.'.folder.'.(int)$record->folder );
-		} else {
-			// Component Permissions
-			return parent::canEditState( $record );
 		}
+
+		// Component Permissions
+		return parent::canEditState( $record );
 	}
 	
 	// populateState
@@ -121,17 +121,10 @@ class CCKModelType extends JCckBaseLegacyModelAdmin
 	protected function prepareTable2( &$table, &$data )
 	{
 		if ( !$data['jform']['id'] && !$data['jform']['rules'] ) {
-			$data['jform']['rules']	=	array( 'core.create'=>array(),
-											   'core.create.max.parent'=>array( '8'=>"0" ),
-											   'core.create.max.parent.author'=>array( '8'=>"0" ),
-											   'core.create.max.author'=>array( '8'=>"0" ),
-											   'core.delete'=>array(),
-											   'core.delete.own'=>array(),
-											   'core.edit'=>array(),
-											   'core.edit.own'=>array(),
-											   'core.edit.own.content'=>array(),
-											   'core.export'=>array(),
-											   'core.process'=>array()
+			$data['jform']['rules']	=	array(
+											'core.create.max.parent'=>array( '8'=>'0' ),
+											'core.create.max.parent.author'=>array( '8'=>'0' ),
+											'core.create.max.author'=>array( '8'=>'0' )
 										);
 		}
 		if ( $data['jform']['rules'] ) {

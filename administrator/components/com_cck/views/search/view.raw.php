@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -24,7 +24,7 @@ class CCKViewSearch extends JViewLegacy
 	protected $vTitle	=	_C4_TEXT;
 	
 	// display
-	function display( $tpl = null )
+	public function display( $tpl = null )
 	{
 		switch ( $this->getlayout() ) {
 			case 'delete':
@@ -68,13 +68,13 @@ class CCKViewSearch extends JViewLegacy
 	}
 	
 	// prepareDelete
-	function prepareDelete()
+	protected function prepareDelete()
 	{		
 		Helper_Admin::addToolbarDelete( $this->vName, 'COM_CCK_'.$this->vTitle );
 	}
 	
 	// prepareDisplay
-	function prepareDisplay()
+	protected function prepareDisplay()
 	{
 		$app			=	JFactory::getApplication();
 		$this->form		=	$this->get( 'Form' );
@@ -99,6 +99,10 @@ class CCKViewSearch extends JViewLegacy
 			$this->panel_class	=	'open';
 			$this->panel_style	=	'';
 			$name				=	'';
+
+			if ( $this->item->cck_type != '' ) {
+				$this->item->sef_route	=	$this->item->cck_type;
+			}
 		}
 		$this->item->folder		=	Helper_Admin::getSelected( $this->vName, 'folder', $this->item->folder, 1 );
 		$this->item->published	=	Helper_Admin::getSelected( $this->vName, 'state', $this->item->published, 1 );
@@ -122,7 +126,7 @@ class CCKViewSearch extends JViewLegacy
 	}
 	
 	// prepareDisplay_Ajax
-	function prepareDisplay_Ajax()
+	protected function prepareDisplay_Ajax()
 	{
 		$folder		=	( $this->item->id > 0 ) ? $this->item->folder : 1;
 
@@ -177,7 +181,7 @@ class CCKViewSearch extends JViewLegacy
 	}
 	
 	// prepareDisplay_Ajax2
-	function prepareDisplay_Ajax2( $isScoped )
+	protected function prepareDisplay_Ajax2( $isScoped )
 	{
 		$and		=	'';
 		$folder		=	( $this->item->id > 0 ) ? $this->item->folder : 1;
@@ -195,13 +199,13 @@ class CCKViewSearch extends JViewLegacy
 		$this->fieldsAv			=	Helper_Workshop::getFieldsAv( 'search', $this->item, $and, 'a.folder != '.(int)$folder );
 		$this->type_fields		=	JCckDatabase::loadObjectList( 'SELECT fieldid, GROUP_CONCAT(DISTINCT typeid separator " c-") AS cc FROM #__cck_core_type_field group by fieldid', 'fieldid' );
 		
-		// Languages (todo: optimize)
+		// Languages /* TODO#SEBLOD: optimize */
 		Helper_Admin::getPluginOptions( 'field', 'cck_', true, false, true );
 		JPluginHelper::importPlugin( 'cck_field' );
 	}
 
 	// setPosition
-	function setPosition( $name, $title = '' )
+	public function setPosition( $name, $title = '' )
 	{
 		$title	=	( !empty( $title ) ) ? $title : $name;
 		$legend	=	'<input class="thin blue" type="text" name="ffp[pos-'.$name.'][legend]" value="'.htmlspecialchars( @$this->positions[$name]->legend ).'" size="22" />';

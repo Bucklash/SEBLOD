@@ -4,14 +4,20 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
 defined( '_JEXEC' ) or die;
 
+if ( version_compare( PHP_VERSION, '5.4', '>=' ) ) {
+	include_once __DIR__ . '/content_placeholder.php';
+} else {
+	include_once __DIR__ . '/content_placeholder_legacy.php';
+}
+
 // JCckContent
-class JCckContentJoomla_Category extends JCckContent
+class JCckContentJoomla_Category extends JCckContentJoomla_CategoryPlaceholder
 {
 	// initialize
 	protected function initialize()
@@ -22,9 +28,9 @@ class JCckContentJoomla_Category extends JCckContent
 	}
 
 	// preSave
-	protected function preSave( $instance_name, &$data )
+	protected function preSave( $table_instance_name, &$data )
 	{
-		if ( $instance_name == 'base' ) {
+		if ( $table_instance_name == 'base' ) {
 			if ( !( isset( $data['extension'] ) && $data['extension'] != '' ) ) {
 				$data['extension']	=	'com_content';
 			}
@@ -48,26 +54,38 @@ class JCckContentJoomla_Category extends JCckContent
 		if ( !$this->_pk && !$status ) {
 			$i			=	2;
 			$alias		=	$this->_instance_base->alias.'-'.$i;
-			$property	=	$this->_columns['parent'];
+			$property	=	self::$objects[$this->_object]['properties']['parent'];
 			$test		=	JTable::getInstance( 'Category' );
 			
-			while ( $test->load( array( 'alias'=>$alias, $property=>$this->_instance_base->{$property} ) ) ) {
+			while ( $test->load( array( 'alias'=>$alias, $property=>$this->_instance_base->$property ) ) ) {
 				$alias	=	$this->_instance_base->alias.'-'.$i++;
 			}
 			$this->_instance_base->alias	=	$alias;
 
 			$status		=	$this->_instance_base->store();
 
-			/* TODO: publish_up */
+			/* TODO#SEBLOD: publish_up */
 		}
 
 		return $status;
 	}
+
+	// triggerSave
+	public function triggerSave( $event )
+	{
+		$result	=	$this->_dispatcher->trigger( self::$objects[$this->_object]['properties']['events'][$event], array( self::$objects[$this->_object]['properties']['context'], $this->_instance_base, $this->_is_new ) );
+
+		if ( $event == 'afterSave' ) {
+			unset( $this->_instance_base->catid );
+		}
+
+		return $result;
+	}
 	
 	// postSave
-	protected function postSave( $instance_name, $data )
+	protected function postSave( $table_instance_name, $data )
 	{
-		if ( $instance_name == 'base' ) {
+		if ( $table_instance_name == 'base' ) {
 			$this->_instance_base->rebuildPath( $this->getPk() );
 		}
 	}

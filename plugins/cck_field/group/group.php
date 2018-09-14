@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -57,7 +57,7 @@ class plgCCK_FieldGroup extends JCckPluginField
 		self::$path	=	parent::g_getPath( self::$type.'/' );
 		parent::g_onCCK_FieldPrepareContent( $field, $config );
 		
-		if ( !$field->state ) { /* TODO: Support for "onBeforeRender" restrictions may be implemented later. */
+		if ( !$field->state ) { /* TODO#SEBLOD: Support for "onBeforeRender" restrictions may be implemented later. */
 			$field->value	=	'';
 			return;
 		}
@@ -91,7 +91,7 @@ class plgCCK_FieldGroup extends JCckPluginField
 							JCckPluginLink::g_setHtml( $content[$f_name], $target );
 						}
 					}
-					if ( @$content[$f_name]->typo && $content[$f_name]->$target != '' && $config['doTypo'] ) {
+					if ( @$content[$f_name]->typo && ( $content[$f_name]->$target != '' || $content[$f_name]->typo_label == -2 ) ) {
 						$dispatcher->trigger( 'onCCK_Field_TypoPrepareContent', array( &$content[$f_name], $content[$f_name]->typo_target, &$config ) );
 					} else {
 						$content[$f_name]->typo	=	'';
@@ -114,7 +114,7 @@ class plgCCK_FieldGroup extends JCckPluginField
 		self::$path	=	parent::g_getPath( self::$type.'/' );
 		parent::g_onCCK_FieldPrepareForm( $field, $config );
 
-		if ( !$field->state ) { /* TODO: Support for "onBeforeRender" restrictions may be implemented later. */
+		if ( !$field->state ) { /* TODO#SEBLOD: Support for "onBeforeRender" restrictions may be implemented later. */
 			$field->form	=	'';
 			$field->value	=	'';
 			return;
@@ -149,9 +149,15 @@ class plgCCK_FieldGroup extends JCckPluginField
 						$dispatcher->trigger( 'onCCK_StoragePrepareForm_Xi', array( &$f, &$f_value, &$config['storages'][$table], $name, $xi ) );
 					} elseif ( $f->live ) {
 						$dispatcher->trigger( 'onCCK_Field_LivePrepareForm', array( &$f, &$f_value, &$config ) );
+					} else {
+						$f_value				=	$f->live_value;
 					}
 					$inherit					=	array();
 					$clone						=	clone $f;
+
+					if ( $field->variation != '' && $clone->variation == '' ) {
+						$clone->variation		=	$field->variation;
+					}
 					$results					=	$dispatcher->trigger( 'onCCK_FieldPrepareForm', array( &$clone, $f_value, &$config, $inherit, true ) );
 					$form[$f_name]				=	@$results[0];
 					@$form[$f_name]->name		=	$f->name;
@@ -215,7 +221,7 @@ class plgCCK_FieldGroup extends JCckPluginField
 					if ( isset( $data[$name] ) ) {
 						$val		=	$data[$name];
 					} else {
-						$val		=	NULL;
+						$val		=	null;
 						$f->state	=	'disabled';
 					}
 				}

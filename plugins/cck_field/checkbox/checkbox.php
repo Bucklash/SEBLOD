@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -246,8 +246,11 @@ class plgCCK_FieldCheckbox extends JCckPluginField
 		}
 		$class		=	'checkboxes'.$orientation . ( $field->css ? ' '.$field->css : '' );
 		$attr		=	'class="'.$class.'"' . ( $field->attributes ? ' '.$field->attributes : '' );
-		$form		=	'<fieldset id="'.$id.'" '.$attr.'>'.$form.'</fieldset>';
-		
+
+		if ( $form != '' ) {
+			$form	=	'<fieldset id="'.$id.'" '.$attr.'>'.$form.'</fieldset>';
+		}
+
 		// Set
 		if ( ! $field->variation ) {
 			$field->form	=	$form;

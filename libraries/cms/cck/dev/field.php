@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -16,7 +16,7 @@ abstract class JCckDevField
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Get
 	
 	// get
-	public static function get( $field, $value, &$config = array( 'doTranslation'=>1, 'doValidation'=>2 ), $inherit = array(), $override = array() )
+	public static function get( $field, $value, &$config = array( 'doTranslation'=>1, 'doValidation'=>2 ), $inherit = array(), $override = array(), $completion = 'render' )
 	{
 		if ( ! is_object( $field ) ) {
 			$field	=	JCckDatabase::loadObject( 'SELECT a.* FROM #__cck_core_fields AS a WHERE a.name = "'.$field.'"' ); //#
@@ -37,6 +37,7 @@ abstract class JCckDevField
 		$field->conditional_options	=	'';
 		$field->markup				=	'';
 		$field->markup_class		=	'';
+		
 		if ( count( $override ) ) {
 			foreach ( $override as $k => $v ) {
 				$field->$k	=	$v;
@@ -45,7 +46,13 @@ abstract class JCckDevField
 		if ( ! ( $field && ( @$field->storage == 'dev' && @$field->storage_field ) || $field->type == 'button_submit' ) ) {
 			return '';
 		}
+
+		if ( $completion == 'initialize' ) {
+			return $field;
+		}
+
 		$name	=	$field->storage_field;
+
 		if ( isset( $config['inherit'] ) ) {
 			if ( strpos( $name, '[' ) !== false ) {
 				$parts				=	explode( '[', $name );
@@ -61,7 +68,7 @@ abstract class JCckDevField
 		if ( ! isset( $inherit['id'] ) ) {
 			$inherit['id']		=	str_replace( array('[', ']'), array('_', ''), $name );
 		}
-		
+
 		JEventDispatcher::getInstance()->trigger( 'onCCK_FieldPrepareForm', array( &$field, $value, &$config, $inherit ) );
 		
 		if ( $field->required ) {
@@ -69,7 +76,7 @@ abstract class JCckDevField
 				$field->required	=	'';
 			}
 		}
-
+		
 		$field->form	=	JCck::callFunc_Array( 'plgCCK_Field'.$field->type, 'onCCK_FieldRenderForm', array( $field, &$config ) );
 		
 		return $field;
@@ -209,9 +216,14 @@ abstract class JCckDevField
 			$event	=	$context[0];
 			$pk		=	$context[1];
 		} elseif ( is_numeric( $context ) ) {
+			$event	=	'afterStore';
 			$pk		=	$context;
 		} else {
 			$event	=	$context;
+
+			if ( isset( $config['pk'] ) && $config['pk'] ) {
+				$pk	=	$config['pk'];
+			}
 		}
 
 		if ( isset( $fields[$name] ) ) {

@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -23,12 +23,6 @@ class CCKControllerTypes extends JControllerAdmin
 	public function __construct( $config = array() )
 	{
 		parent::__construct( $config );
-	}
-	
-	// getModel
-	public function getModel( $name = 'Type', $prefix = CCK_MODEL, $config = array( 'ignore_request' => true ) )
-	{
-		return parent::getModel( $name, $prefix, $config );
 	}
 	
 	// duplicate
@@ -51,6 +45,12 @@ class CCKControllerTypes extends JControllerAdmin
 		}
 		
 		$this->setRedirect( _C2_LINK, $msg, $type );
+	}
+
+	// getModel
+	public function getModel( $name = 'Type', $prefix = CCK_MODEL, $config = array( 'ignore_request' => true ) )
+	{
+		return parent::getModel( $name, $prefix, $config );
 	}
 	
 	// version

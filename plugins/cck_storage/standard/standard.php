@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -103,6 +103,7 @@ class plgCCK_StorageStandard extends JCckPluginStorage
 		switch ( $match ) {
 			case 'exact':
 				$var_type	=	( $field->match_options ) ? $field->match_options->get( 'var_type', 1 ) : 1;
+				
 				if ( !$var_type ) {
 					$sql	=	$target.' = '.JCckDatabase::clean( $value );
 				} else {
@@ -121,6 +122,7 @@ class plgCCK_StorageStandard extends JCckPluginStorage
 			case 'any':
 				$separator	=	( $field->match_value ) ? $field->match_value : ' ';
 				$values		=	explode( $separator, $value );
+				
 				if ( count( $values ) ) {
 					$fragments	=	array();
 					foreach ( $values as $v ) {
@@ -136,10 +138,14 @@ class plgCCK_StorageStandard extends JCckPluginStorage
 			case 'any_exact':
 				$separator	=	( $field->match_value ) ? $field->match_value : ' ';
 				$values		=	explode( $separator, $value );
-				if ( count( $values ) ) {
+				$count		=	count( $values );
+				
+				if ( $count ) {
 					$fragments	=	array();
+					$var_count	=	( $field->match_options ) ? $field->match_options->get( 'var_count', '' ) : '';
 					$var_mode	=	( $field->match_options ) ? $field->match_options->get( 'var_mode', '0' ) : '0';
 					$var_type	=	( $field->match_options ) ? $field->match_options->get( 'var_type', 1 ) : 1;
+
 					if ( $var_mode == '1' ) {
 						foreach ( $values as $v ) {
 							if ( strlen( $v ) > 0 ) {
@@ -170,6 +176,24 @@ class plgCCK_StorageStandard extends JCckPluginStorage
 							$sql	=	$target.' IN ('.implode( ',', $fragments ).')';
 						}
 					}
+					if ( $var_count != '' ) {
+						if ( (int)$var_count == 0 || (int)$var_count == 1 ) {
+							$idx	=	'diff_'.$field->name;
+							$offset	=	( $field->match_options && (int)$var_count == 1 ) ? $field->match_options->get( 'var_count_offset', '' ) : '';
+
+							if ( !isset( $config['query_parts'] ) ) {
+								$config['query_parts']	=	array();
+							}
+							if ( !isset( $config['query_parts']['select'] ) ) {
+								$config['query_parts']['select']	=	array();
+							}
+							if ( !isset( $config['query_parts']['having'] ) ) {
+								$config['query_parts']['having']	=	array();
+							}
+							$config['query_parts']['select'][]		=	'COUNT('.$target.') AS '.$idx;
+							$config['query_parts']['having'][]		=	$idx.' = '.( $count + (int)$offset );
+						}
+					}
 				}
 				break;
 			case 'each':
@@ -177,9 +201,11 @@ class plgCCK_StorageStandard extends JCckPluginStorage
 				$separator	=	( $field->match_value ) ? $field->match_value : ' ';
 				$values		=	explode( $separator, $value );
 				$count		=	count( $values );
+				
 				if ( $count ) {
 					$fragments	=	array();
 					$var_count	=	( $field->match_options ) ? $field->match_options->get( 'var_count', '' ) : '';
+					
 					if ( $match == 'each_exact' ) {
 						foreach ( $values as $v ) {
 							if ( strlen( $v ) > 0 ) {
@@ -240,6 +266,7 @@ class plgCCK_StorageStandard extends JCckPluginStorage
 				$table		=	( $field->match_options ) ? $field->match_options->get( 'table', $field->storage_table ) : $field->storage_table;
 				$column		=	'id';
 				$values		=	JCckDevHelper::getBranch( $table, $value );
+				
 				if ( $column != 'id' ) {
 					if ( count( $values ) ) {
 						$fragments	=	array();
@@ -279,9 +306,11 @@ class plgCCK_StorageStandard extends JCckPluginStorage
 			case 'not_any_exact':
 				$separator	=	( $field->match_value ) ? $field->match_value : ' ';
 				$values		=	explode( $separator, $value );
+				
 				if ( count( $values ) ) {
 					$fragments	=	array();
 					$var_type	=	( $field->match_options ) ? $field->match_options->get( 'var_type', 1 ) : 1;
+					
 					if ( !$var_type ) {
 						foreach ( $values as $v ) {
 							if ( strlen( $v ) > 0 ) {
@@ -336,22 +365,24 @@ class plgCCK_StorageStandard extends JCckPluginStorage
 				$lng		=	( isset( $fields[$f_lng] ) ) ? $fields[$f_lng]->value : '';
 				$s_lat		=	( isset( $fields[$f_lat]->storage_field ) && $fields[$f_lat]->storage_field ) ? $fields[$f_lat]->storage_field : $f_lat;
 				$s_lng		=	( isset( $fields[$f_lng]->storage_field ) && $fields[$f_lng]->storage_field ) ? $fields[$f_lng]->storage_field : $f_lng;
+
 				if ( $lat != '' && $lng != '' ) {
 					$alias		=	'distance';
 					$mod		=	( $field->match_options->get( 'var_unit', '1' ) ) ? '' : '*1.609344';
 					$radius		=	( isset( $fields[$f_rad] ) ) ? $fields[$f_rad]->value : '';
 					$sign		=	( $match == 'radius_higher' ) ? '>' : '<';
 					$config['query_parts']['select'][]	=	'(((acos(sin(('.(float)$lat.'*pi()/180)) * sin(('.$t[0].'.'.$s_lat.'*pi()/180))+cos(('.(float)$lat.'*pi()/180)) * cos(('.$t[0].'.'.$s_lat.'*pi()/180)) * cos((('.(float)$lng.'- '.$t[0].'.'.$s_lng.')*pi()/180))))*180/pi())*60*1.1515'.$mod.') AS '.$alias;						
+					
 					if ( (int)$radius > 0 ) {
 						$config['query_parts']['having'][]	=	$alias.' '.$sign.' '.$radius;
-						$sql		=	'()'; // todo
+						$sql		=	'()'; /* TODO#SEBLOD: */
 					} else {
 						$lat		=	number_format( $lat, 8 );
 						$lng		=	number_format( $lng, 8 );
 						$sql		=	'('.$t[0].'.'.$s_lat.' = '.JCckDatabase::quote( $lat ).' AND '.$t[0].'.'.$s_lng.' = '.JCckDatabase::quote( $lng ).')';
 					}
 				} else {
-					$sql			=	'()'; // todo
+					$sql			=	'()'; /* TODO#SEBLOD: */
 				}
 				break;
 			case 'none':

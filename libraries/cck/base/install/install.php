@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -44,7 +44,7 @@ class CCK_Install
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Import
 	
 	// import
-	public static function import( &$parent, $folder = 'elements', $extension = NULL )
+	public static function import( &$parent, $folder = 'elements', $extension = null )
 	{
 		$config		=	JFactory::getConfig();
 		$tmp_path	=	$config->get( 'tmp_path' );
@@ -73,7 +73,7 @@ class CCK_Install
 		self::_import( 'content', $data, $config );
 		
 		// Elements
-		self::_importMore( 'category', $data, $config ); //todo >> self::_import( 'content', 'joomla_category', $data );
+		self::_importMore( 'category', $data, $config ); /* TODO#SEBLOD: self::_import( 'content', 'joomla_category', $data ); */
 		
 		self::_importElements( 'folder', $data, $config );
 		$data['folders']	=	JCckDatabase::loadObjectList( 'SELECT id, name FROM #__cck_core_folders WHERE lft', 'name' );
@@ -172,7 +172,7 @@ class CCK_Install
 	
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Manage
 	
-	// manageAddon
+	// manageAddon (#JFMTree)
 	public static function manageAddon( $event, $addon )
 	{
 		$db		=	JFactory::getDbo();

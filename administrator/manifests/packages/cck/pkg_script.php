@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -14,23 +14,23 @@ defined( '_JEXEC' ) or die;
 class pkg_cckInstallerScript
 {
 	// install
-	function install( $parent )
+	public function install( $parent )
 	{
 		JFactory::getLanguage()->load( 'com_cck.sys', JPATH_ADMINISTRATOR, null, true );
 	}
 
 	// uninstall
-	function uninstall( $parent )
+	public function uninstall( $parent )
 	{
 	}
 
 	// update
-	function update( $parent )
+	public function update( $parent )
 	{
 	}
 
 	// preflight
-	function preflight( $type, $parent )
+	public function preflight( $type, $parent )
 	{
 		if ( !defined( 'DS' ) ) {
 			define( 'DS', DIRECTORY_SEPARATOR );
@@ -39,7 +39,7 @@ class pkg_cckInstallerScript
 	}
 
 	// postflight
-	function postflight( $type, $parent )
+	public function postflight( $type, $parent )
 	{
 		if ( JCck::on( '3.8' ) ) {
 			if ( $type == 'install' || $type == 'update' && version_compare( JCck::getConfig_Param( 'initial_version', '3' ), '3.13.0', '>=' ) ) {
@@ -101,10 +101,10 @@ class pkg_cckInstallerScript
 		</div>
 		<legend><?php echo JText::_( 'LIB_CCK_INSTALLATION_LEGEND_GETTING_STARTED' ); ?></legend>
 		<div style="margin-bottom:30px;">
-			<a class="btn btn-success" href="https://www.seblod.com/store" target="_blank"><span class="icon-puzzle"></span> <?php echo JText::_( 'LIB_CCK_INSTALLATION_SEBLOD_MARKETPLACE' ); ?></a>
-			<a class="btn btn-primary" href="https://www.seblod.com/resources/manuals" target="_blank"><span class="icon-book"></span> <?php echo JText::_( 'LIB_CCK_INSTALLATION_SEBLOD_DOCUMENTATION' ); ?></a>
-			<a class="btn btn-info" href="https://www.seblod.com/resources/videos" target="_blank"><span class="icon-play-circle"></span> <?php echo JText::_( 'LIB_CCK_INSTALLATION_SEBLOD_VIDEOS' ); ?></a>
-			<a class="btn" href="https://www.seblod.com/changelogs" target="_blank"><span class="icon-file-2"></span> <?php echo JText::_( 'LIB_CCK_INSTALLATION_LATEST_CHANGELOG' ); ?></a>
+			<a class="btn btn-success" href="https://www.seblod.com/store" target="_blank" rel="noopener noreferrer"><span class="icon-puzzle"></span> <?php echo JText::_( 'LIB_CCK_INSTALLATION_SEBLOD_MARKETPLACE' ); ?></a>
+			<a class="btn btn-primary" href="https://www.seblod.com/resources/manuals" target="_blank" rel="noopener noreferrer"><span class="icon-book"></span> <?php echo JText::_( 'LIB_CCK_INSTALLATION_SEBLOD_DOCUMENTATION' ); ?></a>
+			<a class="btn btn-info" href="https://www.seblod.com/resources/videos" target="_blank" rel="noopener noreferrer"><span class="icon-play-circle"></span> <?php echo JText::_( 'LIB_CCK_INSTALLATION_SEBLOD_VIDEOS' ); ?></a>
+			<a class="btn" href="https://www.seblod.com/changelogs" target="_blank" rel="noopener noreferrer"><span class="icon-file-2"></span> <?php echo JText::_( 'LIB_CCK_INSTALLATION_LATEST_CHANGELOG' ); ?></a>
 		</div>
 		<legend><?php echo JText::_( 'LIB_CCK_INSTALLATION_LEGEND_RECOMMENDED_SETTINGS' ); ?></legend>
 		<table class="table table-bordered">

@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -26,7 +26,7 @@ if ( $listDir == 'asc' ) {
 <div class="<?php echo $this->css['filter']; ?>" id="filter-bar">
 	<div class="<?php echo $this->css['filter_search']; ?>">
         <?php
-		echo JCckDev::getForm( $cck['core_location_filter'], $this->state->get( 'filter.location' ), $config );
+		echo JCckDev::getFormFromHelper( array( 'component'=>'com_cck', 'function'=>'getLocationFilter', 'name'=>'core_location_filter' ), $this->state->get( 'filter.location' ), $config, array( 'storage_field'=>'filter_location' ) );
 		echo JCckDev::getForm( $cck['core_filter_input'], $this->escape( $this->state->get( 'filter.search' ) ), $config, array( 'attributes'=>'placeholder="'.JText::_( 'COM_CCK_ITEMS_SEARCH_FILTER' ).'" style="text-align:center;"' ), array( 'after'=>"\n" ) );
 		echo JCckDev::getForm( $cck['core_filter_go'], '', $config, array( 'css'=>$this->css['filter_search_button'] ), array( 'after'=>"\n" ) );
 		echo JCckDev::getForm( $cck['core_filter_search'], '', $config, array( 'css'=>$this->css['filter_search_button'], 'attributes'=>'onclick="'.$clear.'this.form.submit();"' ), array( 'after'=>"\n" ) );
@@ -48,9 +48,9 @@ if ( $listDir == 'asc' ) {
 	<div class="<?php echo $this->css['filter_select']; ?>">
         <?php
         echo $this->html['filter_select_header'];
-		echo JCckDev::getForm( $cck['core_type_filter'], $this->state->get( 'filter.type' ), $config, array( 'css'=>'small span12' ) );
+		echo JCckDev::getFormFromHelper( array( 'component'=>'com_cck', 'function'=>'getTypeFilter', 'name'=>'core_type_filter' ), $this->state->get( 'filter.type' ), $config, array( 'storage_field'=>'filter_type' ) );
 		echo $this->html['filter_select_separator'];
-		echo JCckDev::getForm( $cck['core_folder_filter'], $this->state->get( 'filter.folder' ), $config, array( 'css'=>'small span12' ) );
+		echo JCckDev::getFormFromHelper( array( 'component'=>'com_cck', 'function'=>'getFolderFilter', 'name'=>'core_folder_filter' ), $this->state->get( 'filter.folder' ), $config, array( 'storage_field'=>'filter_folder' ) );
 		echo $this->html['filter_select_separator'];
 		echo JCckDev::getForm( $cck['core_state_filter'], $this->state->get( 'filter.state' ), $config, array( 'css'=>'small span12' ) );
 		echo $this->html['filter_select_separator'];

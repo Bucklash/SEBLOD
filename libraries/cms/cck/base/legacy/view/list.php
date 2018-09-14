@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -18,7 +18,7 @@ class JCckBaseLegacyViewList extends JViewLegacy
 	protected $state;
 	
 	// display
-	public function display( $tpl = NULL )
+	public function display( $tpl = null )
 	{
 		if ( $this->getlayout() == 'element' ) {
 			$this->prepareDisplay();
@@ -48,12 +48,12 @@ class JCckBaseLegacyViewList extends JViewLegacy
 	}
 	
 	// prepareBatch
-	public function prepareBatch()
+	protected function prepareBatch()
 	{
 	}
 	
 	// prepareDisplay
-	public function prepareDisplay()
+	protected function prepareDisplay()
 	{
 		$app				=	JFactory::getApplication();
 		$this->items		=	$this->get( 'Items' );
@@ -63,13 +63,13 @@ class JCckBaseLegacyViewList extends JViewLegacy
 	}
 	
 	// completeUI
-	public function completeUI()
+	protected function completeUI()
 	{
 		$this->document->setTitle( JText::_( $this->vTitle.'_MANAGER' ) );
 	}
 
 	// prepareUI
-	public function prepareUI()
+	protected function prepareUI()
 	{
 		$this->css		=	array( 'batch'=>'modal modal-small hide fade',
 								   'filter'=>'',
@@ -95,7 +95,7 @@ class JCckBaseLegacyViewList extends JViewLegacy
 	}
 	
 	// prepareToolbar
-	public function prepareToolbar()
+	protected function prepareToolbar()
 	{
 		Helper_Admin::addToolbar( $this->vName, $this->vTitle );
 	}

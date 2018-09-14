@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -25,16 +25,10 @@ class CCKControllerList extends JControllerAdmin
 		parent::__construct( $config );
 	}
 	
-	// getModel
-	public function getModel( $name = 'List', $prefix = CCK_MODEL, $config = array( 'ignore_request' => true ) )
-	{
-		return parent::getModel( $name, $prefix, $config );
-	}
-	
 	// delete
 	public function delete()
 	{
-		// JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
+		JSession::checkToken( 'get' ) or jexit( JText::_( 'JINVALID_TOKEN' ) );
 		
 		$app	=	JFactory::getApplication();
 		$model	=	$this->getModel();
@@ -42,7 +36,7 @@ class CCKControllerList extends JControllerAdmin
 		$cid	=	ArrayHelper::toInteger( $cid );
 		
 		if ( $nb = $model->delete( $cid ) ) {
-			$msg		=	JText::_( 'COM_CCK_SUCCESSFULLY_DELETED' ); // todo: JText::plural( 'COM_CCK_N_SUCCESSFULLY_DELETED', $nb );
+			$msg		=	JText::_( 'COM_CCK_SUCCESSFULLY_DELETED' ); /* TODO#SEBLOD: JText::plural( 'COM_CCK_N_SUCCESSFULLY_DELETED', $nb ); */
 			$msgType	=	'message';
 		} else {
 			$msg		=	JText::_( 'JERROR_AN_ERROR_HAS_OCCURRED' );
@@ -55,7 +49,9 @@ class CCKControllerList extends JControllerAdmin
 	// export
 	public function export()
 	{
-		// JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
+		if ( !JSession::checkToken( 'get' ) ) {
+			JSession::checkToken( 'post' ) or jexit( JText::_( 'JINVALID_TOKEN' ) );
+		}
 		
 		if ( !is_file( JPATH_ADMINISTRATOR.'/components/com_cck_exporter/models/cck_exporter.php' ) ) {
 			$this->setRedirect( $this->_getReturnPage(), JText::_( 'JERROR_AN_ERROR_HAS_OCCURRED' ), 'error' );
@@ -84,10 +80,18 @@ class CCKControllerList extends JControllerAdmin
 		}
 	}
 
+	// getModel
+	public function getModel( $name = 'List', $prefix = CCK_MODEL, $config = array( 'ignore_request' => true ) )
+	{
+		return parent::getModel( $name, $prefix, $config );
+	}
+
 	// process
 	public function process()
 	{
-		// JSession::checkToken() or jexit( JText::_( 'JINVALID_TOKEN' ) );
+		if ( !JSession::checkToken( 'get' ) ) {
+			JSession::checkToken( 'post' ) or jexit( JText::_( 'JINVALID_TOKEN' ) );
+		}
 		
 		if ( !is_file( JPATH_ADMINISTRATOR.'/components/com_cck_toolbox/models/cck_toolbox.php' ) ) {
 			$this->setRedirect( $this->_getReturnPage(), JText::_( 'JERROR_AN_ERROR_HAS_OCCURRED' ), 'error' );

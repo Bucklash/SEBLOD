@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -83,12 +83,18 @@ class plgCCK_Field_LinkCCK_Form extends JCckPluginLink
 			}
 			$user 				=	JCck::getUser();
 			$canEdit			=	$user->authorise( 'core.edit', 'com_cck.form.'.$config['type_id'] );
-			// if ( $user->id && !$user->guest ) {
-				$canEditOwn		=	$user->authorise( 'core.edit.own', 'com_cck.form.'.$config['type_id'] );
-			// } else {
-			//	$canEditOwn		=	false; // todo: guest
-			// }
 			$canEditOwnContent	=	'';
+
+			if ( $user->id && !$user->guest ) {
+				$canEditOwn		=	$user->authorise( 'core.edit.own', 'com_cck.form.'.$config['type_id'] );
+			} else {
+				$canEditOwn		=	false;
+
+				if ( $config['author_session'] ) {
+					$canEditOwn		=	$user->authorise( 'core.edit.own', 'com_cck.form.'.$config['type_id'] );
+					$session_id		=	$config['author_session'];
+				}
+			}
 
 			// canEditOwnContent
 			jimport( 'cck.joomla.access.access' );
@@ -133,6 +139,7 @@ class plgCCK_Field_LinkCCK_Form extends JCckPluginLink
 			if ( !( $canEdit && $canEditOwn
 				|| ( $canEdit && !$canEditOwn && ( $config['author'] != $user->id ) )
 				|| ( $canEditOwn && ( $config['author'] == $user->id ) )
+				|| ( $canEditOwn && ( isset( $session_id ) && $session_id == JFactory::getSession()->getId() ) )
 				|| ( $canEditOwnContent ) ) ) {
 				if ( !$link->get( 'no_access', 0 ) ) {
 					$field->display	=	0;
@@ -166,11 +173,9 @@ class plgCCK_Field_LinkCCK_Form extends JCckPluginLink
 		$tmpl			=	( $tmpl ) ? '&tmpl='.$tmpl : '';
 		$vars			=	$tmpl;	// + live
 		
-		/*
-		if ( $config['client'] == 'admin' || $config['client'] == 'site' || $config['client'] == 'search' ) {
-			$redirection		=	'-1'; // todo
-		}
-		*/
+		// if ( $config['client'] == 'admin' || $config['client'] == 'site' || $config['client'] == 'search' ) {
+			// $redirection		=	'-1'; /* TODO#SEBLOD: */
+		// }
 		
 		// Set
 		if ( is_array( $field->value ) ) {
@@ -202,7 +207,7 @@ class plgCCK_Field_LinkCCK_Form extends JCckPluginLink
 					$f->link_title		=	'';
 				}
 			}
-			$field->link		=	'#';	//todo
+			$field->link		=	'#'; /* TODO#SEBLOD: */
 		} else {
 			$custom				=	parent::g_getCustomVars( self::$type, $field, $custom, $config );
 			if ( $form[0] == '#' ) {
@@ -264,7 +269,7 @@ class plgCCK_Field_LinkCCK_Form extends JCckPluginLink
 				$target					=	 $fields[$name]->typo_target;
 
 				if ( $fields[$name]->typo ) {
-					$fields[$name]->typo	=	$fields[$name]->$target; // todo: str_replace link+target par target
+					$fields[$name]->typo	=	$fields[$name]->$target; /* TODO#SEBLOD: str_replace link+target par target */
 				} else {
 					$fields[$name]->html	=	$fields[$name]->$target;
 				}

@@ -4,18 +4,19 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
 defined( '_JEXEC' ) or die;
+
+use Joomla\String\StringHelper;
 
 // Plugin
 class plgContentCCK extends JPlugin
 {
 	protected $cache	=	false;
 	protected $loaded	=	array();
-	protected $title	=	'';
 	
 	// onContentAfterSave
 	public function onContentAfterSave( $context, $article, $isNew )
@@ -78,7 +79,7 @@ class plgContentCCK extends JPlugin
 	}
 
 	// onContentAfterDelete
-	public function onContentAfterDelete( $context, $data )
+	public function onContentAfterDelete( $context, $item )
 	{
 		if ( empty( $context ) ) {
 			return false;
@@ -96,9 +97,9 @@ class plgContentCCK extends JPlugin
 			return true;
 		}
 		
-		$table_key	=	$data->getKeyName();
-		$table_name	=	$data->getTableName();
-		$pk			= 	$data->$table_key;
+		$table_key	=	$item->getKeyName();
+		$table_name	=	$item->getTableName();
+		$pk			= 	$item->$table_key;
 		$base 		= 	str_replace( '#__', '', $table_name );
 		
 		require_once JPATH_SITE.'/plugins/cck_storage_location/'.$object.'/'.$object.'.php';
@@ -112,7 +113,7 @@ class plgContentCCK extends JPlugin
 
 		// Core
 		if ( $custom ) {
-			preg_match( '#::cck::(\d+)::/cck::#U', $data->$custom, $matches );
+			preg_match( '#::cck::(\d+)::/cck::#U', $item->$custom, $matches );
 			$id		=	$matches[1];
 
 			if ( ! $id ) {
@@ -159,7 +160,7 @@ class plgContentCCK extends JPlugin
 							$config['storages'][$Pt]	=	'';
 							
 							if ( $Pt == $table_name ) {
-								$config['storages'][$Pt]	=	$data;
+								$config['storages'][$Pt]	=	$item;
 							} else {
 								$dispatcher->trigger( 'onCCK_Storage_LocationPrepareDelete', array( &$field, &$config['storages'][$Pt], $pk, &$config ) );	
 							}
@@ -194,17 +195,21 @@ class plgContentCCK extends JPlugin
 		JLoader::register( 'JCckToolbox', JPATH_PLATFORM.'/cms/cck/toolbox.php' );
 		if ( JCckToolbox::getConfig()->get( 'processing', 0 ) ) {
 			$event		=	'onContentAfterDelete';
-			$processing	=	JCckDatabaseCache::loadObjectListArray( 'SELECT type, scriptfile FROM #__cck_more_processings WHERE published = 1 ORDER BY ordering', 'type' );
+			$processing	=	JCckDatabaseCache::loadObjectListArray( 'SELECT type, scriptfile, options FROM #__cck_more_processings WHERE published = 1 ORDER BY ordering', 'type' );
 			if ( isset( $processing[$event] ) ) {
+				$data	=	$item;	/* Avoid B/C issue */
+
 				foreach ( $processing[$event] as $p ) {
 					if ( is_file( JPATH_SITE.$p->scriptfile ) ) {
-						include_once JPATH_SITE.$p->scriptfile;	/* Variables: $id, $pk, $type */
+						$options	=	new JRegistry( $p->options );
+
+						include JPATH_SITE.$p->scriptfile;	/* Variables: $id, $item, $pk, $type */
 					}
 				}
 			}
 		}
 		
-		$tables	=	JCckDatabase::loadColumn( 'SHOW TABLES' );
+		$tables	=	JCckDatabase::getTableList();
 		$prefix	= 	JFactory::getConfig()->get( 'dbprefix' );
 		
 		if ( in_array( $prefix.'cck_store_item_'.$base, $tables ) ) {
@@ -228,6 +233,17 @@ class plgContentCCK extends JPlugin
 			}
 		}
 		
+		if ( isset( $config, $config['pk'] ) && $config['pk'] ) {
+			if ( JCckToolbox::getConfig()->get( 'processing', 0 ) ) {
+				$trigger_config	=	array(
+										'pk'=>$config['pk'],
+										'type'=>$config['type']
+									);
+
+				JCckToolbox::process( 'onCckPostAfterDelete', $trigger_config );
+			}
+		}
+
 		return true;
 	}
 
@@ -264,7 +280,7 @@ class plgContentCCK extends JPlugin
 
 		$join			=	' LEFT JOIN #__cck_core_folders AS f ON f.id = b.folder';
 		$join_select	=	', f.app as folder_app';
-		$query			=	'SELECT a.id, a.pk, a.pkb, a.cck, a.storage_location, a.store_id, a.author_id AS author, b.id AS type_id, b.alias AS type_alias, b.indexed, b.parent, b.stylesheets,'
+		$query			=	'SELECT a.id, a.pk, a.pkb, a.cck, a.storage_location, a.store_id, a.author_id AS author, b.id AS type_id, b.alias AS type_alias, b.indexed, b.parent, b.parent_inherit, b.stylesheets,'
 						.	' b.options_content, b.options_intro, c.template AS content_template, c.params AS content_params, d.template AS intro_template, d.params AS intro_params'.$join_select
 						.	' FROM #__cck_core AS a'
 						.	' LEFT JOIN #__cck_core_types AS b ON b.name = a.cck'
@@ -279,7 +295,7 @@ class plgContentCCK extends JPlugin
 			return;
 		}
 		$contentType	=	(string)$cck->cck;
-		$parent_type	=	(string)$cck->parent;
+		$parent_type	=	$cck->parent_inherit ? (string)$cck->parent : '';
 		
 		if ( ! $contentType ) {
 			return;
@@ -370,16 +386,31 @@ class plgContentCCK extends JPlugin
 			$registry	=	new JRegistry;
 			$registry->loadString( $cck->{'options_'.$client} );
 			$this->loaded[$contentType.'_'.$client.'_options']	=	$registry->toArray();
-			if ( isset( $this->loaded[$contentType.'_'.$client.'_options']['title'] ) ) {
-				if ( $this->loaded[$contentType.'_'.$client.'_options']['title'] != '' && $this->loaded[$contentType.'_'.$client.'_options']['title'][0]	==	'{' ) {
-					$titles		=	json_decode( $this->loaded[$contentType.'_'.$client.'_options']['title'] );
-					$lang_tag	=	JFactory::getLanguage()->getTag();
-					$this->loaded[$contentType.'_'.$client.'_options']['title']	=	( isset( $titles->{$lang_tag} ) ) ? $titles->{$lang_tag} : '';
-				}
-			}
+
 			if ( isset( $this->loaded[$contentType.'_'.$client.'_options']['sef'] ) ) {
 				if ( $this->loaded[$contentType.'_'.$client.'_options']['sef'] == '' ) {
 					$this->loaded[$contentType.'_'.$client.'_options']['sef']	=	JCck::getConfig_Param( 'sef', '2' );
+				}
+			}
+			if ( isset( $this->loaded[$contentType.'_'.$client.'_options']['metadesc'] ) ) {
+				if ( $this->loaded[$contentType.'_'.$client.'_options']['metadesc'] != '' && $this->loaded[$contentType.'_'.$client.'_options']['metadesc'][0]	==	'{' ) {
+					$descriptions	=	json_decode( $this->loaded[$contentType.'_'.$client.'_options']['metadesc'] );
+					$lang_tag		=	JFactory::getLanguage()->getTag();
+					$this->loaded[$contentType.'_'.$client.'_options']['metadesc']	=	( isset( $descriptions->$lang_tag ) ) ? $descriptions->$lang_tag : '';
+				}
+			}
+			if ( isset( $this->loaded[$contentType.'_'.$client.'_options']['metatitle'] ) ) {
+				if ( $this->loaded[$contentType.'_'.$client.'_options']['metatitle'] != '' && $this->loaded[$contentType.'_'.$client.'_options']['metatitle'][0]	==	'{' ) {
+					$descriptions	=	json_decode( $this->loaded[$contentType.'_'.$client.'_options']['metatitle'] );
+					$lang_tag		=	JFactory::getLanguage()->getTag();
+					$this->loaded[$contentType.'_'.$client.'_options']['metatitle']	=	( isset( $descriptions->$lang_tag ) ) ? $descriptions->$lang_tag : '';
+				}
+			}
+			if ( isset( $this->loaded[$contentType.'_'.$client.'_options']['title'] ) ) {
+				if ( $this->loaded[$contentType.'_'.$client.'_options']['title'] != '' && $this->loaded[$contentType.'_'.$client.'_options']['title'][0]	==	'{' ) {
+					$titles			=	json_decode( $this->loaded[$contentType.'_'.$client.'_options']['title'] );
+					$lang_tag		=	JFactory::getLanguage()->getTag();
+					$this->loaded[$contentType.'_'.$client.'_options']['title']	=	( isset( $titles->$lang_tag ) ) ? $titles->$lang_tag : '';
 				}
 			}
 		}
@@ -405,7 +436,7 @@ class plgContentCCK extends JPlugin
 			return;
 		}
 		
-		$this->_render( $context, $article, $tpl, $contentType, $fields, $property, $client, $cck, $parent_type );
+		$this->_render( $context, $article, $params, $tpl, $contentType, $fields, $property, $client, $cck, $parent_type );
 	}
 	
 	// _process
@@ -439,7 +470,7 @@ class plgContentCCK extends JPlugin
 	}
 
 	// _render
-	protected function _render( $context, &$article, $tpl, $contentType, $fields, $property, $client, $cck, $parent_type )
+	protected function _render( $context, &$article, &$article_params, $tpl, $contentType, $fields, $property, $client, $cck, $parent_type )
 	{
 		$app		=	JFactory::getApplication();
 		$dispatcher	=	JEventDispatcher::getInstance();
@@ -452,16 +483,18 @@ class plgContentCCK extends JPlugin
 		JPluginHelper::importPlugin( 'cck_field' );
 		JPluginHelper::importPlugin( 'cck_field_link' );
 		JPluginHelper::importPlugin( 'cck_field_restriction' );
-		$p_sef		=	isset( $this->loaded[$contentType.'_'.$client.'_options']['sef'] ) ? $this->loaded[$contentType.'_'.$client.'_options']['sef'] : JCck::getConfig_Param( 'sef', '2' );
-		$p_title	=	isset( $this->loaded[$contentType.'_'.$client.'_options']['title'] ) ? $this->loaded[$contentType.'_'.$client.'_options']['title'] : '';
-		$p_typo		=	isset( $this->loaded[$contentType.'_'.$client.'_options']['typo'] ) ? $this->loaded[$contentType.'_'.$client.'_options']['typo'] : 1;
-		if ( $p_typo ) {
-			JPluginHelper::importPlugin( 'cck_field_typo' );
-		}
-		
+		JPluginHelper::importPlugin( 'cck_field_typo' );
+
+		$p_metadesc		=	isset( $this->loaded[$contentType.'_'.$client.'_options']['metadesc'] ) ? $this->loaded[$contentType.'_'.$client.'_options']['metadesc'] : '';
+		$p_metatitle	=	isset( $this->loaded[$contentType.'_'.$client.'_options']['metatitle'] ) ? $this->loaded[$contentType.'_'.$client.'_options']['metatitle'] : '';
+		$p_sef			=	isset( $this->loaded[$contentType.'_'.$client.'_options']['sef'] ) ? $this->loaded[$contentType.'_'.$client.'_options']['sef'] : JCck::getConfig_Param( 'sef', '2' );
+		$p_title		=	isset( $this->loaded[$contentType.'_'.$client.'_options']['title'] ) ? $this->loaded[$contentType.'_'.$client.'_options']['title'] : '';
+
 		jimport( 'cck.rendering.document.document' );
+
 		$doc		=	CCK_Document::getInstance( 'html' );
 		$positions	=	array();
+
 		if ( $parent_type != '' ) {
 			$w_type	=	'(b.name = "'.$contentType.'" OR b.name = "'.$parent_type.'")';
 		} else {
@@ -469,10 +502,10 @@ class plgContentCCK extends JPlugin
 		}
 		if ( $client == 'intro' /* && $this->cache */ ) {
 			$positions_more	=	JCckDatabaseCache::loadObjectList( 'SELECT * FROM #__cck_core_type_position AS a LEFT JOIN #__cck_core_types AS b ON b.id = a.typeid'
-																 . ' WHERE '.$w_type.' AND a.client ="'.$client.'"', 'position' );	// todo::improve
+																 . ' WHERE '.$w_type.' AND a.client ="'.$client.'"', 'position' );	/* TODO#SEBLOD: improve */
 		} else {
 			$positions_more	=	JCckDatabase::loadObjectList( 'SELECT * FROM #__cck_core_type_position AS a LEFT JOIN #__cck_core_types AS b ON b.id = a.typeid'
-															. ' WHERE '.$w_type.' AND a.client ="'.$client.'"', 'position' );	// todo::improve
+															. ' WHERE '.$w_type.' AND a.client ="'.$client.'"', 'position' );	/* TODO#SEBLOD: improve */
 		}
 
 		// Fields
@@ -482,7 +515,6 @@ class plgContentCCK extends JPlugin
 							   'client'=>$client,
    							   'doSEF'=>$p_sef,
 							   'doTranslation'=>JCck::getConfig_Param( 'language_jtext', 0 ),
-							   'doTypo'=>$p_typo,
 							   'error'=>0,
 							   'fields'=>array(),
 							   'id'=>$cck->id,
@@ -523,7 +555,7 @@ class plgContentCCK extends JPlugin
 							JCckPluginLink::g_setHtml( $field, $target );
 						}
 					}
-					if ( @$field->typo && ( $field->$target !== '' || $field->typo_label == -2 ) && $p_typo ) {
+					if ( @$field->typo && ( $field->$target !== '' || $field->typo_label == -2 ) ) {
 						$dispatcher->trigger( 'onCCK_Field_TypoPrepareContent', array( &$field, $field->typo_target, &$config ) );
 					} else {
 						$field->typo	=	'';
@@ -545,7 +577,7 @@ class plgContentCCK extends JPlugin
 						$fields[$k]	=	$v;
 					}
 				}
-				$config['fields']	=	NULL;
+				$config['fields']	=	null;
 				unset( $config['fields'] );
 			}
 		}
@@ -563,16 +595,40 @@ class plgContentCCK extends JPlugin
 		
 		// Set Title
 		if ( $p_title != '' && isset( $fields[$p_title]->value ) && !empty( $fields[$p_title]->value ) ) {
- 			$this->title	=	$fields[$p_title]->value;
+ 			$p_title		=	$fields[$p_title]->value;
+ 		} elseif ( $p_metatitle != '' && isset( $fields[$p_metatitle]->value ) && !empty( $fields[$p_metatitle]->value ) ) {
+ 			$p_title		=	$fields[$p_metatitle]->value;
+ 			$p_title		=	strip_tags( $p_title );
+			$p_title		=	$this->_truncate( $p_title, 70 );
+ 		} else {
+ 			$p_title		=	'';
  		}
-		if ( $this->title ) {
-			if ( is_object( $article ) && isset( $article->title ) ) {
-				$article->title	=	$this->title;
+ 		if ( $p_title != '' ) {
+ 			if ( is_object( $article ) && isset( $article->title ) ) {
+				$article->title		=	$p_title;
+				
+				// if ( is_object( $article_params ) ) {
+				// 	$article_params->set( 'page_title', $p_title );
+				// }
+				$app->cck_page_title	=	$p_title;
 			} else {
-				JFactory::getDocument()->setTitle( $this->title );
+				JFactory::getDocument()->setTitle( $p_title );
 			}
-		}
-		
+ 		}
+
+ 		// Set Description
+ 		if ( $p_metadesc != '' && isset( $fields[$p_metadesc]->value ) && !empty( $fields[$p_metadesc]->value ) ) {
+ 			$p_metadesc		=	$fields[$p_metadesc]->value;
+ 			$p_metadesc		=	strip_tags( $p_metadesc );
+			$p_metadesc		=	$this->_truncate( $p_metadesc, 200 );
+
+ 			if ( is_object( $article ) && isset( $article->metadesc ) && $article->metadesc == '' ) {
+				$article->metadesc	=	$p_metadesc;
+			} else {
+				JFactory::getDocument()->setDescription( $p_metadesc );
+			}
+ 		}
+
 		// Finalize
 		$doc->fields	=	&$fields;
 		$infos			=	array( 'context'=>$context, 'params'=>$tpl['params'], 'path'=>$tpl['path'], 'root'=>JUri::root( true ), 'template'=>$tpl['folder'], 'theme'=>$tpl['home'] );
@@ -580,10 +636,36 @@ class plgContentCCK extends JPlugin
 		
 		$data					=	$doc->render( false, $params );
 		$article->$property		=	str_replace( $article->$property, $data, $article->$property );
-		
-		if ( JCck::on( '3.8' ) && isset( $article->introtext ) ) {
-			$article->introtext	=	'';
+	}
+
+	// _truncate
+	protected function _truncate( $str, $length )
+	{
+		if ( $str == '' ) {
+			return '';
 		}
+
+		/*
+		$str	=	str_replace( ' "', ' «', $str );
+		$str	=	str_replace( '"', '»', $str );
+		*/
+
+		if ( StringHelper::strlen( $str ) > $length ) {
+			$str2	=	StringHelper::substr( $str, $length );
+			$str	=	StringHelper::substr( $str, 0, $length );
+
+			if ( $str2[0] == ' ' ) {
+				return $str;
+			}
+
+			$pos	=	StringHelper::strrpos( $str, ' ' );
+
+			if ( $pos !== false ) {
+				$str	=	StringHelper::substr( $str, 0, $pos );
+			}
+		}
+
+		return $str;
 	}
 }
 ?>

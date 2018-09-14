@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -14,12 +14,13 @@ defined( '_JEXEC' ) or die;
 abstract class JCckEcommerce
 {
 	public static $_me			=	'cck_ecommerce';
-	public static $_config		=	NULL;
+	public static $_config		=	null;
 	
-	public static $currency		=	NULL;
-	public static $promotions	=	NULL;
-	public static $rules		=	NULL;
-	public static $taxes		=	NULL;
+	public static $currency		=	null;
+	public static $promotions	=	null;
+	public static $rules		=	null;
+	public static $taxes		=	null;
+	public static $zones		=	null;
 	
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Config
 	
@@ -131,7 +132,7 @@ abstract class JCckEcommerce
 	// getCurrency
 	public static function getCurrency( $id = 0 )
 	{
-		static $currency	=	NULL;
+		static $currency	=	null;
 		
 		if ( (int)$id > 0 ) {
 			return JCckDatabase::loadObject( 'SELECT a.id, a.title, a.code, a.conversion_rate, a.lft, a.rgt'
@@ -179,7 +180,7 @@ abstract class JCckEcommerce
 		static $cache	=	array();
 		
 		if ( !isset( $cache[$pay_key] ) ) {
-			$cache[$pay_key]	=	JCckDatabase::loadObject( 'SELECT a.number, b.id, b.pk, a.type, a.state, a.user_id, a.session_id, a.total, a.total_ht, a.total_paid, a.weight, a.invoice, a.info_billing'
+			$cache[$pay_key]	=	JCckDatabase::loadObject( 'SELECT a.number, b.id, b.pk, a.type, a.state, a.user_id, a.session_id, a.total, a.total_ht, a.total_paid, a.weight, a.invoice, a.stickers, a.info_billing, a.info_shipping'
 															. ' FROM #__cck_more_ecommerce_orders AS a'
 															. ' LEFT JOIN #__cck_core AS b ON (b.pk = a.id AND b.storage_location = "cck_ecommerce_order")'
 															. ' WHERE a.pay_key = "'.$pay_key.'"' );
@@ -193,6 +194,24 @@ abstract class JCckEcommerce
 		}
 
 		return $cache[$pay_key];
+	}
+
+	// isCheckout
+	public static function isCheckout( $strict = false )
+	{
+		$app	=	JFactory::getApplication();
+
+		if ( $app->input->get( 'option' ) == 'com_cck' && $app->input->get( 'view' ) == 'form' ) {
+			if ( $strict ) {
+				if ( $pk = $app->input->getInt( 'id' ) ) {
+					return $pk;
+				}
+			} else {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Payments
@@ -283,6 +302,8 @@ abstract class JCckEcommerce
 							JCckEcommercePromotion::apply( '', $price, $items, $options );
 						}
 						
+						/* TODO#SEBLOD: should we apply Tax@product2 here? */
+
 						// Quantity /* Alter Price */
 						$total	+=	$price * $item->quantity;
 					}
@@ -298,7 +319,7 @@ abstract class JCckEcommerce
 	// getPromotions
 	public static function getPromotions( $type = '' )
 	{
-		if ( !self::$promotions ) {
+		if ( self::$promotions === null ) {
 			self::$promotions	=	self::_setPromotions();
 		}
 		
@@ -325,7 +346,7 @@ abstract class JCckEcommerce
 		$null	=	$db->getNullDate();
 		$now	=	JFactory::getDate()->toSql();
 
-		$promotions	=	JCckDatabase::loadObjectListArray( 'SELECT a.id, a.title, a.type, a.code, a.discount, a.discount_amount, a.groups, a.target, a.target_attributes, a.target_products'
+		$promotions	=	JCckDatabase::loadObjectListArray( 'SELECT a.id, a.title, a.type, a.code, a.discount, a.discount_amount, a.groups, a.target, a.target_attributes, a.target_products, a.usage_limit'
 														.  ' FROM #__cck_more_ecommerce_promotions AS a'
 														.  ' WHERE a.published = 1'
 														.  ' AND (a.publish_up = '.JCckDatabase::quote( $null ).' OR '.'a.publish_up <= '.JCckDatabase::quote( $now ).')'
@@ -354,7 +375,7 @@ abstract class JCckEcommerce
 	// getShippingRules
 	public static function getShippingRules( $type = '', $zones = array() )
 	{
-		if ( !self::$rules ) {
+		if ( self::$rules === null ) {
 			self::$rules	=	self::_setShippingRules( $zones );
 		}
 		
@@ -374,7 +395,7 @@ abstract class JCckEcommerce
 		}
 	}
 	
-	// _setTaxes
+	// _setShippingRules
 	protected static function _setShippingRules( $zones )
 	{
 		$db			=	JFactory::getDbo();
@@ -417,10 +438,10 @@ abstract class JCckEcommerce
 	// getTaxes
 	public static function getTaxes( $type = '', $zones = array() )
 	{
-		if ( !self::$taxes ) {
+		if ( self::$taxes === null ) {
 			self::$taxes	=	self::_setTaxes( $zones );
 		}
-		
+
 		if ( $type ) {
 			return ( isset( self::$taxes[$type] ) ) ? self::$taxes[$type] : array();	
 		} else {
@@ -462,37 +483,105 @@ abstract class JCckEcommerce
 	// -------- -------- -------- -------- -------- -------- -------- -------- // Taxes
 
 	// getUserZones
-	public static function getUserZones()
+	public static function getUserZones( $context = 'billing' )
 	{
+		$app	=	JFactory::getApplication();
 		$user	=	JCck::getUser();
 		$zones	=	array();
+		
+		$country	=	'';
+		$source		=	'user';
+		
+		if ( isset( $user->country ) && $user->country ) {
+			$country	=	$user->country;
+		}
+		if ( $pk = self::isCheckout( true ) ) {
+			$type	=	JCckEcommerce::getConfig_Param( 'integration_order', '' );
 
-		if ( !( isset( $user->country ) && $user->country != '' ) ) {
+			if ( $type && $app->input->get( 'type' ) == $type ) {
+				$order	=	JCckDatabaseCache::loadObject( 'SELECT info_billing, info_shipping FROM #__cck_more_ecommerce_orders WHERE id = '.(int)$pk );
+
+				if ( is_object( $order ) ) {
+					$order	=	json_decode( $order->{'info_'.$context} );
+
+					if ( $order->country ) {
+						$country	=	$order->country;
+						$source		=	'order';
+					}
+				}
+			}
+		}
+		
+		if ( !$country ) {
 			return $zones;
 		}
-		$where	=	'countries = "'.$user->country.'" OR countries LIKE "'.$user->country.'||%" OR countries LIKE "%||'.$user->country.'" OR countries LIKE "%||'.$user->country.'||%"';
+
+		$where	=	'countries = "'.$country.'" OR countries LIKE "'.$country.'||%" OR countries LIKE "%||'.$country.'" OR countries LIKE "%||'.$country.'||%"';
 		$items	=	JCckDatabaseCache::loadObjectList( 'SELECT id, profile FROM #__cck_more_ecommerce_zones WHERE published = 1 AND ('.$where.') ORDER BY CHARACTER_LENGTH(countries) ASC' );
 
 		if ( count( $items ) ) {
 			foreach ( $items as $item ) {
-				$isValid	=	true;
+				$do	=	0;
 
 				if ( $item->profile ) {
+					$count		=	0;
 					$profile	=	json_decode( $item->profile );
 
-					if ( is_object( $profile ) ) {
-						$target	=	$profile->trigger;
+					if ( isset( $profile->do ) && $profile->do ) {
+						$do		=	1;
+					}
+					if ( isset( $profile->conditions ) ) {
+						$conditions	=	$profile->conditions;
+					} else {
+						$conditions	=	array( 0=>$conditions );
+					}
 
-						if ( $profile->match == 'isFilled' ) {
-							if ( $user->$target == '' ) {
+					foreach ( $conditions as $condition ) {
+						$isValid	=	true;
+
+						if ( is_object( $condition ) ) {
+							$target		=	$condition->trigger;
+
+							if ( $condition->match == 'isFilled' ) {
+								if ( @${$source}->$target == '' ) {
+									$isValid	=	false;
+								}
+							} elseif ( $condition->match == 'isEmpty' ) {
+								if ( @${$source}->$target != '' ) {
+									$isValid	=	false;
+								}
+							} elseif ( $condition->match == 'isEqual' ) {
 								$isValid	=	false;
+
+								if ( isset( $condition->values ) ) {
+									$condition_values	=	explode( ',', $condition->values );
+
+									foreach ( $condition_values as $v ) {
+										if ( @${$source}->$target == $v ) {
+											$isValid	=	true;
+											break;
+										}
+									}
+								}
 							}
-						} elseif ( $profile->match == 'isEmpty' ) {
-							if ( $user->$target != '' ) {
-								$isValid	=	false;
-							}
+						} else {
+							$isValid	=	false;
+						}
+
+						if ( $isValid ) {
+							$count++;
 						}
 					}
+
+					$isValid	=	( $count == count( $conditions ) ) ? true : false;
+				} else {
+					$isValid	=	true;
+				}
+
+				if ( $isValid ) {
+					$isValid	=	( $do ) ? false : true;
+				} else {
+					$isValid	=	( $do ) ? true : false;
 				}
 
 				if ( $isValid ) {
@@ -500,6 +589,7 @@ abstract class JCckEcommerce
 				}
 			}
 		}
+
 		return $zones;
 	}
 }

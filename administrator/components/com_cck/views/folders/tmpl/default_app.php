@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -92,7 +92,7 @@ jQuery(document).ready(function($) {
 			var v = $(this).myVal();
 			opts += "&options["+k+"]="+v;
 		});
-		document.location.href	=	url+"&elements="+elements+"&dep_categories="+$("#app_dependencies_categories").myVal()+"&dep_menu="+$("#app_dependencies_menu").myVal()+opts;
+		document.location.href	=	url+"&elements="+elements+"&dep_categories="+$("#app_dependencies_categories").myVal()+"&dep_menu="+$("#app_dependencies_menu").myVal()+opts+"&"+Joomla.getOptions("csrf.token")+"=1";
 		return;
 	});
 });

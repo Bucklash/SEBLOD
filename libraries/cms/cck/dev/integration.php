@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -16,7 +16,7 @@ use Joomla\CMS\Menu\MenuHelper;
 abstract class JCckDevIntegration
 {
 	// addDropdown
-	public static function addDropdown( $view, $variables = '', $options = NULL )
+	public static function addDropdown( $view, $variables = '', $options = null )
 	{
 		$doc	=	JFactory::getDocument();
 		$html	=	'';
@@ -144,7 +144,7 @@ abstract class JCckDevIntegration
 	}
 
 	// addModalBox
-	public static function addModalBox( $layout = 'icon', $variables = '', $options = NULL )
+	public static function addModalBox( $layout = 'icon', $variables = '', $options = null )
 	{
 		JCck::loadjQuery();
 		$layout	=	JPATH_ADMINISTRATOR.'/components/com_cck/views/form/tmpl/modal_'.$layout.'.php';
@@ -163,7 +163,7 @@ abstract class JCckDevIntegration
 	}
 
 	// appendModal
-	public static function appendModal( $layout, $target_id, $trigger, $params = array(), $variables = '', $options = NULL )
+	public static function appendModal( $layout, $target_id, $trigger, $params = array(), $variables = '', $options = null )
 	{
 		$doc	=	JFactory::getDocument();
 
@@ -229,13 +229,13 @@ abstract class JCckDevIntegration
 				$order_by	=	' ORDER BY folder ASC, title ASC';
 			} else {
 				$call		=	'loadObjectList';
-				$index		=	NULL;
+				$index		=	null;
 				$order_by	=	' ORDER BY title';
 			}
 			$items	=	JCckDatabase::$call( 'SELECT a.id, a.title, a.name, a.description, b.id as folder_id, b.title as folder, b.app as folder_app, b.icon_path as folder_icon'
 											.' FROM #__cck_core_types AS a'
 											.' LEFT JOIN #__cck_core_folders AS b ON b.id = a.folder'
-											.' WHERE a.published = 1 AND a.location != "none" AND a.location != "site"'
+											.' WHERE a.published = 1 AND a.location != "hidden" AND a.location != "none" AND a.location != "site"'
 											.' AND a.storage_location IN ('.$in.')'.$order_by, $index );
 		}
 
@@ -261,8 +261,7 @@ abstract class JCckDevIntegration
 	// rewriteBuffer
 	public static function rewriteBuffer( $buffer, $data, $list, $list_assoc = array() )
 	{
-		$app			=	JFactory::getApplication();
-		$class			=	JCck::on( '3.4' ) ? ' class="hasTooltip"' : '';
+		$class			=	' class="hasTooltip"';
 		$idx			=	0;
 		$idx2			=	2;
 		$idx3			=	3;

@@ -4,7 +4,7 @@
 * @package			SEBLOD (App Builder & CCK) // SEBLOD nano (Form Builder)
 * @url				https://www.seblod.com
 * @editor			Octopoos - www.octopoos.com
-* @copyright		Copyright (C) 2009 - 2017 SEBLOD. All Rights Reserved.
+* @copyright		Copyright (C) 2009 - 2018 SEBLOD. All Rights Reserved.
 * @license 			GNU General Public License version 2 or later; see _LICENSE.php
 **/
 
@@ -117,7 +117,7 @@ class plgCCK_FieldJForm_Rules extends JCckPluginField
 									.	'&id='.$id.'&name='.$name.'&type='.$value.'&params='.$component.'||'.$section;
 			
 			$class					=	'jform_rules_box variation_href';
-			if ( $app->input->get( 'option' ) == 'com_cck' && $app->input->get( 'view' ) != 'form' ) { // todo: remove later
+			if ( $app->input->get( 'option' ) == 'com_cck' && $app->input->get( 'view' ) != 'form' ) { /* TODO#SEBLOD: remove later */
 					$class			.=	' btn';
 			}
 			$class					=	'class="'.$class.'" ';
