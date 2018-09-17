@@ -69,7 +69,35 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
         echo '<textarea id="json_options2_settings" name="json[options2][settings]" value="" class="inputbox text" placeholder="&lt;tcpdf method="addPageBreak" value="true,10" class=""&gt;" col="50" rows="10">';
         
         
+        /*
+        * Header
+        *
+        * @tip: same functionality as Seblod's Email Message field
+        */
+        echo '<label>Header</label>';
+        echo '<textarea id="json_options2_header" name="json[options2][header]" value="" class="inputbox text" col="50" rows="10">';
+        
+        
+        /*
+        * Body
+        *
+        * @tip: same functionality as Seblod's Email Message field
+        */
+        echo '<label>Body</label>';
+        echo '<textarea id="json_options2_body" name="json[options2][body]" value="" class="inputbox text" col="50" rows="10">';
 
+        
+                
+        /*
+        * Footer
+        *
+        * @tip: same functionality as Seblod's Email Message field
+        */
+        echo '<label>Footer</label>';
+        echo '<textarea id="json_options2_footer" name="json[options2][footer]" value="" class="inputbox text" col="50" rows="10">';
+
+        
+        
         // Add link to tutorial on forum i.e. https://www.seblod.com/community/forums/fields-plug-ins/pdf-plugin
         // RenderHelp forces a dodgy link so need to hardcode or do something else
         echo JCckDev::renderHelp( 'field', 'pdf-plugin' );
