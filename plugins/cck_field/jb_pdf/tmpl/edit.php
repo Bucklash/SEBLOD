@@ -27,16 +27,21 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
         
         /*
         *
-        * create
-        
-        * options: Never, Always, Add, Edit
-        * override "Never" with some select field i.e. yes=1 no=0]
+        * create_select
+        * create_field
+        * create_field_trigger
+        *
+        * @options: Never, Always, Add, Edit
         * @tip: Similar to Seblod's Email Field
-        * @tip: You can designate the value to trigger this plugin
-        * @tip: You may require one plugin set with portrait and another plugin set with landscape settings, you could create a select field called 'orientation' with options "Landscape=landscape||Portrait=portrait" and have one pdf plugin with "create_field_value" as landscape and the other plugin with "create_field_value" as portrait
+        * @tip: create_field overrides "Never", i.e. use a select field with yes=1 no=0
+        * @tip: create_field_trigger references the trigger for create_field
+        * @example: create_field references select field called "orientation" which has the options "Landscape=landscape||Portrait=portrait".
+        * @example: create_field_trigger set as "landscape" as it's value, so when "orientation" equals "landscape", the pdf plugin is triggered.
+        * @example: you could then have another pdf plugin with create_field_trigger set as "portrait".
+        *
         */
         echo '<label>Create PDF</label>';
-        echo '<select id="json_options2_create" name="json[options2][create]" class="inputbox select has-value">
+        echo '<select id="json_options2_create_select" name="json[options2][create_select]" class="inputbox select has-value">
                   <option value="0" selected="selected">Never</option>
                   <option value="3">Always</option>
                   <optgroup label="Workflow">
@@ -45,11 +50,56 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
                   </optgroup>
               </select>';
         echo '<input type="text" id="json_options2_create_field" name="json[options2][create_field]" value="" class="inputbox text" placeholder="some_field_to_override" size="14" maxlength="255">';
-        echo '<input type="text" id="json_options2_create_field_value" name="json[options2][create_field_value]" value="" class="inputbox text" placeholder="value to look for" size="14" maxlength="255">';
-
+        echo '<input type="text" id="json_options2_create_field_trigger" name="json[options2][create_field_trigger]" value="" class="inputbox text" placeholder="value to look for" size="14" maxlength="255">';
 
         /*
-        * Settings
+        *
+        * location_select
+        * location_text
+        * location_field
+        *
+        * @options: Text,Field
+        * @tip: Enter location manually or designate a field
+        * @tip: Idea is to be able to have location as dynamic as possible
+        * @tip: If text or field, I aim to have $user,$uri,$fields available to use within any string
+        *
+        */
+        echo '<label>Location PDF</label>';
+        echo '<select id="json_options2_location_select" name="json[options2][location_select]" class="inputbox select has-value">
+                  <option value="0" selected="selected">Text</option>
+                  <option value="1">Field</option>
+              </select>';
+        echo '<input type="text" id="json_options2_location_text" name="json[options2][location_text]" value="" class="inputbox text" placeholder="some location" size="14" maxlength="255">';
+        echo '<input type="text" id="json_options2_location_field" name="json[options2][location_field]" value="" class="inputbox text" placeholder="some_field_referencing_location" size="14" maxlength="255">';
+
+        
+        
+        /*
+        * TODO
+        * location_override_select
+        * location_override_format
+        *
+        * Looking to use Seblod's SEF alias creation stuff i.e. append with -1, -2, -n, whatever is next in sequence
+        * @options: Yes,No
+        * @tip: If PDF with that name exists in that location, what do you want to do?
+        * @tip: If yes, replace existing
+        * @tip: If No, save with alteration as selected in location_override_format
+        *
+        */
+
+        echo '<select id="json_options2_location_override_select" name="json[options2][location_override_select]" class="inputbox select has-value">
+                  <option value="0" selected="selected">JNo</option>
+                  <option value="1">JYes</option>
+              </select>';
+        
+
+        echo '<select id="json_options2_location_override_format" name="json[options2][location_override_format]" class="inputbox select has-value">
+                  <option value="0" selected="selected"></option>
+                  <option value="1"></option>
+              </select>';        
+        
+        /*
+        * settings
         *
         * @options: Add your method name and value using a html style tag
         * @example: <tcpdf method="addPageBreak" value="true,10" class="">
@@ -58,14 +108,6 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
         * @tip: any method can be added in to the document, these will be applied as they appear, good for when requiring a specific page break
         */
         echo '<label>TCPDF Settings</label>';
-        echo '<select id="json_options2_settings" name="json[options2][settings]" class="inputbox select has-value">
-                  <option value="0" selected="selected">Never</option>
-                  <option value="3">Always</option>
-                  <optgroup label="Workflow">
-                      <option value="1">Add</option>
-                      <option value="2">Edit</option>
-                  </optgroup>
-              </select>';
         echo '<textarea id="json_options2_settings" name="json[options2][settings]" value="" class="inputbox text" placeholder="&lt;tcpdf method="addPageBreak" value="true,10" class=""&gt;" col="50" rows="10">';
         
         
@@ -112,5 +154,6 @@ jQuery(document).ready(function($) {
     // If Never is selected, then show override field
     $('#json_options2_create_field').isVisibleWhen('json_options2_create','0',true,'visibility');
     $('#json_options2_create_field_value').isVisibleWhen('json_options2_create','0',true,'visibility');
-});
+    $('#json_options2_location_override_format').isVisibleWhen('json_options2_location_override_select','1',true,'visibility');
+    });
 </script>
