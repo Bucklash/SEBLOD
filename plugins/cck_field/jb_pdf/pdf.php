@@ -1,4 +1,3 @@
-
 <?php
 /**
 * @version 			SEBLOD 3.x Core
@@ -132,99 +131,65 @@ class plgCCK_FieldJBPDF extends JCckPluginField
 		} else {
 			$name	=	$field->name;
 		}
+		
 		$options2	=	JCckDev::fromJSON( $field->options2 );
-		$siteName	=	JFactory::getConfig()->get( 'sitename' );
-		$valid		=	0;
-		$send		=	( isset( $options2['send'] ) && $field->state != 'disabled' ) ? $options2['send'] : 0;
-		$send_field	=	( isset( $options2['send_field'] ) && strlen( $options2['send_field'] ) > 0 ) ? $options2['send_field'] : 0;
+		
 		$isNew		=	( $config['pk'] ) ? 0 : 1;
-		$sender		=	0;
-		switch ( $send ) {
-			case 0:
-				$sender	=	0;
-				break;
-			case 1:
-				if ( !$config['pk'] ) {
-					$sender	=	1;
-				}
-				break;
-			case 2:
-				if ( $config['pk'] ) {
-					$sender	=	1;
-				}
-				break;
-			case 3:
-				$sender	=	1;
-				break;
-		}
-		$subject	=	( isset( $options2['subject'] ) && $options2['subject'] ) ? $options2['subject'] : $siteName . '::' . JText::_( 'COM_CCK_EMAIL_GENERIC_SUBJECT' );
-		$message	=	( isset( $options2['message'] ) && $options2['message'] ) ? htmlspecialchars_decode($options2['message']) : JText::sprintf( 'COM_CCK_EMAIL_GENERIC_MESSAGE', $siteName );
-		$message	=	( strlen( $options2['message'] ) > 0 ) ? htmlspecialchars_decode($options2['message']) : JText::sprintf( 'COM_CCK_EMAIL_GENERIC_MESSAGE', $siteName );
-		$new_message	=	( strlen( $options2['message_field'] ) > 0 ) ? $options2['message_field'] : '';
-		$dest					=	array();
-		$from					=	( isset( $options2['from'] ) ) ? $options2['from'] : 0;
-		$from_param				=	( isset( $options2['from_param'] ) ) ? $options2['from_param'] : '';
-		$from_name				=	( isset( $options2['from_name'] ) ) ? $options2['from_name'] : 0;
-		$from_name_param		=	( isset( $options2['from_name_param'] ) ) ? $options2['from_name_param'] : '';
-		$reply_to				=	( isset( $options2['reply_to'] ) ) ? $options2['reply_to'] : 0;
-		$reply_to_param			=	( isset( $options2['reply_to_param'] ) ) ? $options2['reply_to_param'] : '';
-		$reply_to_name			=	( isset( $options2['reply_to_name'] ) ) ? $options2['reply_to_name'] : 0;
-		$reply_to_name_param	=	( isset( $options2['reply_to_name_param'] ) ) ? $options2['reply_to_name_param'] : '';
-		$cc						=	( isset( $options2['cc'] ) ) ? $options2['cc'] : 0;
-		$cc_param				=	( isset( $options2['cc_param'] ) ) ? $options2['cc_param'] : '';
-		$bcc					=	( isset( $options2['bcc'] ) ) ? $options2['bcc'] : 0;
-		$bcc_param				=	( isset( $options2['bcc_param'] ) ) ? $options2['bcc_param'] : '';
-		$moredest				=	( isset( $options2['to_field'] ) ) ? $options2['to_field'] : '';
-		$send_attach			=	( isset( $options2['send_attachment_field'] ) && strlen( $options2['send_attachment_field'] ) > 0 ) ? $options2['send_attachment_field'] : 1;
-		$moreattach				=	( isset( $options2['attachment_field'] ) && strlen( $options2['attachment_field'] ) > 0 ) ? $options2['attachment_field'] : '';
+		
+		// Determine whether we create PDF or not?
+		$create_select	=	( isset( $options2['create_select'] ) && $field->state != 'disabled' ) ? $options2['create_select'] : 0;
+		$create_field = ( isset( $options2['create_field'] ) && $field->state != 'disabled' ) ? $options2['create_field'] : '';
+		$create_field_trigger	=	( isset( $options2['create_field_trigger'] ) && $field->state != 'disabled' ) ? $options2['create_field_trigger'] : '';
+		$location	=	( isset( $options2['location'] ) ) ? $options2['location'] : JPATH_SITE.'/'.'images';
+		$settings	=	( isset( $options2['settings'] ) ) ? $options2['settings'] : '';
+		$header	=	( isset( $options2['header'] ) ) ? $options2['header'] : '';
+		$body	=	( isset( $options2['body'] ) ) ? $options2['body'] : '';
+		$footer	=	( isset( $options2['footer'] ) ) ? $options2['footer'] : '';
+		
+		$valid		=	0;
 		
 		// Prepare
-		if ( isset( $options2['to'] ) && $options2['to'] != '' ) {
-			$to		=	self::_split( $options2['to'] );
-			$dest	=	array_merge( $dest, $to );
-			$valid	=	1;
+		switch ( $create ) {
+			case 0:
+  		    $create_field_trigger = ($create_field_trigger == '') ? 1 : $create_field_trigger;
+		      $valid = ($fields[$create_field]->value == $create_field_trigger) ? 1 : 0;
+				break;
+
+			case 1:
+				$valid	=	($isNew === 1) ? 1 : 0;
+				break;
+				
+			case 2:
+				$valid	=	($isNew === 0) ? 1 : 0;
+				break;
+				
+			case 3:
+				$valid	=	1;
+				break;
+				
+			default:
+		      $valid = 0;
+				break;
 		}
-		if ( $moredest ) {
-			$valid	=	1;
-		}
-		if ( isset( $options2['to_admin'] ) && $options2['to_admin'] != '' ) {
-			$to_admin	=	( count( $options2['to_admin'] ) ) ? implode( ',', $options2['to_admin'] ) : $options2['to_admin'];
-			if ( strpos( $to_admin, ',' ) !== false ) {
-				$recips = explode( ',', $to_admin );
-				foreach ( $recips as $recip ) {
-					$recip_mail = JCckDatabase::loadResult( 'SELECT email FROM #__users WHERE block=0 AND id='.$recip );
-					if ( $recip_mail ) {
-						$dest[]	=	$recip_mail;
-						$valid	=	1;
-					}
-				}
-			} else {
-				$recip_mail = JCckDatabase::loadResult( 'SELECT email FROM #__users WHERE block=0 AND id='.$to_admin );
-				if ( $recip_mail ) {
-					$dest[]	=	$recip_mail;
-					$valid	=	1;
-				}
-			}
-		}
-		if ( $value ) {
-			/* TODO#SEBLOD: check multiple if () */
-			$m_value		=	self::_split( $value );
-			$m_value_size	=	count( $m_value );
-			if ( $m_value_size > 1 ) {
-				for ( $i = 0; $i < $m_value_size; $i++ )
-					$dest[]	= 	$m_value[$i];
-			} else {
-				$dest[]	= 	$value;
-			}
-			$valid	=	1;
-		}
-		
+    
+
 		// Validate
 		parent::g_onCCK_FieldPrepareStore_Validation( $field, $name, $value, $config );
 		
 		// Add Process
-		if ( ( $sender || $send_field ) && $valid ) {
-			parent::g_addProcess( 'afterStore', self::$type, $config, array( 'isNew'=>$isNew, 'sender'=>$sender, 'send_field'=>$send_field, 'name'=>$name, 'valid'=>$valid, 'subject'=>$subject, 'message'=>$message, 'new_message'=>$new_message, 'dest'=>$dest, 'from'=>(int)$from, 'from_param'=>$from_param, 'from_name'=>(int)$from_name, 'from_name_param'=>$from_name_param, 'reply_to'=>(int)$reply_to, 'reply_to_param'=>$reply_to_param, 'reply_to_name'=>(int)$reply_to_name, 'reply_to_name_param'=>$reply_to_name_param, 'cc'=>(int)$cc, 'cc_param'=>$cc_param, 'bcc'=>(int)$bcc, 'bcc_param'=>$bcc_param, 'moredest'=>$moredest, 'send_attach'=>$send_attach, 'moreattach'=>$moreattach, 'format'=>@(string)$options2['format'] ) );
+		if ( $valid ) {
+			parent::g_addProcess( 'afterStore', self::$type, $config, array(
+			  'isNew'=>$isNew,
+        'create_select'=>$create_select,
+        'create_field'=>$create_field,
+        'create_field_trigger'=>$create_field_trigger,
+        'location'=>$location,
+        'settings'=>$settings,
+        'header'=>$header,
+        'body'=>$body,
+        'footer'=>$footer,
+        'valid'=>$valid
+        ));
 		}
 		
 		// Set or Return
@@ -234,3 +199,98 @@ class plgCCK_FieldJBPDF extends JCckPluginField
 		$field->value	=	$value;
 		parent::g_onCCK_FieldPrepareStore( $field, $name, $value, $config );
 	}
+
+	// -------- -------- -------- -------- -------- -------- -------- -------- // Render
+	
+	// onCCK_FieldRenderContent
+	public static function onCCK_FieldRenderContent( $field, &$config = array() )
+	{
+		return parent::g_onCCK_FieldRenderContent( $field );
+	}
+	
+	// onCCK_FieldRenderForm
+	public static function onCCK_FieldRenderForm( $field, &$config = array() )
+	{
+		return parent::g_onCCK_FieldRenderForm( $field );
+	}
+	
+	
+	
+	// -------- -------- -------- -------- -------- -------- -------- -------- // Special Events
+	
+	// onCCK_FieldAfterStore
+	public static function onCCK_FieldAfterStore( $process, &$fields, &$storages, &$config = array() )
+	{
+		$isNew		=	$process['isNew'];
+		$valid		=	$process['valid'];
+
+		if ( $valid )
+		{
+
+		}
+		if ( !$valid )
+		{
+			return;
+		}
+
+    // Get Settings Defined in PDF Field
+		if ( $process['settings'] )
+		{
+			
+
+			// <tcpdf class="" method="" params="">);
+			if ( $process['settings'] != '' && strpos( $process['settings'], '<tcpdf' ) !== false )
+			{
+			  
+				$matches	=	'';
+				
+        $settingsSplit = _split($process['settings']);
+				
+      	foreach($settingsSplit as $k => $v)
+      	{
+      	    
+          	if (preg_match('/class="(.*?)"/', $v, $match) === 1)
+          	{
+          	       $matches[$k]['class'] = $match[1];
+          	}
+      	    
+          	if (preg_match('/method="(.*?)"/', $v, $match) === 1)
+          	{
+          	       $matches[$k]['method'] = $match[1];
+          	}
+      	    
+          	if (preg_match('/params="(.*?)"/', $v, $match) === 1)
+          	{
+          	       $matches[$k]['params'] = $match[1];
+          	}
+      
+      	}
+
+			}
+		}
+		
+			
+			
+	}
+	
+	// -------- -------- -------- -------- -------- -------- -------- -------- // Stuff & Script
+	
+	// _split
+	protected static function _split( $string )
+	{
+		$string		=	str_replace( array( ' ', "\r" ), '', $string );
+		if ( strpos( $string, ',' ) !== false ) {
+			$tab	=	explode( ',', $string );
+		} else if ( strpos( $string, ';' ) !== false ) {
+			$tab	=	explode( ';', $string );
+		} else {
+			$tab	=	explode( "\n", $string );
+		}
+		
+		return $tab;
+	}
+	
+
+	
+	
+} // END OF PLUGIN
