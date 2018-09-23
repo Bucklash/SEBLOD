@@ -24,7 +24,7 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
     <?php echo JCckDev::renderLegend( JText::_( 'COM_CCK_CONSTRUCTION' ), JText::_( 'PLG_CCK_FIELD_'.$this->item->type.'_DESC' ) ); ?>
     <ul class="adminformlist adminformlist-2cols">
         <?php
-        
+
         /*
         *
         * create_select
@@ -65,13 +65,13 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
         echo '<label>Location PDF</label>';
         echo '<input type="text" id="json_options2_location" name="json[options2][location]" value="" class="inputbox text" placeholder="some location to store pdf" size="14" maxlength="255">';
 
-        
-   
+
+
         /*
         *
         * tcpdf
         *
-        * @options: Text 
+        * @options: Text
         * @tip: Enter location and name of tcpdf.php file
         * @example: /libraries/tcpdf/tcpdf.php
         *
@@ -79,7 +79,7 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
         echo '<label>Location TCPDF</label>';
         echo '<input type="text" id="json_options2_location_tcpdf" name="json[options2][location_tcpdf]" value="" class="inputbox text" placeholder="location of tcpdf.php" size="14" maxlength="255">';
 
-        
+
         /*
         * TODO
         * location_override_select
@@ -97,13 +97,13 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
                   <option value="0" selected="selected">JNo</option>
                   <option value="1">JYes</option>
               </select>';
-        
+
 
         echo '<select id="json_options2_location_override_format" name="json[options2][location_override_format]" class="inputbox select has-value">
                   <option value="0" selected="selected"></option>
                   <option value="1"></option>
-              </select>';        
-        
+              </select>';
+
         /*
         * settings
         *
@@ -114,9 +114,19 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
         * @tip: any method can be added in to the document, these will be applied as they appear, good for when requiring a specific page break
         */
         echo '<label>TCPDF Settings</label>';
-        echo '<textarea id="json_options2_settings" name="json[options2][settings]" value="" class="inputbox text" placeholder="&lt;tcpdf method="addPageBreak" value="true,10" class=""&gt;" col="50" rows="10">';
-        
-        
+        echo '<textarea id="json_options2_settings" name="json[options2][settings]" value="" class="inputbox text" placeholder="&lsaquo;tcpdf method=&ldquo;addPageBreak&rdquo; params=&ldquo;true,10&rdquo; &frasl;&rsaquo;" col="50" rows="10">';
+
+        /*
+        * delimiter
+        *
+        * @options: $string
+        * @example: <tcpdf method="addPageBreak" value="true,10" class="">
+        * @tip: what separates the tags i.e. ',\n,||' etc
+        */
+        echo '<label>TAG Delimiter</label>';
+        echo '<textarea id="json_options2_delimiter" name="json[options2][delimiter]" value="" class="inputbox text" placeholder="," col="50" rows="10">';
+
+
         /*
         * Header
         *
@@ -124,8 +134,8 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
         */
         echo '<label>Header</label>';
         echo '<textarea id="json_options2_header" name="json[options2][header]" value="" class="inputbox text" col="50" rows="10">';
-        
-        
+
+
         /*
         * Body
         *
@@ -134,8 +144,8 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
         echo '<label>Body</label>';
         echo '<textarea id="json_options2_body" name="json[options2][body]" value="" class="inputbox text" col="50" rows="10">';
 
-        
-                
+
+
         /*
         * Footer
         *
@@ -144,8 +154,8 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
         echo '<label>Footer</label>';
         echo '<textarea id="json_options2_footer" name="json[options2][footer]" value="" class="inputbox text" col="50" rows="10">';
 
-        
-        
+
+
         // Add link to tutorial on forum i.e. https://www.seblod.com/community/forums/fields-plug-ins/pdf-plugin
         // RenderHelp forces a dodgy link so need to hardcode or do something else
         echo JCckDev::renderHelp( 'field', 'pdf-plugin' );
