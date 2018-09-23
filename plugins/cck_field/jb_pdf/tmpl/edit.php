@@ -54,23 +54,16 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
 
         /*
         *
-        * location_select
-        * location_text
-        * location_field
+        * location
         *
-        * @options: Text,Field
-        * @tip: Enter location manually or designate a field
+        * @options: Text [$user,$uri,$fields,#field_name#]
+        * @tip: Enter location manually or designate a field etc
         * @tip: Idea is to be able to have location as dynamic as possible
-        * @tip: If text or field, I aim to have $user,$uri,$fields available to use within any string
+        * @tip: Aim to have $user,$uri,$fields available to use within any string
         *
         */
         echo '<label>Location PDF</label>';
-        echo '<select id="json_options2_location_select" name="json[options2][location_select]" class="inputbox select has-value">
-                  <option value="0" selected="selected">Text</option>
-                  <option value="1">Field</option>
-              </select>';
-        echo '<input type="text" id="json_options2_location_text" name="json[options2][location_text]" value="" class="inputbox text" placeholder="some location" size="14" maxlength="255">';
-        echo '<input type="text" id="json_options2_location_field" name="json[options2][location_field]" value="" class="inputbox text" placeholder="some_field_referencing_location" size="14" maxlength="255">';
+        echo '<input type="text" id="json_options2_location" name="json[options2][location]" value="" class="inputbox text" placeholder="some location" size="14" maxlength="255">';
 
         
         
