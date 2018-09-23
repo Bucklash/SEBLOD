@@ -57,15 +57,28 @@ $to_admin   =   ( is_array( @$options2['to_admin'] ) ) ? implode( ',', $options2
         * location
         *
         * @options: Text [$user,$uri,$fields,#field_name#]
-        * @tip: Enter location manually or designate a field etc
-        * @tip: Idea is to be able to have location as dynamic as possible
+        * @tip: Enter location to store pdf manually or designate a field etc
+        * @tip: Idea is to be able to have storeage location as dynamic as possible
         * @tip: Aim to have $user,$uri,$fields available to use within any string
         *
         */
         echo '<label>Location PDF</label>';
-        echo '<input type="text" id="json_options2_location" name="json[options2][location]" value="" class="inputbox text" placeholder="some location" size="14" maxlength="255">';
+        echo '<input type="text" id="json_options2_location" name="json[options2][location]" value="" class="inputbox text" placeholder="some location to store pdf" size="14" maxlength="255">';
 
         
+   
+        /*
+        *
+        * tcpdf
+        *
+        * @options: Text 
+        * @tip: Enter location and name of tcpdf.php file
+        * @example: /libraries/tcpdf/tcpdf.php
+        *
+        */
+        echo '<label>Location TCPDF</label>';
+        echo '<input type="text" id="json_options2_location_tcpdf" name="json[options2][location_tcpdf]" value="" class="inputbox text" placeholder="location of tcpdf.php" size="14" maxlength="255">';
+
         
         /*
         * TODO
