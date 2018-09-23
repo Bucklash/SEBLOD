@@ -263,6 +263,18 @@ class plgCCK_FieldJBPDF extends JCckPluginField
 
 
 
+    // _split($strng, 'delimiter')
+    protected static function _splitDelimiter( $string, $delimiter = ',' )
+    {
+
+        $string     =   str_replace( array( ' ', "\r" ), '', $string );
+
+        $tab    =   explode( $delimiter, $string );
+
+        return $tab;
+    }
+
+
     // _tcpdf
     protected static function _tcpdf( $data )
     {
@@ -280,11 +292,11 @@ class plgCCK_FieldJBPDF extends JCckPluginField
         {
             if ( $data['header'] != '' && strpos( $data['header'], '<tcpdf' ) !== false )
             {
-                $data['header'] = self::_tcpdfTagToData( $data['header'] );
+                $data['header'] = self::_tcpdfTagToData( $data['header'], $data['delimiter'] );
 
                 // pass params to instance
                 // $vaue is array array(class => '', method => 'someMethod', params => array(0,1,2...))
-                foreach ($process['header'] as $key => $value)
+                foreach ($data['header'] as $key => $value)
                 {
 
                     self::_tcpdfParamsBuilder(&$pdf,&$value['method'], &$value['params']);
@@ -296,11 +308,11 @@ class plgCCK_FieldJBPDF extends JCckPluginField
         {
             if ( $data['footer'] != '' && strpos( $data['footer'], '<tcpdf' ) !== false )
             {
-                $data['footer'] = self::_tcpdfTagToData( $data['footer'] );
+                $data['footer'] = self::_tcpdfTagToData( $data['footer'], $data['delimiter'] );
 
                 // pass params to instance
                 // $vaue is array array(class => '', method => 'someMethod', params => array(0,1,2...))
-                foreach ($process['footer'] as $key => $value)
+                foreach ($data['footer'] as $key => $value)
                 {
 
                     self::_tcpdfParamsBuilder(&$pdf,&$value['method'], &$value['params']);
@@ -312,7 +324,7 @@ class plgCCK_FieldJBPDF extends JCckPluginField
         {
             if ( $data['settings'] != '' && strpos( $data['settings'], '<tcpdf' ) !== false )
             {
-                $data['settings'] = self::_tcpdfTagToData( $data['settings'] );
+                $data['settings'] = self::_tcpdfTagToData( $data['settings'], $data['delimiter'] );
 
                 // pass params to instance
                 // $vaue is array array(class => '', method => 'someMethod', params => array(0,1,2...))
@@ -334,7 +346,7 @@ class plgCCK_FieldJBPDF extends JCckPluginField
 
 
     // _tcpdfParamsBuilder
-    protected static function _tcpdfParamsBuilder( &$instance,&$method, &$param )
+    protected static function _tcpdfParamsBuilder( &$pdf,&$method, &$param )
     {
 
                 // Parameters 10 max (should be enough, are there any methods that can take more?)
@@ -382,12 +394,12 @@ class plgCCK_FieldJBPDF extends JCckPluginField
     // <tcpdf class="" method="" params="">);
     // becomes array[0]['method'] = someMethod
     // becomes array[0]['params'] = array(param1,param2,...)
-    protected static function _tcpdfTagToData( $string )
+    protected static function _tcpdfTagToData( $string, $delimiter )
     {
 
         $matches    =   '';
 
-        $array = self::_split($string);
+        $array = self::_splitDelimiter($string, $delimiter);
 
         foreach($array as $k => $v)
         {
